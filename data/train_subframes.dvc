@@ -1,0 +1,6 @@
+outs:
+- md5: c9cfaaff9f3aee9649e3d9278b6693f5.dir
+  size: 1884103246
+  nfiles: 3556
+  hash: md5
+  path: train_subframes
