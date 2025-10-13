@@ -7,6 +7,21 @@ import torch.optim as optim
 from torch.nn.functional import mse_loss
 
 class Trainer:
+    def _prepare_density_map_batch(self, centers_list, orig_sizes, h_out, w_out):
+        """
+        Escala los centros de cada imagen del batch a la resolución de salida y genera el mapa de densidad.
+        """
+        scaled_centers = []
+        for i, centers in enumerate(centers_list):
+            orig_w, orig_h = orig_sizes[i]
+            scale_x = w_out / orig_w
+            scale_y = h_out / orig_h
+            centers_i = centers.clone()
+            if centers_i.numel() > 0:
+                centers_i[:, 0] *= scale_x
+                centers_i[:, 1] *= scale_y
+            scaled_centers.append(centers_i)
+        return self._generate_density_map(scaled_centers, h_out, w_out)
     def __init__(self, model, train_loader, val_loader, config, device):
         self.model = model
         self.train_loader = train_loader
@@ -61,28 +76,34 @@ class Trainer:
         self.model.train()
         running_loss = 0.0
 
-        for batch in self.train_loader:
-            images_tuple, centers_tuple, classes_tuple, image_ids_tuple, orig_sizes_tuple = batch
+        total_batches = len(self.train_loader)
+        print(f"[Entrenamiento] Epoch {epoch} - Total batches: {total_batches}")
+        for batch_idx, batch in enumerate(self.train_loader):
+            print(f"  [Entrenamiento] Epoch {epoch} | Batch {batch_idx+1}/{total_batches}")
+            if batch_idx < 2:
+                print(f"    [DEBUG] images.shape: {torch.stack(batch['image']).shape}")
+                print(f"    [DEBUG] centers[0].shape: {batch['centers'][0].shape if len(batch['centers']) > 0 else 'N/A'}")
+                print(f"    [DEBUG] orig_sizes[0]: {batch['orig_size'][0] if len(batch['orig_size']) > 0 else 'N/A'}")
+            images = torch.stack(batch['image']).to(self.device)  # [B, 3, H, W]
+            centers = batch['centers']
+            orig_sizes = batch['orig_size']
 
-            # Convertir imágenes a un tensor batch
-            images = torch.stack(images_tuple).to(self.device)  # [B, 3, H, W]
+            bs, _, h_in, w_in = images.shape
 
-            # centers_tuple es una tupla de tensores con diferente tamaño (por imagen)
-            centers = centers_tuple  # puedes usarlos tal cual, por ejemplo para generar mapas de densidad
+            outputs = self.model(images)  # [B, C, H_out, W_out]
+            _, _, h_out, w_out = outputs.shape
 
-            bs, _, h, w = images.shape
-
-            # Generar ground truth density maps
-            gt_density = self._generate_density_map(centers, h, w).to(self.device)  # [B, C, H, W]
+            # Generar ground truth density maps al tamaño de salida
+            gt_density = self._prepare_density_map_batch(centers, orig_sizes, h_out, w_out).to(self.device)
 
             self.optimizer.zero_grad()
-            outputs = self.model(images)
-
             loss = self.criterion(outputs, gt_density)
             loss.backward()
             self.optimizer.step()
-
             running_loss += loss.item()
+
+            if batch_idx % 10 == 0:
+                print(f"  [Batch {batch_idx}] Loss: {loss.item():.4f}")
 
         return running_loss / len(self.train_loader)
 
@@ -94,23 +115,32 @@ class Trainer:
         total_FP = 0
         total_FN = 0
 
+        total_batches = len(self.val_loader)
+        print(f"[Validación] Epoch {epoch} - Total batches: {total_batches}")
         with torch.no_grad():
-            for batch in self.val_loader:
+            for batch_idx, batch in enumerate(self.val_loader):
+                print(f"  [Validación] Epoch {epoch} | Batch {batch_idx+1}/{total_batches}")
+                if batch_idx < 2:
+                    print(f"    [DEBUG] images.shape: {torch.stack(batch['image']).shape}")
+                    print(f"    [DEBUG] centers[0].shape: {batch['centers'][0].shape if len(batch['centers']) > 0 else 'N/A'}")
+                    print(f"    [DEBUG] orig_sizes[0]: {batch['orig_size'][0] if len(batch['orig_size']) > 0 else 'N/A'}")
+
                 images = torch.stack(batch['image']).to(self.device)   # [B, 3, H, W]
                 centers_batch = batch['centers']
-                classes_batch = batch['classes']
-                bs, _, h, w = images.shape
+                orig_sizes_batch = batch['orig_size']
+                bs, _, h_in, w_in = images.shape
 
-                outputs = self.model(images)  # [B, C, H, W]
+                outputs = self.model(images)  # [B, C, H_out, W_out]
+                _, _, h_out, w_out = outputs.shape
 
                 for i in range(bs):
-                    pred_density = outputs[i]  # [C, H, W]
+                    pred_density = outputs[i]  # [C, H_out, W_out]
                     pred_points = extract_points_from_density_map(pred_density, threshold=0.2)
 
                     gt_centers = centers_batch[i]  # Tensor [N, 2]
-                    gt_classes = classes_batch[i]  # Tensor [N]
-                    gt_points = [(int(x.item()), int(y.item()), int(c.item()))
-                                for (x, y), c in zip(gt_centers, gt_classes)]
+                    gt_classes = batch['classes'][i] if 'classes' in batch else None
+                    gt_points = [(int(x.item()), int(y.item()), int(c.item()) if gt_classes is not None else 0)
+                                 for (x, y), c in zip(gt_centers, gt_classes)] if gt_classes is not None else [(int(x.item()), int(y.item()), 0) for (x, y) in gt_centers]
 
                     # Matching detecciones | ground truth
                     TP, FP, FN = match_detections_to_gt(pred_points, gt_points,
@@ -121,7 +151,7 @@ class Trainer:
                     total_FN += FN
 
                     # Loss por imagen
-                    gt_density = self._generate_density_map(gt_centers, h, w).to(self.device)
+                    gt_density = self._prepare_density_map_batch([gt_centers], [orig_sizes_batch[i]], h_out, w_out).to(self.device)
                     loss = self.criterion(pred_density.unsqueeze(0), gt_density.unsqueeze(0))  # añadir dimensión batch
                     running_loss += loss.item()
 
@@ -130,12 +160,12 @@ class Trainer:
         recall = total_TP / (total_TP + total_FN + 1e-8)
         f1 = 2 * (precision * recall) / (precision + recall + 1e-8)
 
-        print(f"[Validación Epoch {epoch}]")
-        print(f"  Loss     : {running_loss / len(self.val_loader):.4f}")
+        print(f"[Validación Epoch {epoch}] Resultados globales:")
+        print(f"  Loss     : {running_loss / total_batches:.4f}")
         print(f"  TP: {total_TP} | FP: {total_FP} | FN: {total_FN}")
         print(f"  Precision: {precision:.3f} | Recall: {recall:.3f} | F1-score: {f1:.3f}")
 
-        return running_loss / len(self.val_loader)
+        return running_loss / total_batches
 
     def _generate_density_map(self, batch_centers, height, width):
         """
@@ -163,13 +193,3 @@ class Trainer:
             'optimizer_state_dict': self.optimizer.state_dict()
         }, ckpt_path)
         print(f"[INFO] Checkpoint guardado: {ckpt_path}")
-
-    def _load_checkpoint(self, path):
-        if not os.path.exists(path):
-            print(f"[WARN] Checkpoint {path} no encontrado. Entrenamiento desde cero.")
-            return
-
-        checkpoint = torch.load(path, map_location=self.device)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        print(f"[INFO] Checkpoint cargado desde {path}")

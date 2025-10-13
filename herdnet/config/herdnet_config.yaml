@@ -25,14 +25,14 @@ dataset:
 # Training config
 # ====================
 training:
-  epochs: 100
-  batch_size: 8
+  epochs: 1
+  batch_size: 2
   lr: 0.001
   weight_decay: 0.0005
   lr_scheduler: step
   step_size: 30
   gamma: 0.1
-  warmup_epochs: 5
+  # warmup_epochs: 5
   resume_from_checkpoint: null
 
 # ====================

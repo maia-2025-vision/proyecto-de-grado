@@ -5,6 +5,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.data import Subset
 
 # HerdNet modules
 from herdnet.data.dataset import HerdNetDataset
@@ -21,7 +22,9 @@ def load_config(config_path):
         return yaml.safe_load(f)
 
 def custom_collate_fn(batch):
-    return tuple(zip(*batch))
+    # batch es una lista de diccionarios
+    collated = {key: [d[key] for d in batch] for key in batch[0]}
+    return collated
 
 # ------------------------------
 # Main training entry point
@@ -51,17 +54,19 @@ def main(config):
         image_size=None  # tamaño libre
     )
 
+    train_subset = Subset(train_dataset, range(10))
     # 4. DataLoaders
     train_loader = DataLoader(
-        train_dataset,
+        train_subset,
         batch_size=config['training']['batch_size'],
         shuffle=True,
         num_workers=config['dataset']['workers'],
         collate_fn=custom_collate_fn
     )
 
+    val_subset = Subset(val_dataset, range(10))
     val_loader = DataLoader(
-        val_dataset,
+        val_subset,
         batch_size=1,
         shuffle=False,
         num_workers=config['dataset']['workers'],
