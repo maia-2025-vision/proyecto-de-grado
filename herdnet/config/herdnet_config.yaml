@@ -13,9 +13,11 @@ dataset:
   name: annotations
   train_annotation: data/groundtruth/json/sub_frames/train_subframes_A_B_E_K_WH_WB.json
   val_annotation: data/groundtruth/json/big_size/val_big_size_A_B_E_K_WH_WB.json
+  test_annotation: data/groundtruth/json/big_size/test_big_size_A_B_E_K_WH_WB.json
   train_image_dir: data/train_subframes
   train_image_size: [2000, 2000]
   val_image_dir: data/val
+  test_image_dir: data/test
   num_classes: 6
   workers: 4
 

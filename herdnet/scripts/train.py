@@ -37,14 +37,14 @@ def main(config):
     train_dataset = HerdNetDataset(
         annotation_path=config['dataset']['train_annotation'],
         image_dir=config['dataset']['train_image_dir'],
-        transforms=train_transforms,
+        image_transforms=train_transforms,
         image_size=config['dataset']['train_image_size']
     )
 
     val_dataset = HerdNetDataset(
         annotation_path=config['dataset']['val_annotation'],
         image_dir=config['dataset']['val_image_dir'],
-        transforms=val_transforms,
+        image_transforms=val_transforms,
         image_size=None  # tamaño libre
     )
 
@@ -65,7 +65,7 @@ def main(config):
     )
 
     # 5. Model
-    model = build_herdnet(config['model'])
+    model = build_herdnet(config)
     model.to(device)
 
     # 6. Entrenador
