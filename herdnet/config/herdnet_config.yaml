@@ -1,0 +1,61 @@
+# ====================
+# General config
+# ====================
+project_name: herdnet
+experiment_name: default_experiment
+seed: 42
+device: cuda  # or 'cpu'
+
+# ====================
+# Dataset config
+# ====================
+dataset:
+  name: annotations
+  train_annotation: data/groundtruth/json/sub_frames/train_subframes_A_B_E_K_WH_WB.json
+  val_annotation: data/groundtruth/json/big_size/val_big_size_A_B_E_K_WH_WB.json
+  train_image_dir: data/train_subframes
+  train_image_size: [2000, 2000]
+  val_image_dir: data/val
+  num_classes: 6
+  workers: 4
+
+# ====================
+# Training config
+# ====================
+training:
+  epochs: 100
+  batch_size: 8
+  lr: 0.001
+  weight_decay: 0.0005
+  lr_scheduler: step
+  step_size: 30
+  gamma: 0.1
+  warmup_epochs: 5
+  resume_from_checkpoint: null
+
+# ====================
+# Model config
+# ====================
+model:
+  name: herdnet
+  pretrained: true
+  backbone: resnet18
+  use_density_map: true
+  output_stride: 8
+
+# ====================
+# Logging & output
+# ====================
+output:
+  save_dir: experiments/herdnet/outputs
+  checkpoint_dir: experiments/herdnet/checkpoints
+  log_dir: experiments/herdnet/logs
+  save_freq: 5  # cada cuántos epochs guardar
+
+# ====================
+# Evaluation
+# ====================
+evaluation:
+  eval_interval: 1
+  metric: distance  # o 'mAP' si se usan bboxes
+  max_detection_distance: 10  # en píxeles
