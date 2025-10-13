@@ -62,8 +62,14 @@ class Trainer:
         running_loss = 0.0
 
         for batch in self.train_loader:
-            images = batch['image'].to(self.device)  # [B, 3, H, W]
-            centers = batch['centers']               # [B, N, 2]
+            images_tuple, centers_tuple, classes_tuple, image_ids_tuple, orig_sizes_tuple = batch
+
+            # Convertir imágenes a un tensor batch
+            images = torch.stack(images_tuple).to(self.device)  # [B, 3, H, W]
+
+            # centers_tuple es una tupla de tensores con diferente tamaño (por imagen)
+            centers = centers_tuple  # puedes usarlos tal cual, por ejemplo para generar mapas de densidad
+
             bs, _, h, w = images.shape
 
             # Generar ground truth density maps

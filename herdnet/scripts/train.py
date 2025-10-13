@@ -20,6 +20,9 @@ def load_config(config_path):
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
+def custom_collate_fn(batch):
+    return tuple(zip(*batch))
+
 # ------------------------------
 # Main training entry point
 # ------------------------------
@@ -53,7 +56,8 @@ def main(config):
         train_dataset,
         batch_size=config['training']['batch_size'],
         shuffle=True,
-        num_workers=config['dataset']['workers']
+        num_workers=config['dataset']['workers'],
+        collate_fn=custom_collate_fn
     )
 
     val_loader = DataLoader(
@@ -61,7 +65,7 @@ def main(config):
         batch_size=1,
         shuffle=False,
         num_workers=config['dataset']['workers'],
-        collate_fn=lambda x: tuple(zip(*x))  # permite tamaños variables
+        collate_fn=custom_collate_fn 
     )
 
     # 5. Model
