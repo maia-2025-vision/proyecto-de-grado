@@ -39,29 +39,30 @@ def match_detections_to_gt(pred_points, gt_points, max_dist=10):
 
     used_preds = set()
 
+    print("\n[Matching Log]")
     for i, pred in enumerate(pred_points):
         px, py, pc = pred
         best_gt = None
         best_dist = max_dist + 1
-
+        print(f"Pred[{i}] ({px},{py}, clase={pc}):")
         for j, gt in enumerate(gt_points):
             if j not in unmatched_gts:
                 continue
             gx, gy, gc = gt
-
             if pc != gc:
                 continue  # solo comparamos dentro de la misma clase
-
             dist = np.sqrt((px - gx) ** 2 + (py - gy) ** 2)
+            # print(f"  vs GT[{j}] ({gx},{gy}, clase={gc}) -> dist={dist:.2f}")
             if dist <= max_dist and dist < best_dist:
                 best_dist = dist
                 best_gt = j
-
         if best_gt is not None:
+            print(f"  -> MATCH con GT[{best_gt}] (dist={best_dist:.2f})")
             matched.append((i, best_gt))
             unmatched_gts.remove(best_gt)
             used_preds.add(i)
         else:
+            print("  -> NO MATCH")
             unmatched_preds.append(i)
 
     TP = len(matched)

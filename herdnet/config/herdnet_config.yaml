@@ -12,11 +12,13 @@ device: cuda  # or 'cpu'
 dataset:
   name: annotations
   train_annotation: data/groundtruth/json/sub_frames/train_subframes_A_B_E_K_WH_WB.json
-  val_annotation: data/groundtruth/json/big_size/val_big_size_A_B_E_K_WH_WB.json
+  val_annotation: data/groundtruth/json/sub_frames/train_subframes_A_B_E_K_WH_WB.json
+  # val_annotation: data/groundtruth/json/big_size/val_big_size_A_B_E_K_WH_WB.json
   test_annotation: data/groundtruth/json/big_size/test_big_size_A_B_E_K_WH_WB.json
   train_image_dir: data/train_subframes
   train_image_size: [2000, 2000]
-  val_image_dir: data/val
+  val_image_dir: data/train_subframes
+  # val_image_dir: data/val
   test_image_dir: data/test
   num_classes: 6
   workers: 4
@@ -26,12 +28,13 @@ dataset:
 # ====================
 training:
   epochs: 1
-  batch_size: 8
+  batch_size: 4
   lr: 0.001
   weight_decay: 0.0005
   lr_scheduler: step
   step_size: 30
   gamma: 0.1
+  gaussian_sigma: 3
   # warmup_epochs: 5
   resume_from_checkpoint: null
 
@@ -58,6 +61,7 @@ output:
 # Evaluation
 # ====================
 evaluation:
-  eval_interval: 8
+  eval_interval: 4
   metric: distance  # o 'mAP' si se usan bboxes
   max_detection_distance: 10  # en píxeles
+  density_threshold: 0.5
