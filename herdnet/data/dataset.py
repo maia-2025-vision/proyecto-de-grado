@@ -58,39 +58,28 @@ class HerdNetDataset(Dataset):
 
         # Leer imagen
         image = Image.open(image_path).convert('RGB')
-        orig_w, orig_h = image.size
+        orig_size = image.size  # (width, height)
 
-        # Obtener puntos centrales a partir de bboxes
+        # Obtener centros y clases de las anotaciones
         centers = []
         classes = []
         for ann in entry['annotations']:
-            x, y, w, h = ann['bbox']
-            cx = x + w / 2
-            cy = y + h / 2
-            centers.append([cx, cy])
+            x = ann['bbox'][0] + ann['bbox'][2] / 2
+            y = ann['bbox'][1] + ann['bbox'][3] / 2
+            centers.append([x, y])
             classes.append(ann['category_id'])
 
-        centers = np.array(centers, dtype=np.float32) if centers else np.zeros((0, 2), dtype=np.float32)
-        classes = np.array(classes, dtype=np.int64) if classes else np.zeros((0,), dtype=np.int64)
+        centers = torch.tensor(centers, dtype=torch.float32)
+        classes = torch.tensor(classes, dtype=torch.long)
 
-        # Resize si es entrenamiento
-        if self.image_size is not None:
-            image = image.resize(self.image_size, Image.BILINEAR)
-            scale_x = self.image_size[0] / orig_w
-            scale_y = self.image_size[1] / orig_h
-            centers[:, 0] *= scale_x
-            centers[:, 1] *= scale_y
-
-        # Transformaciones
+        # Aplicar transformaciones si existen
         if self.transforms:
             image = self.transforms(image)
 
-        sample = {
-            'image': image,                 # Tensor [3,H,W]
-            'centers': torch.tensor(centers, dtype=torch.float32),  # [N,2]
-            'classes': torch.tensor(classes, dtype=torch.long),     # [N]
-            'image_id': entry['image_id'],
-            'orig_size': (orig_w, orig_h)
+        return {
+            'image': image,
+            'centers': centers,
+            'classes': classes,
+            'orig_size': (orig_size[1], orig_size[0])  # (height, width)
         }
-
-        return sample
+        

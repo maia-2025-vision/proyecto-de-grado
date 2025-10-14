@@ -9,12 +9,21 @@ def extract_points_from_density_map(density_map, threshold=0.1, min_distance=3):
     Retorna una lista de puntos por clase.
     """
     density_map = density_map.cpu().numpy()  # [C, H, W]
+
+    # Validar que el mapa de densidad tenga al menos 3 dimensiones
+    if len(density_map.shape) != 3:
+        raise ValueError(f"Se esperaba un mapa de densidad con 3 dimensiones [C, H, W], pero se recibió: {density_map.shape}")
+
     detections = []
 
     for c in range(density_map.shape[0]):
         class_map = density_map[c]
 
-        #aplicar suavizado (puede mejorar la detección de picos)
+        # Validar que cada mapa de clase sea 2D
+        if len(class_map.shape) != 2:
+            raise ValueError(f"Se esperaba un mapa de clase 2D para la clase {c}, pero se recibió: {class_map.shape}")
+
+        # Aplicar suavizado (puede mejorar la detección de picos)
         class_map = scipy.ndimage.gaussian_filter(class_map, sigma=1)
 
         # Buscar picos locales por encima del umbral

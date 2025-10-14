@@ -63,7 +63,9 @@ config = {
         'step_size': 20,
         'gamma': 0.5,
         'resume_from_checkpoint': None,
-        'gaussian_sigma': 3
+        'lambda_localization': 1.0,
+        'lambda_classification': 1.0,
+        'gaussian_sigma': 0.01
     },
     'output': {
         'checkpoint_dir': './checkpoints_overfit',
@@ -74,7 +76,7 @@ config = {
     },
     'evaluation': {
         'max_detection_distance': 10,
-        'density_threshold': 0.1
+        'density_threshold': 2
     }
 }
 
@@ -114,9 +116,9 @@ model = model.to(DEVICE)
 trainer = Trainer(model, train_loader, val_loader, config, DEVICE)
 trainer.train()
 
-# Visualización final
 
-# Visualización solo al final del entrenamiento
+# Visualización final con dual-head HerdNet
+import matplotlib.pyplot as plt
 print('Entrenamiento finalizado. Generando visualización de validación...')
 for batch in val_loader:
     images = torch.stack(batch['image']).to(DEVICE)
@@ -125,36 +127,32 @@ for batch in val_loader:
     orig_size = batch['orig_size']
     model.eval()
     with torch.no_grad():
-        output = model(images)[0]
+        loc_map, cls_map = model(images)
     from herdnet.engine.evaluator import extract_points_from_density_map, match_detections_to_gt
-    pred_points_raw = extract_points_from_density_map(output, threshold=config['evaluation']['density_threshold'])
+    # Extraer picos del mapa de localización
+    print("Valor máximo en loc_map:", loc_map[0].max().item())
+    pred_points_raw = extract_points_from_density_map(loc_map[0, 0].unsqueeze(0), threshold=config['evaluation']['density_threshold'])
+    # Asignar clase por pixel usando el mapa de clasificación
+    import torch.nn.functional as F
+    cls_map_upsampled = F.interpolate(cls_map[0].unsqueeze(0), size=loc_map.shape[2:], mode='bilinear', align_corners=False).squeeze(0)
+    pred_classes = torch.argmax(cls_map_upsampled, dim=0)  # [H, W]
+    pred_points = [
+        (int(x * images[0].shape[2] / loc_map.shape[3]), int(y * images[0].shape[1] / loc_map.shape[2]), int(pred_classes[y, x].item()))
+        for (x, y, *_) in pred_points_raw
+    ]
     gt_points = [(int(x.item()), int(y.item()), int(c.item())) for (x, y), c in zip(centers[0], classes[0])]
-
-    # Validar tamaños de imagen y mapa de densidad
-    img_np = images[0].cpu().numpy().transpose(1, 2, 0)
-    h_img, w_img = img_np.shape[:2]
-    h_map, w_map = output.shape[1:]
-    print(f'Tamaño imagen: {h_img}x{w_img}, Tamaño mapa de densidad: {h_map}x{w_map}')
-
-    # Reescalar puntos predichos al espacio de la imagen original (depuración)
-    # print("Valores de reescalado:")
-    # print(f"w_img={w_img}, h_img={h_img}, w_map={w_map}, h_map={h_map}")
-    pred_points = []
-    for x, y, c in pred_points_raw:
-        # print(f"x_map={x}, y_map={y}, clase={c}")
-        x_img = int(x * w_img / w_map)
-        y_img = int(y * h_img / h_map)
-        # print(f"x_img={x_img}, y_img={y_img}")
-        pred_points.append((x_img, y_img, c))
 
     # Matching en el espacio correcto
     TP, FP, FN = match_detections_to_gt(pred_points, gt_points, max_dist=config['evaluation']['max_detection_distance'])
     print(f"TP: {TP} | FP: {FP} | FN: {FN}")
 
+    # Visualización completa con 9 gráficas
     trainer.visualize_prediction(
-        images[0], output, gt_points, pred_points,
+        images[0].cpu(),
+        loc_map[0].cpu(),  # Mapa de densidad con todos los canales/clases
+        gt_points,
+        pred_points,
         save_path='overfit_multiclass_result.png',
-        category_id_to_name=category_id_to_name,
-        img_path=IMAGE_PATH
+        category_id_to_name=category_id_to_name
     )
 print('Visualización guardada en overfit_multiclass_result.png')

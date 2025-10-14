@@ -34,6 +34,8 @@ training:
   lr_scheduler: step
   step_size: 30
   gamma: 0.1
+  lambda_localization: 1.0
+  lambda_classification: 1.0
   gaussian_sigma: 3
   # warmup_epochs: 5
   resume_from_checkpoint: null
