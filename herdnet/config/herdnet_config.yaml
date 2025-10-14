@@ -26,7 +26,7 @@ dataset:
 # ====================
 training:
   epochs: 1
-  batch_size: 2
+  batch_size: 8
   lr: 0.001
   weight_decay: 0.0005
   lr_scheduler: step
@@ -52,12 +52,12 @@ output:
   save_dir: experiments/herdnet/outputs
   checkpoint_dir: experiments/herdnet/checkpoints
   log_dir: experiments/herdnet/logs
-  save_freq: 5  # cada cuántos epochs guardar
+  save_freq: 1  # cada cuántos epochs guardar
 
 # ====================
 # Evaluation
 # ====================
 evaluation:
-  eval_interval: 1
+  eval_interval: 8
   metric: distance  # o 'mAP' si se usan bboxes
   max_detection_distance: 10  # en píxeles

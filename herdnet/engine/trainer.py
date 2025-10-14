@@ -5,23 +5,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.nn.functional import mse_loss
+from tqdm import tqdm
 
 class Trainer:
-    def _prepare_density_map_batch(self, centers_list, orig_sizes, h_out, w_out):
-        """
-        Escala los centros de cada imagen del batch a la resolución de salida y genera el mapa de densidad.
-        """
-        scaled_centers = []
-        for i, centers in enumerate(centers_list):
-            orig_w, orig_h = orig_sizes[i]
-            scale_x = w_out / orig_w
-            scale_y = h_out / orig_h
-            centers_i = centers.clone()
-            if centers_i.numel() > 0:
-                centers_i[:, 0] *= scale_x
-                centers_i[:, 1] *= scale_y
-            scaled_centers.append(centers_i)
-        return self._generate_density_map(scaled_centers, h_out, w_out)
     def __init__(self, model, train_loader, val_loader, config, device):
         self.model = model
         self.train_loader = train_loader
@@ -78,12 +64,7 @@ class Trainer:
 
         total_batches = len(self.train_loader)
         print(f"[Entrenamiento] Epoch {epoch} - Total batches: {total_batches}")
-        for batch_idx, batch in enumerate(self.train_loader):
-            print(f"  [Entrenamiento] Epoch {epoch} | Batch {batch_idx+1}/{total_batches}")
-            if batch_idx < 2:
-                print(f"    [DEBUG] images.shape: {torch.stack(batch['image']).shape}")
-                print(f"    [DEBUG] centers[0].shape: {batch['centers'][0].shape if len(batch['centers']) > 0 else 'N/A'}")
-                print(f"    [DEBUG] orig_sizes[0]: {batch['orig_size'][0] if len(batch['orig_size']) > 0 else 'N/A'}")
+        for batch_idx, batch in enumerate(tqdm(self.train_loader, desc="Entrenamiento", leave=False)):
             images = torch.stack(batch['image']).to(self.device)  # [B, 3, H, W]
             centers = batch['centers']
             orig_sizes = batch['orig_size']
@@ -102,9 +83,6 @@ class Trainer:
             self.optimizer.step()
             running_loss += loss.item()
 
-            if batch_idx % 10 == 0:
-                print(f"  [Batch {batch_idx}] Loss: {loss.item():.4f}")
-
         return running_loss / len(self.train_loader)
 
     def _validate(self, epoch):
@@ -118,13 +96,7 @@ class Trainer:
         total_batches = len(self.val_loader)
         print(f"[Validación] Epoch {epoch} - Total batches: {total_batches}")
         with torch.no_grad():
-            for batch_idx, batch in enumerate(self.val_loader):
-                print(f"  [Validación] Epoch {epoch} | Batch {batch_idx+1}/{total_batches}")
-                if batch_idx < 2:
-                    print(f"    [DEBUG] images.shape: {torch.stack(batch['image']).shape}")
-                    print(f"    [DEBUG] centers[0].shape: {batch['centers'][0].shape if len(batch['centers']) > 0 else 'N/A'}")
-                    print(f"    [DEBUG] orig_sizes[0]: {batch['orig_size'][0] if len(batch['orig_size']) > 0 else 'N/A'}")
-
+            for batch_idx, batch in enumerate(tqdm(self.val_loader, desc="Validación", leave=False)):
                 images = torch.stack(batch['image']).to(self.device)   # [B, 3, H, W]
                 centers_batch = batch['centers']
                 orig_sizes_batch = batch['orig_size']
@@ -154,7 +126,7 @@ class Trainer:
                     gt_density = self._prepare_density_map_batch([gt_centers], [orig_sizes_batch[i]], h_out, w_out).to(self.device)
                     loss = self.criterion(pred_density.unsqueeze(0), gt_density.unsqueeze(0))  # añadir dimensión batch
                     running_loss += loss.item()
-
+                
         # Métricas globales
         precision = total_TP / (total_TP + total_FP + 1e-8)
         recall = total_TP / (total_TP + total_FN + 1e-8)
@@ -184,6 +156,22 @@ class Trainer:
             maps.append(density)
 
         return torch.stack(maps)  # [B, C, H, W]
+
+    def _prepare_density_map_batch(self, centers_list, orig_sizes, h_out, w_out):
+        """
+        Escala los centros de cada imagen del batch a la resolución de salida y genera el mapa de densidad.
+        """
+        scaled_centers = []
+        for i, centers in enumerate(centers_list):
+            orig_w, orig_h = orig_sizes[i]
+            scale_x = w_out / orig_w
+            scale_y = h_out / orig_h
+            centers_i = centers.clone()
+            if centers_i.numel() > 0:
+                centers_i[:, 0] *= scale_x
+                centers_i[:, 1] *= scale_y
+            scaled_centers.append(centers_i)
+        return self._generate_density_map(scaled_centers, h_out, w_out)
 
     def _save_checkpoint(self, epoch):
         ckpt_path = os.path.join(self.checkpoint_dir, f"model_epoch_{epoch}.pth")

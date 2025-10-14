@@ -54,7 +54,7 @@ def main(config):
         image_size=None  # tamaño libre
     )
 
-    train_subset = Subset(train_dataset, range(10))
+    train_subset = Subset(train_dataset, range(500))
     # 4. DataLoaders
     train_loader = DataLoader(
         train_subset,
@@ -64,9 +64,9 @@ def main(config):
         collate_fn=custom_collate_fn
     )
 
-    val_subset = Subset(val_dataset, range(10))
+    # val_subset = Subset(val_dataset, range(20))
     val_loader = DataLoader(
-        val_subset,
+        val_dataset,
         batch_size=1,
         shuffle=False,
         num_workers=config['dataset']['workers'],
