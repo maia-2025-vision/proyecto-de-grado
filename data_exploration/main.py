@@ -73,7 +73,7 @@ def main():
     
     # Gráfico comparativo
     class_distribution_image_name = "class_distribution.png"
-    image_path = f"data-exploration/result/{class_distribution_image_name}"
+    image_path = f"data_exploration/result/{class_distribution_image_name}"
     plot_total_species_comparison(dataset_summaries, image_path)
 
     # bbox areas para conjunto de entrenamiento
@@ -82,7 +82,7 @@ def main():
     }
     bbox_data = load_all_bbox_data(bbox_datasets)
         
-    plot_bbox_area_histogram_from_data(bbox_data, "data-exploration/result/")
+    plot_bbox_area_histogram_from_data(bbox_data, "data_exploration/result/")
 
     stats_absolute, stats_relative_global, stats_relative_split, image_sizes = analyze_area_statistics(bbox_data)
 
@@ -90,7 +90,7 @@ def main():
     top_bboxes = get_top_n_bboxes_in_area_range(bbox_data, 1000, 13000, n=5)
 
     # Generar markdown
-    md_path = "data-exploration/result/exploracion_datos.md"
+    md_path = "data_exploration/result/exploracion_datos.md"
     generate_markdown_report(dataset_summaries, md_path, class_distribution_image_name, stats_absolute, 
                              stats_relative_global, stats_relative_split, image_sizes, top_bboxes)
 

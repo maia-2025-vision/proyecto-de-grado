@@ -166,6 +166,11 @@ wheels = [
 ]
 
 [[package]]
+name = "animaloc"
+version = "0.2.1"
+source = { git = "https://github.com/Alexandre-Delplanque/HerdNet.git#7e25f482d875522c59c446dc0c78c8f6f2dd448d" }
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2603,6 +2608,7 @@ dev = [
 ]
 herdnet = [
     { name = "albumentations" },
+    { name = "animaloc" },
     { name = "mlflow" },
     { name = "opencv-python" },
     { name = "scikit-learn" },
@@ -2625,6 +2631,7 @@ dev = [
 ]
 herdnet = [
     { name = "albumentations", specifier = ">=2.0.8" },
+    { name = "animaloc", git = "https://github.com/Alexandre-Delplanque/HerdNet.git" },
     { name = "mlflow", specifier = ">=3.5.0" },
     { name = "opencv-python", specifier = ">=4.12.0.88" },
     { name = "scikit-learn", specifier = ">=1.7.2" },
