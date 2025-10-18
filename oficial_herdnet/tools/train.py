@@ -16,6 +16,8 @@ __version__ = "0.2.1"
 
 import torch
 import hydra
+from hydra.core.config_store import ConfigStore
+from hydra.conf import HydraConf, JobConf
 import animaloc
 import wandb
 import pandas
@@ -35,7 +37,9 @@ from animaloc.utils.seed import set_seed
 from animaloc.utils.useful_funcs import current_date
 
 def _set_species_labels(cls_dict: dict, df: pandas.DataFrame) -> None:
-    assert 'species' in df.columns
+    if 'labels' in df.columns:
+        return
+    assert 'species' in df.columns, "El CSV debe tener una columna 'labels' o 'species'"
     cls_dict = dict(map(reversed, cls_dict.items()))
     df['labels'] = df['species'].map(cls_dict)
 
@@ -218,7 +222,14 @@ def _define_evaluator(
 
     return evaluator
 
-@hydra.main(config_path='../configs', config_name="config")
+# Configure Hydra to not change directory
+cs = ConfigStore.instance()
+hydra_config = HydraConf()
+hydra_config.job = JobConf()
+hydra_config.job.chdir = False
+cs.store(name="hydra_config", node=hydra_config)
+
+@hydra.main(config_path='../configs', config_name="config", version_base=None)
 def main(cfg: DictConfig) -> None:
 
     cfg = cfg.train
@@ -271,7 +282,7 @@ def main(cfg: DictConfig) -> None:
         
         val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=False, collate_fn=_get_collate_fn(cfg))
 
-    work_dir = None
+    work_dir = cfg.training_settings.work_dir
 
     # Set up wandb
     print('Connecting to Weights & Biases ...')
