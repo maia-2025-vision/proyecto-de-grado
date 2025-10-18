@@ -12,4 +12,141 @@ dev = [
     "ipykernel>=6.30.1",
     "matplotlib>=3.10.6",
     "pandas>=2.3.2",
+    "animaloc", # i.e. HerdNet library
+    "pre-commit",
+    "poethepoet",
+    "marimo",
+    "mypy",
 ]
+
+train = [
+    "torch~=2.7.1",
+    "torchvision",
+    "pillow",
+]
+
+api = [
+    "uvicorn~=0.37.0",
+    "loguru~=0.7.3",
+    "fastapi~=0.119.0",
+    "pillow>=11.3.0",
+    "pydantic>=2.11.7",
+]
+
+dashboard-deps = [
+    "boto3>=1.39.11",
+    "loguru>=0.7.3",
+    "requests>=2.32.5",
+    "streamlit>=1.49.1",
+]
+
+
+[tool.uv.sources]
+animaloc = { git = "https://github.com/Alexandre-Delplanque/HerdNet", tag = "v0.2.1" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# qué directorios de código incluir al instalar este projecto como un paquete
+packages = ["api"]
+
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "N",  # pep8-naming
+    "D",  # pydocstring
+]
+ignore = [
+    "D100", # Missing docstring in public module
+    "D103", # Missing docstring in public function
+    "D104", # Missing docstring in public package
+    "D107", # Missing docstring in __init__
+    "UP040", # Type alias `X` uses `TypeAlias` annotation instead of the `type` keyword
+]
+
+# TODO: remove this excludes of pages/ and fix issues, there are only a few of them
+exclude = [
+    "pages/1_Upload_Images.py",
+    "pages/2_View_Detections.py"
+]
+
+[tool.ruff.format]
+exclude = [
+    "pages/1_Upload_Images.py",
+    "pages/2_View_Detections.py"
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    # Whitelisted default arguments
+    "typer.Option",
+    "typer.Argument",
+    "fastapi.Header",
+    "fastapi.Depends",
+    "fastapi.Security"
+]
+
+[tool.mypy]
+python_version = "3.13"
+# TODO: fix typing errors in dashboard
+# TODO: fix typing errors in api...
+exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|api)/'
+disallow_untyped_defs = true
+disallow_any_unimported = true
+explicit_package_bases = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+show_error_codes = true
+
+
+[tool.poe.env]
+AWS_PROFILE="dvc-user"
+
+[tool.poe.tasks.pre-commit]
+help="runs formatting checks (e.g. ruff) on commited files"
+cmd="pre-commit run --all-files"
+
+[tool.poe.tasks.type-check]
+help="run type-checking on the whole project with mypy (takes a couple of secs)"
+cmd="mypy --config pyproject.toml ./"
+
+[tool.poe.tasks.serve]
+help="Start the prediction API service, MODEL_PATH needs set by caller first"
+env={MODEL_PATH="data/models/mock/model.pth"}
+cmd="python api/run_api.py"
+
+[tool.poe.tasks.dockerize-api]
+help="Package the API in as a docker image"
+# shell="docker build --progress=plain -t cowd-api -f api/Dockerfile  ."
+shell="""docker build -f ./api/Dockerfile -t herd-api ."""
+
+
+[tool.poe.tasks.dockerize-dashboard]
+help="Package the dashboard in as a docker image"
+shell="docker build -t herd-dashboard -f dashboard/Dockerfile ."
+
+[tool.poe.tasks.docker-run-api-aws-prof]
+help="Run API with docker sharing local AWS profile and mounting credentials in containers /root/.aws "
+shell="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/root/.aws herd-api"
+
+[tool.poe.tasks.docker-run-api-aws-creds]
+help="Run API with docker assuming AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are provided in the environment"
+shell="docker run -v $HOME/.aws:/root/.aws herd-api"
+
