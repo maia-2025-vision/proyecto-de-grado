@@ -14,6 +14,7 @@ dev = [
     "pandas>=2.3.2",
 ]
 herdnet = [
+    "albumentations>=2.0.8",
     "opencv-python>=4.12.0.88",
     "scikit-learn>=1.7.2",
     "scipy>=1.16.2",

@@ -5,6 +5,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from tqdm import tqdm
 from herdnet.engine.evaluator import extract_points_from_density_map, match_detections_to_gt
+from herdnet.engine.focal_loss import FocalLoss
 
 
 class Trainer:
@@ -140,7 +141,11 @@ class Trainer:
         )
 
         # Losses
-        self.localization_criterion = nn.MSELoss()
+        self.localization_criterion = FocalLoss(
+            alpha=config['training'].get('focal_alpha', 2),
+            beta=config['training'].get('focal_beta', 4),
+            reduction='mean'
+        )
         self.classification_criterion = nn.CrossEntropyLoss(reduction='none')
         
         # Pesos de los losses
