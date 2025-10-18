@@ -5,15 +5,17 @@ from urllib.parse import unquote, urlparse
 import boto3
 from loguru import logger
 
+from api.config import SETTINGS
+
 # When running with docker AWS_PROFILE env var should NOT be set
 # instead AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY env vars should be
 # provided to the container by the external environment
 
 logger.info(
-    f"Env var AWS_PROFILE={os.getenv('AWS_PROFILE')!r}, AWS_ACCESS_KEY_ID={os.getenv('AWS_ACCESS_KEY_ID')!r}, "
+    f"Setting up boto3.Session - Env var AWS_PROFILE={os.getenv('AWS_PROFILE')!r}, "
+    f"AWS_ACCESS_KEY_ID={os.getenv('AWS_ACCESS_KEY_ID')!r}, "
     f"AWS_SECRET_ACCESS_KEY is defined: {os.getenv('AWS_SECRET_ACCESS_KEY') is not None}"
 )
-
 
 session = (
     boto3.Session(profile_name=os.getenv("AWS_PROFILE"))
@@ -22,9 +24,6 @@ session = (
 )
 
 s3_client = session.client("s3")
-bucket = os.getenv("S3_BUCKET", "cow-detect-maia")
-
-logger.info(f"S3 Bucket name: {bucket!r}")
 
 
 def parse_s3_url(url: str) -> tuple[str, str]:
@@ -82,10 +81,13 @@ def upload_json_to_s3(prediction: dict, image_url: str):
 
     # Subir JSON a S3
     s3_client.put_object(
-        Bucket=bucket, Key=json_key, Body=json.dumps(prediction), ContentType="application/json"
+        Bucket=SETTINGS.s3_bucket,
+        Key=json_key,
+        Body=json.dumps(prediction),
+        ContentType="application/json",
     )
 
-    return f"s3://{bucket}/{json_key}"
+    return f"s3://{SETTINGS.s3_bucket}/{json_key}"
 
 
 def list_region_folders() -> list[str]:
@@ -94,7 +96,7 @@ def list_region_folders() -> list[str]:
     Returns:
         list[str]: Nombres de las regiones
     """
-    response = s3_client.list_objects_v2(Bucket=bucket, Delimiter="/")
+    response = s3_client.list_objects_v2(Bucket=SETTINGS.s3_bucket, Delimiter="/")
     regions = [cp["Prefix"].rstrip("/").split("/")[-1] for cp in response.get("CommonPrefixes", [])]
     return regions
 
@@ -109,7 +111,7 @@ def list_flyover_folders(region: str) -> list[str]:
         list[str]: Nombres de las carpetas encontradas en S3.
     """
     prefix = f"{region}/"
-    response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix, Delimiter="/")
+    response = s3_client.list_objects_v2(Bucket=SETTINGS.s3_bucket, Prefix=prefix, Delimiter="/")
     folders = [cp["Prefix"].rstrip("/").split("/")[-1] for cp in response.get("CommonPrefixes", [])]
     return folders
 
@@ -125,19 +127,19 @@ def get_predictions_from_s3_folder(region: str, flyover: str) -> list[dict]:
         list[dict]: Predicciones o errores de lectura.
     """
     prefix = f"{region}/{flyover}/"
-    response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    response = s3_client.list_objects_v2(Bucket=SETTINGS.s3_bucket, Prefix=prefix)
 
     objects = response.get("Contents", [])
     json_keys = [obj["Key"] for obj in objects if obj["Key"].endswith(".json")]
 
     results = []
     for key in json_keys:
-        obj = s3_client.get_object(Bucket=bucket, Key=key)
+        obj = s3_client.get_object(Bucket=SETTINGS.s3_bucket, Key=key)
         content = obj["Body"].read()
         try:
             result = json.loads(content)
             results.append(result)
         except Exception as e:
-            results.append({"error": f"Error leyendo {key}: {str(e)}"})
+            results.append({"error": f"Error leyendo {key} (bucket={SETTINGS.s3_bucket}: {str(e)}"})
 
     return results

@@ -1,4 +1,5 @@
 from pathlib import Path
+from pprint import pformat
 from typing import Literal
 
 import numpy as np
@@ -41,20 +42,28 @@ def make_faster_rcnn_model(num_classes: int) -> FasterRCNN:  # type: ignore[no-a
 
 
 class MockModel(nn.Module):
+    """A model that just generates random predictions."""
 
     def __init__(self, num_classes: int):
         super().__init__()
-        self.num_classes = num_classes # total number of classes including background at index 0
+        self.num_classes = num_classes  # total number of classes including background at index 0
 
-    def __call__(self, image: torch.Tensor) -> list[dict[str, torch.Tensor]]:
-        assert image.dim() == 4, "expected shape of size 4 (batch_size, channels, height, width) but got {image.shape}"
+    def __call__(self, image_batch: torch.Tensor) -> list[dict[str, torch.Tensor]]:
+        """Generate a list of predictions for a batch of images.
 
-        batch_size = image.shape[0]
+        It is assumed in the batch has the shape (batch_size, n_ch, height, width).
+        Returns list of dicts of length batch_size
+        """
+        assert (
+            image_batch.dim() == 4
+        ), "expected shape of size 4 (batch_size, channels, height, width) but got {image.shape}"
+
+        batch_size = image_batch.shape[0]
 
         results = []
 
         for _ in range(batch_size):
-            height, width = image.shape[-2:]
+            height, width = image_batch.shape[-2:]
 
             n_detections = np.random.randint(low=20, high=50)
 
@@ -62,13 +71,9 @@ class MockModel(nn.Module):
             ys = torch.randint(low=0, high=height, size=(n_detections, 1))
 
             labels = torch.randint(low=1, high=self.num_classes + 1, size=(n_detections,))
-            scores = torch.rand(size=(n_detections,)) # uniform distribution on [0, 1)
+            scores = torch.rand(size=(n_detections,))  # uniform distribution on [0, 1)
 
-            one_result =  {
-                "points": torch.hstack([xs, ys]),
-                "labels": labels,
-                "scores": scores
-            }
+            one_result = {"points": torch.hstack([xs, ys]), "labels": labels, "scores": scores}
             results.append(one_result)
 
             # just log:
@@ -79,7 +84,6 @@ class MockModel(nn.Module):
 
 
 def determine_model_arch(weights_path: Path) -> Literal["faster-rcnn", "herdnet", "mock"]:
-
     weights_path_str = str(weights_path)
 
     for p in ["faster-rcnn", "herdnet", "mock"]:
@@ -109,3 +113,50 @@ def get_prediction_model(weights_path: Path) -> nn.Module:
         return model
     else:
         raise NotImplementedError(f"model_arch=`{model_arch}` not implemented yet")
+
+
+def verify_and_post_process_pred(
+    pred: dict[str, list], bbox_format: Literal["xyxy", "xywh"] | None
+) -> dict[str, list]:
+    """Make sure pred has a labels key AND (either boxes or points).
+
+    If only boxes, compute box centers and add them.
+    """
+    assert "labels" in pred.keys(), f"{pred.keys()}"
+
+    # logger.info(f"pred has keys: {pred.keys()}")
+    if "boxes" not in pred:
+        assert "points" in pred, f"Invalid pred: no bboxes and no point ins {pred.keys()=}"
+    else:
+        assert len(pred["boxes"]) == len(pred["labels"]), pformat(pred)
+
+    if "points" not in pred:
+        assert "boxes" in pred, f"{pred.keys()=}"
+
+        if bbox_format == "xywh":
+            # compute points from bboxes, assuming bbox in COCO format x_min, y_min, width, height
+            points = [
+                [
+                    bbox[0] + bbox[2] // 2,  # = x_min + width // 2 => x_center
+                    bbox[1] + bbox[3] // 2,
+                ]  # = y_min + height // 2 => x_center
+                for bbox in pred["boxes"]
+            ]
+            pred["points"] = points
+        elif bbox_format == "xyxy":
+            # compute points from bboxes, assuming bbox in PASCAL_VOC format:
+            # (x_min, y_min, x_max, y_max)
+            points = [
+                [
+                    (bbox[0] + bbox[2]) // 2,  # = (x_min + x_max) // 2 => x_center
+                    (bbox[1] + bbox[3]) // 2,
+                ]  # = (y_min + y_max) // 2 => x_center
+                for bbox in pred["boxes"]
+            ]
+            pred["points"] = points
+        else:
+            raise ValueError("box_format must be COCO or PASCAL_VOC when boxes are given")
+
+    assert len(pred["points"]) == len(pred["labels"]), pformat(pred)
+
+    return pred
