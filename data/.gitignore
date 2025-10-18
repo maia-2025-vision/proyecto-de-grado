@@ -3,3 +3,5 @@
 /train
 /val
 /train_subframes
+/patches_512
+/models
