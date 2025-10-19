@@ -1,0 +1,147 @@
+schema: '2.0'
+stages:
+  fix-headers-csv-annotations:
+    cmd: "sed '1s/Image,x1,y1,x2,y2,Label/images,x1,y1,x2,y2,labels/' data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv
+      > data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv\n"
+    deps:
+    - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv
+      hash: md5
+      md5: b9a83adcb4338121b4a29bb538223069
+      size: 362510
+    outs:
+    - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 08243c145333bcf4e4257ce53e61ee54
+      size: 362512
+  fix-headers-train-csv:
+    cmd: "sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
+      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv > data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv\n"
+    deps:
+    - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv
+      hash: md5
+      md5: b9a83adcb4338121b4a29bb538223069
+      size: 362510
+    outs:
+    - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 4df85b8755658f264f15ab15aa3b7ef3
+      size: 362524
+  fix-headers-val-csv:
+    cmd: "sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
+      data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB.csv > data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv\n"
+    deps:
+    - path: data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB.csv
+      hash: md5
+      md5: 670bc1087d9255d49156e84fa95ef4d7
+      size: 50608
+    outs:
+    - path: data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 15acbab82e8022090098948c43ebff89
+      size: 50622
+  fix-headers-test-csv:
+    cmd: "sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
+      data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB.csv > data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv\n"
+    deps:
+    - path: data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB.csv
+      hash: md5
+      md5: f9f826c539574dbd80c8a8e70ff9e2cf
+      size: 120371
+    outs:
+    - path: data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 30731a9a455b58e36394dd89e24849dc
+      size: 120385
+  patches-512-ol-160-mv0.3-val:
+    cmd: "python ../HerdNet/tools/patcher.py    -csv data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv\
+      \  -min 0.3       data/val/  512 512 160  data/patches-512-ol-160-m0.3/val\n"
+    deps:
+    - path: ../HerdNet/tools/patcher.py
+      hash: md5
+      md5: 2a07254dd36f2589e746b047d9ed640d
+      size: 3802
+    - path: data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 15acbab82e8022090098948c43ebff89
+      size: 50622
+    - path: data/val/
+      hash: md5
+      md5: 7c59a6075823e53aceb6ed1985746da5.dir
+      size: 1041037675
+      nfiles: 111
+    outs:
+    - path: data/patches-512-ol-160-m0.3/val
+      hash: md5
+      md5: f2004882a9587bdc5af0fc4a4b1ab98d.dir
+      size: 40527016
+      nfiles: 1114
+  patches-512-ol-160-mv0.3-test:
+    cmd: "python ../HerdNet/tools/patcher.py    -csv data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv\
+      \  -min 0.3 data/test/  512 512 160  data/patches-512-ol-160-m0.3/test\n"
+    deps:
+    - path: ../HerdNet/tools/patcher.py
+      hash: md5
+      md5: 2a07254dd36f2589e746b047d9ed640d
+      size: 3802
+    - path: data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 30731a9a455b58e36394dd89e24849dc
+      size: 120385
+    - path: data/test/
+      hash: md5
+      md5: 543905ee38c7af30e4a5ccc4b1670752.dir
+      size: 2117638463
+      nfiles: 258
+    outs:
+    - path: data/patches-512-ol-160-m0.3/test/
+      hash: md5
+      md5: 5b82623f43769c275ad2d246baa5ecb3.dir
+      size: 72509931
+      nfiles: 2445
+  patches-512-ol-160-mv0.3-train:
+    cmd: "python ../HerdNet/tools/patcher.py    -csv data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv\
+      \  -min 0.3 data/train/  512 512 160  data/patches-512-ol-160-m0.3/train\n"
+    deps:
+    - path: ../HerdNet/tools/patcher.py
+      hash: md5
+      md5: 2a07254dd36f2589e746b047d9ed640d
+      size: 3802
+    - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 4df85b8755658f264f15ab15aa3b7ef3
+      size: 362524
+    - path: data/train/
+      hash: md5
+      md5: cdd58c7737f0c1e8b7a4db5f99619b86.dir
+      size: 8163547559
+      nfiles: 928
+    outs:
+    - path: data/patches-512-ol-160-m0.3/train
+      hash: md5
+      md5: 264c4092e03de15c3c67bc19e0793d4a.dir
+      size: 285273691
+      nfiles: 8142
+  patches-512-ol-160-mv0.3-train-tiny:
+    cmd: "head -n 200 data/patches-512-ol-160-m0.3/train/gt.csv  > data/patches-512-ol-160-m0.3/train/gt-head-200.csv\n"
+    deps:
+    - path: data/patches-512-ol-160-m0.3/train/gt.csv
+      hash: md5
+      md5: ab0941404acb2006ee1e210438de8c4c
+      size: 1212027
+    outs:
+    - path: data/patches-512-ol-160-m0.3/train/gt-head-200.csv
+      hash: md5
+      md5: f6be0c3a0883902dd377c80886f25be4
+      size: 21984
+  patches-512-ol-160-mv0.3-valid-tiny:
+    cmd: "head -n 25 data/patches-512-ol-160-m0.3/val/gt.csv  > data/patches-512-ol-160-m0.3/val/gt-head-25.csv\n"
+    deps:
+    - path: data/patches-512-ol-160-m0.3/val/gt.csv
+      hash: md5
+      md5: 1cc3e635f39f7c4e96d03896e1c8a34e
+      size: 163824
+    outs:
+    - path: data/patches-512-ol-160-m0.3/val/gt-head-25.csv
+      hash: md5
+      md5: f4866b730e65a2f4791cc7deafd8f063
+      size: 2708

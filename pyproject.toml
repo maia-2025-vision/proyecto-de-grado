@@ -11,6 +11,7 @@ dev = [
     "dvc[s3]>=3.63.0",
     "ipykernel>=6.30.1",
     "matplotlib>=3.10.6",
+
     "pandas>=2.3.2",
     "animaloc", # i.e. HerdNet library
     "pre-commit",
@@ -20,9 +21,17 @@ dev = [
 ]
 
 train = [
+    # NOTE: the following are deps of the HerdNet scripts:
+    # [ albumentations, hydra-core, wandb, scikit-learn ]
+    # Thus their versions shouldn't be change to avoid those scripts from failing.
+    "albumentations~=1.0.3", # don't change version -- see NOTE above
+    "hydra-core==1.1.0", # don't change version -- see NOTE above
+    "pillow",
+    "torchmetrics",
     "torch~=2.7.1",
     "torchvision",
-    "pillow",
+    "scikit-learn",
+    "wandb",
 ]
 
 api = [

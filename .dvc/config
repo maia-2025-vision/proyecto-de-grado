@@ -1,5 +1,6 @@
 [core]
     remote = aws-remote
+    autostage = true
 ['remote "aws-remote"']
     url = s3://mammals-detect-dvc
     profile = dvc-user
