@@ -29,14 +29,14 @@ stages:
 
   patches-512-ol-160-mv0.3-train:
     cmd: >
-      python ../HerdNet/tools/patcher.py   
+      python oficial_herdnet/tools/patcher.py   
       -csv data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv 
       -min 0.3
       data/train/ 
       512 512 160 
       data/patches-512-ol-160-m0.3/train
     deps:
-      - ../HerdNet/tools/patcher.py
+      - oficial_herdnet/tools/patcher.py
       - data/train/
       - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
     outs:
@@ -44,14 +44,14 @@ stages:
 
   patches-512-ol-160-mv0.3-val:
     cmd: >
-      python ../HerdNet/tools/patcher.py   
+      python oficial_herdnet/tools/patcher.py   
       -csv data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv 
       -min 0.3      
       data/val/ 
       512 512 160 
       data/patches-512-ol-160-m0.3/val
     deps:
-      - ../HerdNet/tools/patcher.py
+      - oficial_herdnet/tools/patcher.py
       - data/val/
       - data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
     outs:
@@ -59,21 +59,21 @@ stages:
 
   patches-512-ol-160-mv0.3-test:
     cmd: >
-      python ../HerdNet/tools/patcher.py   
+      python oficial_herdnet/tools/patcher.py   
       -csv data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv 
       -min 0.3
       data/test/ 
       512 512 160 
       data/patches-512-ol-160-m0.3/test
     deps:
-      - ../HerdNet/tools/patcher.py
+      - oficial_herdnet/tools/patcher.py
       - data/test/
       - data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
     outs:
       - data/patches-512-ol-160-m0.3/test/
 
   patches-512-ol-160-mv0.3-train-tiny:
-    desc: Seleccionar un subconjunto pequeño del conjunto de parches de entrenamiento para hacer tests rápidos
+    desc: Seleccionar un subconjunto diminuto del conjunto de parches de entrenamiento para hacer tests rápidos
       del flujo de train.
     cmd: >
       head -n 200 data/patches-512-ol-160-m0.3/train/gt.csv 
@@ -84,7 +84,7 @@ stages:
       - data/patches-512-ol-160-m0.3/train/gt-head-200.csv
 
   patches-512-ol-160-mv0.3-valid-tiny:
-    desc: Seleccionar un subconjunto pequeño del conjunto de parches de validación para hacer tests rápidos
+    desc: Seleccionar un subconjunto diminuto del conjunto de parches de validación para hacer tests rápidos
       del flujo de train.
     cmd: >
       head -n 25 data/patches-512-ol-160-m0.3/val/gt.csv 
@@ -98,11 +98,11 @@ stages:
   train-faster-rcnn-hn-trainer:
     desc: Entrenar faster-rcnn via trainer from Herdnet/tools/train.py
     cmd: >
-       python ../HerdNet/tools/train.py  --config-path $PWD/configs/
+       python oficial_herdnet/tools/train.py  --config-path $PWD/configs/
        train=faster_rcnn_herdnet_trainer 
        train.work_dir=data/models/faster-rcnn
     deps:
-      - ../HerdNet/tools/train.py
+      - oficial_herdnet/tools/train.py
       - data/patches-512-ol-160-m0.3/train/gt.csv
     outs:
       - data/models/faster-rcnn
