@@ -1,5 +1,7 @@
 import io
 import traceback
+from collections import Counter, defaultdict
+from collections.abc import Mapping
 from http import HTTPStatus
 from pathlib import Path
 
@@ -195,6 +197,8 @@ def collect_counts_for_flyover(region: str, flyover: str) -> CollectedCountsFlyo
     results = get_predictions_from_s3_folder(region, flyover)
 
     rows: list[CountsRow] = []
+    total_counts: Counter[str] = Counter()
+
     for result in results:
         try:
             pred_result = PredictionResult.model_validate(result)
@@ -206,11 +210,13 @@ def collect_counts_for_flyover(region: str, flyover: str) -> CollectedCountsFlyo
             url=pred_result.url,
             counts_at_threshold=pred_result.counts_at_threshold,
         )
+        total_counts += Counter(pred_result.counts_at_threshold.counts)
         rows.append(row)
 
     return CollectedCountsFlyover(
         region=region,
         flyover=flyover,
+        total_counts=total_counts,
         rows=rows,
     )
 
@@ -225,8 +231,13 @@ def collect_counts_for_region(region: str) -> CollectedCountsRegion:
     logger.info(f"Flyovers for region={region}, flyovers={flyovers}")
 
     rows: list[FlyoverCountsRow] = []
+
+    totals_by_flyover: dict[str, Counter[str]] = {}
+    grand_totals: Counter[str] = Counter()
+
     for flyover in flyovers:
         results = get_predictions_from_s3_folder(region, flyover)
+        totals_by_flyover[flyover] = Counter()
 
         for result in results:
             try:
@@ -240,9 +251,14 @@ def collect_counts_for_region(region: str) -> CollectedCountsRegion:
                 url=pred_result.url,
                 counts_at_threshold=pred_result.counts_at_threshold,
             )
+            totals_by_flyover[flyover] += Counter(pred_result.counts_at_threshold.counts)
             rows.append(row)
+        # End of loop over results of flyover
+        grand_totals += totals_by_flyover[flyover]
 
     return CollectedCountsRegion(
+        grand_totals=grand_totals,
+        totals_by_flyover=totals_by_flyover,
         region=region,
         rows=rows,
     )
