@@ -17,6 +17,8 @@ dev = [
     "poethepoet",
     "marimo",
     "mypy",
+    "pandas-stubs",
+    "types-requests"
 ]
 
 train = [
@@ -106,7 +108,7 @@ extend-immutable-calls = [
 python_version = "3.13"
 # TODO: fix typing errors in dashboard
 # TODO: fix typing errors in api...
-exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|api)/'
+exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|api|data_exploration)/'
 disallow_untyped_defs = true
 disallow_any_unimported = true
 explicit_package_bases = true

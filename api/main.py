@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 
 from api.config import SETTINGS
-from api.model_utils import get_prediction_model
+from api.model_utils import load_model_pack
 from api.req_resp_types import PredictionError
 from api.routes import model_pack, router
 
@@ -34,13 +34,9 @@ async def lifespan(app: FastAPI):
         )
         raise RuntimeError("No AWS credentials!")
 
-    pt_model = get_prediction_model(SETTINGS.model_path)
-    pt_model.eval()
-
-    model_pack.model = pt_model
-    model_pack.pre_transform = transforms.ToTensor()
-    # FIXME: set box_format for other models?
-    model_pack.bbox_format = "xyxy"
+    global model_pack
+    model_pack = load_model_pack(SETTINGS.model_path)
+    model_pack.model.eval()
 
     yield
     # Clean up the ML models and release the resources

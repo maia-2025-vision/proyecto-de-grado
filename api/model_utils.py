@@ -1,3 +1,4 @@
+from collections import Counter
 from pathlib import Path
 from pprint import pformat
 from typing import Literal
@@ -13,14 +14,17 @@ from torchvision.models.detection.faster_rcnn import (
     FastRCNNPredictor,
 )
 
-CLASS_LABEL_2_NAME = {
+from api.req_resp_types import ThresholdCounts
+from api.routes import ModelPackType
+
+DEFAULT_CLASS_LABEL_2_NAME = {
     0: "background",
-    1: "PENDING-name-1",
-    2: "PENDING-name-2",
-    3: "PENDING-name-3",
-    4: "PENDING-name-4",
-    5: "PENDING-name-5",
-    6: "PENDING-name-6",
+    1: "Alcelaphinae",
+    2: "Buffalo",
+    3: "Kob",
+    4: "Warthog",
+    5: "Waterbuck",
+    6: "Elephant",
 }
 
 
@@ -93,9 +97,9 @@ def determine_model_arch(weights_path: Path) -> Literal["faster-rcnn", "herdnet"
     raise ValueError("Could not determine model architecture from model_path ")
 
 
-def get_prediction_model(weights_path: Path) -> nn.Module:
+def load_model_pack(weights_path: Path, transforms=None) -> ModelPackType:
     """Restore and return a prediction model from a weights file."""
-    num_classes = len(CLASS_LABEL_2_NAME)
+    num_classes = len(DEFAULT_CLASS_LABEL_2_NAME)
 
     model_arch = determine_model_arch(weights_path)
 
@@ -107,10 +111,26 @@ def get_prediction_model(weights_path: Path) -> nn.Module:
         state_dict = torch.load(weights_path)
         model.load_state_dict(state_dict)
         assert isinstance(model, nn.Module)
-        return model
+
+        return ModelPackType(
+            model=model,
+            model_path=weights_path,
+            model_arch="faster-rcnn",
+            pre_transform=transforms.ToTensor(),
+            bbox_format="xyxy",
+            idx2species=DEFAULT_CLASS_LABEL_2_NAME,
+        )
+
     elif model_arch == "mock":
         model = MockModel(num_classes=num_classes)
-        return model
+        return ModelPackType(
+            model=model,
+            model_path=weights_path,
+            model_arch="mock",
+            pre_transform=transforms.ToTensor(),
+            bbox_format=None,
+            idx2species=DEFAULT_CLASS_LABEL_2_NAME,
+        )
     else:
         raise NotImplementedError(f"model_arch=`{model_arch}` not implemented yet")
 
@@ -160,3 +180,18 @@ def verify_and_post_process_pred(
     assert len(pred["points"]) == len(pred["labels"]), pformat(pred)
 
     return pred
+
+
+def compute_counts_by_species(
+    labels: list[int], scores: list[float], thresh: float, idx2species: dict[int, str]
+) -> ThresholdCounts:
+    assert len(labels) == len(scores)
+    filtered_species = [
+        idx2species[idx] for idx, scores in zip(labels, scores, strict=False) if scores > thresh
+    ]
+    counts = Counter(filtered_species)
+
+    return ThresholdCounts(
+        threshold=thresh,
+        counts=counts,
+    )

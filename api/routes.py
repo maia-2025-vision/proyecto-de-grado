@@ -3,17 +3,23 @@ import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
 from http import HTTPStatus
+from pathlib import Path
 from typing import Literal, TypedDict
 
 import requests
 import torch
-import torchvision.transforms as transforms
+import torchvision.transforms as transforms # type: ignore [import-untyped]
 from fastapi import APIRouter, HTTPException
 from PIL import Image
 from torch import nn
 
 from api.config import SETTINGS
-from api.model_utils import MockModel, verify_and_post_process_pred
+from api.model_utils import (
+    DEFAULT_CLASS_LABEL_2_NAME,
+    MockModel,
+    compute_counts_by_species,
+    verify_and_post_process_pred,
+)
 from api.req_resp_types import (
     AppInfoResponse,
     Detections,
@@ -39,22 +45,26 @@ class ModelPackType:
 
     model: nn.Module
     model_arch: str
+    model_path: Path
     pre_transform: Callable[[Image.Image], torch.Tensor]
     bbox_format: Literal["xywh", "xyxy"] | None
+    idx2species: dict[int, str]  # Map of label int index to species name
 
 
-# This gets properly initialized in api.main.lifespan
+# This structure gets properly initialized in api.main.lifespan
 model_pack: ModelPackType = ModelPackType(
     model=MockModel(num_classes=0),
     model_arch="mock",
+    model_path=Path("undefined/"),
     pre_transform=transforms.ToTensor(),
-    bbox_format="xyxy",
+    bbox_format=None,
+    idx2species=DEFAULT_CLASS_LABEL_2_NAME,
 )
 
 router = APIRouter()
 
 
-def download_image_from_url(url: str):
+def download_image_from_url(url: str) -> Image.Image:
     if url.startswith("s3://"):  # an s3 url that might not be public!
         file_bytes = download_file_from_s3(url)
     else:  # regular "public" url
@@ -66,7 +76,7 @@ def download_image_from_url(url: str):
 
 
 @router.get("/app-info")
-async def get_app_info():
+async def get_app_info() -> AppInfoResponse:
     return AppInfoResponse(
         model_info=ModelInfo(
             path=str(SETTINGS.model_path),
@@ -84,11 +94,12 @@ async def predict_many_endpoint(req: PredictManyRequest) -> PredictManyResult:
     Descarga cada imagen, la transforma en tensor, ejecuta el modelo de predicción
     y sube los resultados a S3. Devuelve una lista con los resultados o errores por imagen.
     """
-    results = []
+    results: list[PredictionResult | PredictionError] = []
 
+    result: PredictionResult | PredictionError
     for url in req.urls:
         try:
-            result = predict_one(url)
+            result = predict_one(url, counts_score_thresh=req.counts_score_thresh)
         except PredictionError as err:
             result = PredictionError(url, status=HTTPStatus.INTERNAL_SERVER_ERROR, error=str(err))
 
@@ -99,10 +110,10 @@ async def predict_many_endpoint(req: PredictManyRequest) -> PredictManyResult:
 
 @router.post("/predict")
 def predict_one_endpoint(req: PredictOneRequest) -> PredictionResult:
-    return predict_one(url=req.s3_path)
+    return predict_one(url=req.s3_path, counts_score_thresh=req.counts_score_thresh)
 
 
-def predict_one(url: str) -> PredictionResult:
+def predict_one(url: str, *, counts_score_thresh: float) -> PredictionResult:
     try:
         image = download_image_from_url(url)
     except Exception as exc:
@@ -120,7 +131,19 @@ def predict_one(url: str) -> PredictionResult:
         pred = model_outputs[0]  # just the first one since we only passed one image in the batch
         pred_obj = {k: v.tolist() for k, v in pred.items()}
         pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=model_pack.bbox_format)
-        pred_result = PredictionResult(url=url, detections=Detections.model_validate(pred_obj2))
+
+        counts_at_thresh = compute_counts_by_species(
+            labels=pred_obj2["labels"],
+            scores=pred_obj2["scores"],
+            thresh=counts_score_thresh,
+            idx2species=model_pack.idx2species,
+        )
+
+        pred_result = PredictionResult(
+            url=url,
+            detections=Detections.model_validate(pred_obj2),
+            counts_at_threshold=counts_at_thresh,
+        )
 
     except Exception as exc:
         print(exc, traceback.format_exc())
@@ -164,7 +187,7 @@ def list_flyovers(region: str) -> dict[str, list[str]]:
 
 
 @router.get("/results/{region}/{flyover}")
-def get_predictions_from_folder(region: str, flyover: str):
+def get_predictions_from_folder(region: str, flyover: str) -> dict[str, list[dict]]:
     """Obtiene las predicciones almacenadas en S3 para una region y sobrevuelo dadas."""
     try:
         results = get_predictions_from_s3_folder(region, flyover)
