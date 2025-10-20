@@ -3,29 +3,36 @@ import traceback
 from http import HTTPStatus
 from pathlib import Path
 
+import pydantic
 import requests
 import torch
-import torchvision.transforms as transforms # type: ignore [import-untyped]
+import torchvision.transforms as transforms  # type: ignore [import-untyped]
 from fastapi import APIRouter, HTTPException
+from loguru import logger
 from PIL import Image
 
 from api.config import SETTINGS
+from api.internal_types import ModelPackType
 from api.model_utils import (
     DEFAULT_CLASS_LABEL_2_NAME,
     MockModel,
     compute_counts_by_species,
     verify_and_post_process_pred,
 )
-from api.internal_types import ModelPackType
 from api.req_resp_types import (
     AppInfoResponse,
+    CollectedCountsFlyover,
+    CollectedCountsRegion,
+    CountsRow,
     Detections,
+    FlyoverCountsRow,
     ModelInfo,
+    PredictionApiError,
     PredictionError,
     PredictionResult,
     PredictManyRequest,
     PredictManyResult,
-    PredictOneRequest, PredictionApiError,
+    PredictOneRequest,
 )
 from api.s3_utils import (
     download_file_from_s3,
@@ -34,7 +41,6 @@ from api.s3_utils import (
     list_region_folders,
     upload_json_to_s3,
 )
-
 
 # This structure gets properly initialized in api.main.lifespan
 model_pack: ModelPackType = ModelPackType(
@@ -181,3 +187,62 @@ def get_predictions_from_folder(region: str, flyover: str) -> dict[str, list[dic
         raise HTTPException(
             status_code=500, detail=f"Error al reconstruir predicciones: {str(e)}"
         ) from e
+
+
+@router.get("/collect-counts/{region}/{flyover}")
+def collect_counts_for_flyover(region: str, flyover: str) -> CollectedCountsFlyover:
+    """Reune los diccionarios de conteo por especie de todas las imagenes de un sobrevuelo dada."""
+    results = get_predictions_from_s3_folder(region, flyover)
+
+    rows: list[CountsRow] = []
+    for result in results:
+        try:
+            pred_result = PredictionResult.model_validate(result)
+        except pydantic.ValidationError:
+            # logger.warning(f"Validation error: result='{str(result)[:100]}...'")
+            continue
+
+        row = CountsRow(
+            url=pred_result.url,
+            counts_at_threshold=pred_result.counts_at_threshold,
+        )
+        rows.append(row)
+
+    return CollectedCountsFlyover(
+        region=region,
+        flyover=flyover,
+        rows=rows,
+    )
+
+
+@router.get("/collect-counts/{region}")
+def collect_counts_for_region(region: str) -> CollectedCountsRegion:
+    """Reune los diccionarios de conteos por especie de todas las imagenes de una region.
+
+    (sobre todos los sobrevuelos)
+    """
+    flyovers = list_flyover_folders(region=region)
+    logger.info(f"Flyovers for region={region}, flyovers={flyovers}")
+
+    rows: list[FlyoverCountsRow] = []
+    for flyover in flyovers:
+        results = get_predictions_from_s3_folder(region, flyover)
+
+        for result in results:
+            try:
+                pred_result = PredictionResult.model_validate(result)
+            except pydantic.ValidationError:
+                # logger.warning(f"Validation error: result='{str(result)[:100]}...'")
+                continue
+
+            row = FlyoverCountsRow(
+                flyover=flyover,
+                url=pred_result.url,
+                counts_at_threshold=pred_result.counts_at_threshold,
+            )
+            rows.append(row)
+
+    return CollectedCountsRegion(
+        region=region,
+        rows=rows,
+    )

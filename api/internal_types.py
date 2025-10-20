@@ -1,10 +1,11 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal, Callable
 from pathlib import Path
+from typing import Literal
+
 import torch
-from torch import nn
 from PIL import Image
-from pathlib import Path
+from torch import nn
 
 
 @dataclass

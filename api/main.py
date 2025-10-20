@@ -1,8 +1,9 @@
 import gc
 import os
 import traceback
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Never
+from typing import Never
 
 from fastapi import FastAPI, requests
 from fastapi.responses import JSONResponse
@@ -11,7 +12,7 @@ from loguru import logger
 from api.config import SETTINGS
 from api.model_utils import load_model_pack
 from api.req_resp_types import PredictionError
-from api.routes import router, model_pack
+from api.routes import model_pack, router
 
 
 # Proper way to load a model on startup

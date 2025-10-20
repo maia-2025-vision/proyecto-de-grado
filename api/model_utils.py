@@ -6,17 +6,17 @@ from typing import Literal
 import numpy as np
 import torch
 import torchvision  # type: ignore [import-untyped]
-from torchvision import transforms
 from loguru import logger
 from torch import nn
+from torchvision import transforms
 from torchvision.models.detection.faster_rcnn import (  # type: ignore [import-untyped]
     FasterRCNN,
     FasterRCNN_ResNet50_FPN_Weights,
     FastRCNNPredictor,
 )
 
-from api.req_resp_types import ThresholdCounts
 from api.internal_types import ModelPackType
+from api.req_resp_types import ThresholdCounts
 
 DEFAULT_CLASS_LABEL_2_NAME = {
     0: "background",
@@ -191,6 +191,13 @@ def compute_counts_by_species(
         idx2species[idx] for idx, scores in zip(labels, scores, strict=False) if scores > thresh
     ]
     counts = Counter(filtered_species)
+    # Fill all missing slots with 0's for downstream tools to work more smoothly...
+    for idx, species_name in idx2species.items():
+        if idx == 0:  # background
+            continue
+
+        if species_name not in counts:
+            counts[species_name] = 0
 
     return ThresholdCounts(
         score_thresh=thresh,

@@ -15,12 +15,14 @@ class PredictionError(Exception):
 
 class PredictionApiError(BaseModel):
     """Class representing errors so we can put them in API responses."""
+
     url: str
     status: int
     error: str
 
     @classmethod
     def from_prediction_error(cls, p_error: PredictionError) -> Self:
+        """Build myself from a prediction error."""
         return cls(url=p_error.url, status=p_error.status, error=p_error.args[0])
 
 
@@ -111,3 +113,33 @@ class AppInfoResponse(BaseModel):
 
     model_info: ModelInfo
     s3_bucket: str
+
+
+class CountsRow(BaseModel):
+    """Just the thresholded counts for one image."""
+
+    url: str
+    counts_at_threshold: ThresholdCounts
+
+
+class FlyoverCountsRow(BaseModel):
+    """Just the thresholded counts for one image, tagged with corresponding flyover."""
+
+    flyover: str
+    url: str
+    counts_at_threshold: ThresholdCounts
+
+
+class CollectedCountsFlyover(BaseModel):
+    """Collected counts for a Flyover."""
+
+    region: str
+    flyover: str
+    rows: list[CountsRow]
+
+
+class CollectedCountsRegion(BaseModel):
+    """Collected counts for a Region."""
+
+    region: str
+    rows: list[FlyoverCountsRow]
