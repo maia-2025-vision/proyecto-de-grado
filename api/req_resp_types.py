@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from http import HTTPStatus
 from typing import Annotated, Self
 
@@ -135,11 +136,18 @@ class CollectedCountsFlyover(BaseModel):
 
     region: str
     flyover: str
-    rows: list[CountsRow]
+    total_counts: Annotated[
+        Mapping[str, int], "Sum of counts for each species over all images in flyover"
+    ]
+    rows: Annotated[list[CountsRow], "One row per image, containing counts of per species"]
 
 
 class CollectedCountsRegion(BaseModel):
     """Collected counts for a Region."""
 
     region: str
+    grand_totals: Annotated[Mapping[str, int], "Total counts by species over all flyovers"]
+    totals_by_flyover: Annotated[
+        Mapping[str, Mapping[str, int]], "First key is flyover second key is species"
+    ]
     rows: list[FlyoverCountsRow]
