@@ -10,10 +10,10 @@ hyperparameters:
 trainer:
   csv_logger: True
   paths:
-    train_csv: "data/patches_512/gt/points_train_gt.csv"
-    val_csv: "data/patches_512/gt/points_val_gt.csv"
-    train_root: "data/patches_512/train"
-    val_root: "data/patches_512/val"
+    train_csv: "data/patches-512-ol-160-m01/train_points_gt.csv"
+    val_csv: "data/patches-512-ol-160-m01/gt/val_points_gt.csv"
+    train_root: "data/patches-512-ol-160-m01/train"
+    val_root: "data/patches-512-ol-160-m01/val"
     work_dir: "data/models/herdnet_v1"
 
 

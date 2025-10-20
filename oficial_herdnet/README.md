@@ -6,50 +6,34 @@ Antes de comenzar el entrenamiento, es necesario obtener los datos utilizando DV
 
 ```bash
 # Obtener los parches de imágenes para entrenamiento
-uv run dvc pull patches_512.dvc
+uv run dvc pull patches-512-ol-160-mv01-train
 
-# Obtener los modelos pre-entrenados (si se requiere)
-uv run dvc pull models.dvc
+# Obtener los parches de imágenes para validacion
+uv run dvc pull patches-512-ol-160-mv01-val
+
+# Obtener los parches de imágenes para test
+uv run dvc pull patches-512-ol-160-mv01-test
+
+```
+
+```bash
+# Para generar los parches desde los datos originales
+# Si se requieren otras configuraciones hay que generar un nuevo stage en dvc.yaml
+uv run dvc repro patches-512-ol-160-mv01-train
+
+uv run dvc repro patches-512-ol-160-mv01-val
+
+uv run dvc repro patches-512-ol-160-mv01-test
+
+#cargar los nuevos datos al dvc remoto
+uv run dvc push
 ```
 
 ## Configuración y Entrenamiento
 
 Existen dos métodos para entrenar el modelo HerdNet:
 
-### Método 1: Implementación personalizada (Simplificada)
-
-La configuración del entrenamiento se encuentra en el archivo `oficial_herdnet/scripts/custom_train.yml`:
-
-```yaml
-hyperparameters:
-  epochs: 1
-  batch_size: 8
-  optimizer: "adam"
-  learning_rate: 1e-4
-  weight_decay: 0.0005
-
-trainer:
-  csv_logger: True
-  paths:
-    train_csv: "data/patches_512/gt/points_train_gt.csv"
-    val_csv: "data/patches_512/gt/points_val_gt.csv"
-    train_root: "data/patches_512/train"
-    val_root: "data/patches_512/val"
-    work_dir: "data/models/herdnet_v1"
-
-model:
-  pretrained: True
-  num_classes: 7
-  down_ratio: 2
-```
-
-Para iniciar el entrenamiento con esta implementación simplificada:
-
-```bash
-uv run python -m oficial_herdnet.scripts.custom_train_herdnet
-```
-
-### Método 2: Implementación oficial del autor (Hydra)
+### Método 1: Implementación oficial del autor (Hydra)
 
 La implementación original del autor utiliza Hydra para la gestión de configuraciones. El archivo de configuración principal se encuentra en `oficial_herdnet/configs/train/herdnet.yaml`.
 
@@ -68,19 +52,38 @@ wandb login
 
 ```yaml
 wandb_project: 'Herdnet'  # Nombre del proyecto en wandb
-wandb_entity: 'tu-nombre-de-usuario'  # Tu nombre de usuario o equipo en wandb
-wandb_run: 'Train 1'  # Identificador de esta ejecución
+wandb_entity: 'maiavision2025-universidad-de-los-andes'  # Entidad en wandb
+wandb_run: 'Train 1'  # Identificador de esta ejecución ¡Cambiar en cada ejecucion para no mezclar los datos!
+
+# Si en entrenamiento implica cambio de los hiperparametros, es importante cambiar el work_dir para 
+# configurar la salida de un nuevo modelo
+training_settings:
+  work_dir: 'data/models/herdnet_v1' 
 ```
 
 #### Iniciar el entrenamiento oficial
 
-Para iniciar el entrenamiento utilizando el script oficial con Hydra:
+Para iniciar el entrenamiento utilizando el script oficial con Hydra:  
+**Si cambia la version crear otro stage en el `dvc.yaml`**
 
 ```bash
-uv run python -m oficial_herdnet.tools.train
+uv run dvc repro train-herdnet-v1  
 ```
 
 Este comando utilizará la configuración especificada en `configs/train/herdnet.yaml`, y registrará el progreso del entrenamiento en wandb para su visualización y análisis.
+
+
+### Método 2: Implementación personalizada (Simplificada)
+
+La configuración del entrenamiento se encuentra en el archivo `oficial_herdnet/scripts/custom_train.yaml`:
+
+En el `custom_train.yaml` modificar `work_dir: "data/models/herdnet_v1"` en caso de generar una versión diferente.
+
+Para iniciar el entrenamiento con esta implementación simplificada:
+
+```bash
+uv run python -m oficial_herdnet.scripts.custom_train_herdnet
+```
 
 ## Evaluación y Predicción
 

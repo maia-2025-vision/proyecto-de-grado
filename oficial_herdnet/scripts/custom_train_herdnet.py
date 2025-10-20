@@ -27,8 +27,8 @@ def configure_warnings(verbose=False):
 
 configure_warnings(verbose=False)  # Cambiar a True si quieres ver todos los warnings
 
-# Load configurations from train.yml
-config_path = os.path.join(os.path.dirname(__file__), 'custom_train.yml')
+# Load configurations
+config_path = os.path.join(os.path.dirname(__file__), 'custom_train.yaml')
 with open(config_path, 'r') as file:
     config = yaml.safe_load(file)
 

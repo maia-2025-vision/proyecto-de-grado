@@ -1,23 +1,28 @@
-__copyright__ = \
-    """
+__copyright__ = """
     Copyright (C) 2024 University of Liège, Gembloux Agro-Bio Tech, Forest Is Life
     All rights reserved.
 
     This source code is under the MIT License.
 
-    Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be) for any questions.
+    This script is a slightly modified version of the original code at:
+    https://github.com/Alexandre-Delplanque/HerdNet/blob/main/tools/train.py
 
-    Last modification: March 18, 2024
+    CHANGES (marked with '# CHANGE by ...' comments) :
+      1. Change in _set_species_labels to no add a labels column (with label indices)
+      if CSV file already contains it.
+
+      2. Accessing cfg.work_dir (from train config) and creating this dir if it doesn't exist.
+
+      This requires work_dir to be a key with a valid value in train.yaml file.
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
 __version__ = "0.2.1"
 
+from pathlib import Path
 
 import torch
 import hydra
-from hydra.core.config_store import ConfigStore
-from hydra.conf import HydraConf, JobConf
 import animaloc
 import wandb
 import pandas
@@ -37,9 +42,13 @@ from animaloc.utils.seed import set_seed
 from animaloc.utils.useful_funcs import current_date
 
 def _set_species_labels(cls_dict: dict, df: pandas.DataFrame) -> None:
-    if 'labels' in df.columns:
+    # CHANGE by cuckookernel
+    if "labels" in df.columns:
+        print("labels already set, not setting again...")
         return
-    assert 'species' in df.columns, "El CSV debe tener una columna 'labels' o 'species'"
+    # END of CHANGE by cuckookernel
+
+    assert 'species' in df.columns
     cls_dict = dict(map(reversed, cls_dict.items()))
     df['labels'] = df['species'].map(cls_dict)
 
@@ -222,14 +231,7 @@ def _define_evaluator(
 
     return evaluator
 
-# Configure Hydra to not change directory
-cs = ConfigStore.instance()
-hydra_config = HydraConf()
-hydra_config.job = JobConf()
-hydra_config.job.chdir = False
-cs.store(name="hydra_config", node=hydra_config)
-
-@hydra.main(config_path='../configs', config_name="config", version_base=None)
+@hydra.main(config_path='../configs', config_name="config")
 def main(cfg: DictConfig) -> None:
 
     cfg = cfg.train
@@ -282,7 +284,12 @@ def main(cfg: DictConfig) -> None:
         
         val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=False, collate_fn=_get_collate_fn(cfg))
 
+    # CHANGE by: cuckookernel # create cfg.work_dir if it doesn´t exist.
+    # (previous version: work_dir = None)
+    # This work_dir is passed to trainer to save model checkpoints into.    
     work_dir = cfg.training_settings.work_dir
+    Path(work_dir).mkdir(parents=True, exist_ok=True)
+    # END of CHANGE
 
     # Set up wandb
     print('Connecting to Weights & Biases ...')
@@ -403,7 +410,11 @@ def main(cfg: DictConfig) -> None:
     
     # Add information in .pth files
     for pth_name in ['best_model.pth', 'latest_model.pth']:
-        path = os.path.join(os.curdir, pth_name)
+        # CHANGE by: aalea # Control the path according to the trainer's work_dir.
+        # (previous version:  path = os.path.join(os.curdir, pth_name))
+        path = os.path.join(work_dir, pth_name)
+        # END of CHANGE
+
         pth_file = torch.load(path)
         norm_trans = _load_albu_transforms(train_args.albu_transforms)[-1]
         pth_file['classes'] = dict(cfg.datasets.class_def)

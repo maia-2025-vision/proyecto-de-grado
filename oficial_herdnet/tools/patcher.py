@@ -22,6 +22,8 @@ import numpy
 import cv2
 import pandas
 
+from pathlib import Path
+
 from albumentations import PadIfNeeded
 
 from tqdm import tqdm
@@ -53,6 +55,11 @@ def main():
 
     images_paths = [os.path.join(args.root, p) for p in os.listdir(args.root) if not p.endswith('.csv')]
 
+    # CHANGE by Teo
+    dest_dir_path = Path(args.dest)
+    dest_dir_path.mkdir(parents=True, exist_ok=True)
+    # END of change
+
     if args.csv is not None:
         patches_buffer = PatchesBuffer(args.csv, args.root, (args.height, args.width), overlap=args.overlap, min_visibility=args.min).buffer
         patches_buffer.drop(columns='limits').to_csv(os.path.join(args.dest, 'gt.csv'), index=False)
@@ -73,9 +80,10 @@ def main():
 
             # or only annotated ones
             else:
+                # position = 'top_left', updated by aalea
                 padder = PadIfNeeded(
                     args.height, args.width,
-                    position = PadIfNeeded.PositionType.TOP_LEFT,
+                    position = 'top_left',
                     border_mode = cv2.BORDER_CONSTANT,
                     value= 0
                     )
