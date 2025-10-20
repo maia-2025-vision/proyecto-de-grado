@@ -50,4 +50,4 @@ jobs:
           export PYTHONPATH="./"
           echo "PYTHONPATH=$PYTHONPATH"
           source .venv/bin/activate          
-          mypy --config-file pyproject.toml --strict --explicit-package-bases ./
+          poe type-check
