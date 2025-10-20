@@ -30,11 +30,12 @@ DEFAULT_CLASS_LABEL_2_NAME = {
 
 
 class RawPrediction(TypedDict):
+    """Prediction coming from a model, after converting tensors to lists."""
+
     points: list[list[float]]
     labels: list[int]
     scores: list[float]
     boxes: list[list[float]]
-
 
 
 def make_faster_rcnn_model(num_classes: int) -> FasterRCNN:  # type: ignore[no-any-unimported]

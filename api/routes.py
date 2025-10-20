@@ -18,8 +18,9 @@ from api.internal_types import ModelPackType
 from api.model_utils import (
     DEFAULT_CLASS_LABEL_2_NAME,
     MockModel,
+    RawPrediction,
     compute_counts_by_species,
-    verify_and_post_process_pred, RawPrediction,
+    verify_and_post_process_pred,
 )
 from api.req_resp_types import (
     AppInfoResponse,
