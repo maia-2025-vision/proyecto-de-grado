@@ -4,27 +4,21 @@ __copyright__ = """
 
     This source code is under the MIT License.
 
-    This script is a slightly modified version of the original code at:
-    https://github.com/Alexandre-Delplanque/HerdNet/blob/main/tools/train.py
+    Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be)
+    for any questions.
 
-    CHANGES (marked with '# CHANGE by ...' comments) :
-      1. Change in _set_species_labels to no add a labels column (with label indices)
-      if CSV file already contains it.
-
-      2. Accessing cfg.work_dir (from train config) and creating this dir if it doesn't exist.
-
-      This requires work_dir to be a key with a valid value in train.yaml file.
+    Last modification: March 18, 2024
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
 __version__ = "0.2.1"
 
-# ruff: noqa: C408  # Unnecessary `dict` call (rewrite as literal)
 
 import os
 from collections.abc import Callable
 
-import albumentations as A  # noqa: N812
+# ruff: noqa: C408  # Unnecessary `dict` call (rewrite as a literal)
+import albumentations as A  # noqa: N812  # Lowercase `albumentations` imported as non-lowercase `A`
 import animaloc
 import hydra
 import pandas
@@ -41,11 +35,9 @@ import wandb
 
 
 def _set_species_labels(cls_dict: dict, df: pandas.DataFrame) -> None:
-    # CHANGE by cuckookernel
     if "labels" in df.columns:
         print("labels already set, not setting again...")
         return
-    # END of CHANGE by cuckookernel
 
     assert "species" in df.columns
     cls_dict = dict(map(reversed, cls_dict.items()))
@@ -283,12 +275,8 @@ def main(cfg: DictConfig) -> None:
             val_dataset, batch_size=1, shuffle=False, collate_fn=_get_collate_fn(cfg)
         )
 
-    # CHANGE by: cuckookernel # create cfg.work_dir if it doesn´t exist.
-    # (previous version: work_dir = None)
-    # This work_dir is passed to trainer to save model checkpoints into.
     work_dir = cfg.training_settings.work_dir
     Path(work_dir).mkdir(parents=True, exist_ok=True)
-    # END of CHANGE
 
     # Set up wandb
     print("Connecting to Weights & Biases ...")
@@ -409,7 +397,7 @@ def main(cfg: DictConfig) -> None:
 
     # Add information in .pth files
     for pth_name in ["best_model.pth", "latest_model.pth"]:
-        path = os.path.join(os.curdir, pth_name)
+        path = os.path.join(work_dir, pth_name)
         pth_file = torch.load(path)
         norm_trans = _load_albu_transforms(train_args.albu_transforms)[-1]
         pth_file["classes"] = dict(cfg.datasets.class_def)

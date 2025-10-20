@@ -1,0 +1,5 @@
+outs:
+- md5: 32e0de060f3e81d8b73225043268377a
+  size: 496428783
+  hash: md5
+  path: faster-rcnn-resnet50-25epochs.pth
