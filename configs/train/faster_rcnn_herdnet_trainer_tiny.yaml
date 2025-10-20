@@ -3,7 +3,6 @@ wandb_entity: 'teo-cornell-university'
 wandb_run: 'faster-rcnn-tiny'
 seed: 17
 device_name: 'cuda'
-work_dir: "!override-me via command line!"
 
 model:
   name: 'FasterRCNNResNetFPN'
@@ -74,6 +73,7 @@ datasets:
     end_transforms: null
 
 training_settings:
+  work_dir: "!override-me via command line!"
   trainer: 'FasterRCNNTrainer'
   valid_freq: 1
   print_freq: 10

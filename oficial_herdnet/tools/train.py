@@ -284,10 +284,9 @@ def main(cfg: DictConfig) -> None:
         )
 
     # CHANGE by: cuckookernel # create cfg.work_dir if it doesn´t exist.
-    # Before
-    # work_dir = None
+    # (previous version: work_dir = None)
     # This work_dir is passed to trainer to save model checkpoints into.
-    work_dir = cfg.work_dir
+    work_dir = cfg.training_settings.work_dir
     Path(work_dir).mkdir(parents=True, exist_ok=True)
     # END of CHANGE
 
