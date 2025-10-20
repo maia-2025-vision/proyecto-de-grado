@@ -53,7 +53,7 @@ def download_file_from_s3(url: str) -> bytes:
     return resp_content
 
 
-def upload_json_to_s3(prediction: dict, image_url: str):
+def upload_json_to_s3(prediction: dict, image_url: str) -> str:
     """Sube un diccionario de predicción como JSON a S3.
 
     Convierte la URL de la imagen en la clave JSON, cambia la extensión y guarda el archivo.

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
 
@@ -11,6 +11,17 @@ class PredictionError(Exception):
         super().__init__(error)
         self.url = url
         self.status = status
+
+
+class PredictionApiError(BaseModel):
+    """Class representing errors so we can put them in API responses."""
+    url: str
+    status: int
+    error: str
+
+    @classmethod
+    def from_prediction_error(cls, p_error: PredictionError) -> Self:
+        return cls(url=p_error.url, status=p_error.status, error=p_error.args[0])
 
 
 class PredictOneRequest(BaseModel):
@@ -84,7 +95,7 @@ class PredictionResult(BaseModel):
 class PredictManyResult(BaseModel):
     """Detection results for many images."""
 
-    results: list[PredictionResult | PredictionError]
+    results: list[PredictionResult | PredictionApiError]
 
 
 class ModelInfo(BaseModel):

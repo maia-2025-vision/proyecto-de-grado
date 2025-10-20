@@ -2,9 +2,8 @@ import gc
 import os
 import traceback
 from contextlib import asynccontextmanager
-from pathlib import Path
+from typing import AsyncIterator, Never
 
-import torchvision.transforms as transforms
 from fastapi import FastAPI, requests
 from fastapi.responses import JSONResponse
 from loguru import logger
@@ -12,13 +11,13 @@ from loguru import logger
 from api.config import SETTINGS
 from api.model_utils import load_model_pack
 from api.req_resp_types import PredictionError
-from api.routes import model_pack, router
+from api.routes import router, model_pack
 
 
 # Proper way to load a model on startup
 # https://fastapi.tiangolo.com/advanced/events/#use-case
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[Never]:
     # Load the ML model
 
     logger.info(f"MODEL_PATH={SETTINGS.model_path}")
@@ -38,9 +37,9 @@ async def lifespan(app: FastAPI):
     model_pack = load_model_pack(SETTINGS.model_path)
     model_pack.model.eval()
 
-    yield
+    yield  # type: ignore # this works but not sure what to do about type error...
     # Clean up the ML models and release the resources
-    model_pack.model = None
+    model_pack.model = None  # type: ignore [assignment]  # this member will never be used from here on
     gc.collect()
 
 
@@ -49,8 +48,9 @@ app.include_router(router)
 
 
 @app.exception_handler(PredictionError)
-async def custom_exception_handler(request: requests.Request, exc: PredictionError):
-    logger.error(f"request: {await request.body()}\nPredictionError: {exc}")
+async def custom_exception_handler(request: requests.Request, exc: PredictionError) -> JSONResponse:
+    req_body = await request.body()
+    logger.error(f"request: {req_body!r}\nPredictionError: {exc}")
     return JSONResponse(
         status_code=exc.status,
         content={"url": exc.url, "error": str(exc), "traceback": traceback.format_exc()},

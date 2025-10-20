@@ -1,17 +1,13 @@
 import io
 import traceback
-from collections.abc import Callable
-from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
-from typing import Literal, TypedDict
 
 import requests
 import torch
 import torchvision.transforms as transforms # type: ignore [import-untyped]
 from fastapi import APIRouter, HTTPException
 from PIL import Image
-from torch import nn
 
 from api.config import SETTINGS
 from api.model_utils import (
@@ -20,6 +16,7 @@ from api.model_utils import (
     compute_counts_by_species,
     verify_and_post_process_pred,
 )
+from api.internal_types import ModelPackType
 from api.req_resp_types import (
     AppInfoResponse,
     Detections,
@@ -28,7 +25,7 @@ from api.req_resp_types import (
     PredictionResult,
     PredictManyRequest,
     PredictManyResult,
-    PredictOneRequest,
+    PredictOneRequest, PredictionApiError,
 )
 from api.s3_utils import (
     download_file_from_s3,
@@ -39,21 +36,9 @@ from api.s3_utils import (
 )
 
 
-@dataclass
-class ModelPackType:
-    """Declare types for stuffed stored in model_pack global below."""
-
-    model: nn.Module
-    model_arch: str
-    model_path: Path
-    pre_transform: Callable[[Image.Image], torch.Tensor]
-    bbox_format: Literal["xywh", "xyxy"] | None
-    idx2species: dict[int, str]  # Map of label int index to species name
-
-
 # This structure gets properly initialized in api.main.lifespan
 model_pack: ModelPackType = ModelPackType(
-    model=MockModel(num_classes=0),
+    model=MockModel(num_classes=len(DEFAULT_CLASS_LABEL_2_NAME)),
     model_arch="mock",
     model_path=Path("undefined/"),
     pre_transform=transforms.ToTensor(),
@@ -94,14 +79,14 @@ async def predict_many_endpoint(req: PredictManyRequest) -> PredictManyResult:
     Descarga cada imagen, la transforma en tensor, ejecuta el modelo de predicción
     y sube los resultados a S3. Devuelve una lista con los resultados o errores por imagen.
     """
-    results: list[PredictionResult | PredictionError] = []
+    results: list[PredictionResult | PredictionApiError] = []
 
-    result: PredictionResult | PredictionError
+    result: PredictionResult | PredictionApiError
     for url in req.urls:
         try:
             result = predict_one(url, counts_score_thresh=req.counts_score_thresh)
         except PredictionError as err:
-            result = PredictionError(url, status=HTTPStatus.INTERNAL_SERVER_ERROR, error=str(err))
+            result = PredictionApiError.from_prediction_error(err)
 
         results.append(result)
 

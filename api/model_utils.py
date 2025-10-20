@@ -5,17 +5,18 @@ from typing import Literal
 
 import numpy as np
 import torch
-import torchvision
+import torchvision  # type: ignore [import-untyped]
+from torchvision import transforms
 from loguru import logger
 from torch import nn
-from torchvision.models.detection.faster_rcnn import (
+from torchvision.models.detection.faster_rcnn import (  # type: ignore [import-untyped]
     FasterRCNN,
     FasterRCNN_ResNet50_FPN_Weights,
     FastRCNNPredictor,
 )
 
 from api.req_resp_types import ThresholdCounts
-from api.routes import ModelPackType
+from api.internal_types import ModelPackType
 
 DEFAULT_CLASS_LABEL_2_NAME = {
     0: "background",
@@ -74,7 +75,7 @@ class MockModel(nn.Module):
             xs = torch.randint(low=0, high=width, size=(n_detections, 1))
             ys = torch.randint(low=0, high=height, size=(n_detections, 1))
 
-            labels = torch.randint(low=1, high=self.num_classes + 1, size=(n_detections,))
+            labels = torch.randint(low=1, high=self.num_classes, size=(n_detections,))
             scores = torch.rand(size=(n_detections,))  # uniform distribution on [0, 1)
 
             one_result = {"points": torch.hstack([xs, ys]), "labels": labels, "scores": scores}
@@ -92,12 +93,12 @@ def determine_model_arch(weights_path: Path) -> Literal["faster-rcnn", "herdnet"
 
     for p in ["faster-rcnn", "herdnet", "mock"]:
         if p in weights_path_str:
-            return p
+            return p  # type: ignore [return-value]
 
     raise ValueError("Could not determine model architecture from model_path ")
 
 
-def load_model_pack(weights_path: Path, transforms=None) -> ModelPackType:
+def load_model_pack(weights_path: Path) -> ModelPackType:
     """Restore and return a prediction model from a weights file."""
     num_classes = len(DEFAULT_CLASS_LABEL_2_NAME)
 
@@ -192,6 +193,6 @@ def compute_counts_by_species(
     counts = Counter(filtered_species)
 
     return ThresholdCounts(
-        threshold=thresh,
+        score_thresh=thresh,
         counts=counts,
     )

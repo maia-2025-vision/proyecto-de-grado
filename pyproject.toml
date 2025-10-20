@@ -18,7 +18,8 @@ dev = [
     "marimo",
     "mypy",
     "pandas-stubs",
-    "types-requests"
+    "types-requests",
+    "boto3-stubs[s3]>=1.40.55",
 ]
 
 train = [
@@ -108,7 +109,7 @@ extend-immutable-calls = [
 python_version = "3.13"
 # TODO: fix typing errors in dashboard
 # TODO: fix typing errors in api...
-exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|api|data_exploration)/'
+exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|data_exploration)/'
 disallow_untyped_defs = true
 disallow_any_unimported = true
 explicit_package_bases = true
