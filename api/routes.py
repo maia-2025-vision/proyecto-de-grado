@@ -191,7 +191,7 @@ def get_predictions_from_folder(region: str, flyover: str) -> dict[str, list[dic
         ) from e
 
 
-@router.get("/collect-counts/{region}/{flyover}")
+@router.get("/counts/{region}/{flyover}")
 def collect_counts_for_flyover(region: str, flyover: str) -> CollectedCountsFlyover:
     """Reune los diccionarios de conteo por especie de todas las imagenes de un sobrevuelo dada."""
     results = get_predictions_from_s3_folder(region, flyover)
@@ -221,7 +221,7 @@ def collect_counts_for_flyover(region: str, flyover: str) -> CollectedCountsFlyo
     )
 
 
-@router.get("/collect-counts/{region}")
+@router.get("/counts/{region}")
 def collect_counts_for_region(region: str) -> CollectedCountsRegion:
     """Reune los diccionarios de conteos por especie de todas las imagenes de una region.
 
