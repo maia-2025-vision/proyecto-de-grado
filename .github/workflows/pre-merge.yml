@@ -42,7 +42,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          uv sync --dev
+          uv sync --all-groups
           uv pip install -e "."
 
       - name: Run Type-checking
