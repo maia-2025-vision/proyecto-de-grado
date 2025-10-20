@@ -181,7 +181,7 @@ def list_flyovers(region: str) -> dict[str, list[str]]:
 
 
 @router.get("/results/{region}/{flyover}")
-def get_predictions_from_folder(region: str, flyover: str) -> dict[str, list[dict]]:
+def get_predictions_from_folder(region: str, flyover: str) -> dict[str, list[dict[str, object]]]:
     """Obtiene las predicciones almacenadas en S3 para una region y sobrevuelo dadas."""
     try:
         results = get_predictions_from_s3_folder(region, flyover)
