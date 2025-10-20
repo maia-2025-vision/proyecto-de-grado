@@ -2275,6 +2275,7 @@ dev = [
 ]
 train = [
     { name = "albumentations" },
+    { name = "hydra-core" },
     { name = "pillow" },
     { name = "scikit-learn" },
     { name = "torch" },
@@ -2311,7 +2312,8 @@ dev = [
     { name = "pre-commit" },
 ]
 train = [
-    { name = "albumentations", specifier = "==1.0.3" },
+    { name = "albumentations", specifier = "~=1.0.3" },
+    { name = "hydra-core", specifier = "~=1.3" },
     { name = "pillow" },
     { name = "scikit-learn" },
     { name = "torch", specifier = "~=2.7.1" },

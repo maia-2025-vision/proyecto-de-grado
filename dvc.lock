@@ -164,11 +164,11 @@ stages:
       size: 2708
     - path: oficial_herdnet/tools/train.py
       hash: md5
-      md5: a0095c2642f884e8dc5f9872e600a5f2
-      size: 13022
+      md5: e2bfa812a8a05e5ac2f44125f26d90ec
+      size: 13040
     outs:
     - path: data/models/faster-rcnn-tiny
       hash: md5
-      md5: dfecaea5fcb0dd1e96f4c2047f62b117.dir
-      size: 992863815
+      md5: 35cc74c89fc3e1b9a4f3c9c718a2b1e3.dir
+      size: 992863812
       nfiles: 4
