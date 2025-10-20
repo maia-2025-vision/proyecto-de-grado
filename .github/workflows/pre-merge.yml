@@ -32,6 +32,8 @@ jobs:
   Type-Checking:
     runs-on: ubuntu-latest
     steps:
+      - name: Repo checkout
+        uses: actions/checkout@v4
       - name: Setup uv
         uses: astral-sh/setup-uv@v6
         with:
