@@ -1,7 +1,7 @@
 from collections import Counter
 from pathlib import Path
 from pprint import pformat
-from typing import Literal
+from typing import Literal, TypedDict
 
 import numpy as np
 import torch
@@ -27,6 +27,14 @@ DEFAULT_CLASS_LABEL_2_NAME = {
     5: "Waterbuck",
     6: "Elephant",
 }
+
+
+class RawPrediction(TypedDict):
+    points: list[list[float]]
+    labels: list[int]
+    scores: list[float]
+    boxes: list[list[float]]
+
 
 
 def make_faster_rcnn_model(num_classes: int) -> FasterRCNN:  # type: ignore[no-any-unimported]
@@ -137,8 +145,8 @@ def load_model_pack(weights_path: Path) -> ModelPackType:
 
 
 def verify_and_post_process_pred(
-    pred: dict[str, list], bbox_format: Literal["xyxy", "xywh"] | None
-) -> dict[str, list]:
+    pred: RawPrediction, bbox_format: Literal["xyxy", "xywh"] | None
+) -> RawPrediction:
     """Make sure pred has a labels key AND (either boxes or points).
 
     If only boxes, compute box centers and add them.
@@ -158,7 +166,8 @@ def verify_and_post_process_pred(
             # compute points from bboxes, assuming bbox in COCO format x_min, y_min, width, height
             points = [
                 [
-                    bbox[0] + bbox[2] // 2,  # = x_min + width // 2 => x_center
+                    # = x_min + width // 2 => x_center
+                    bbox[0] + bbox[2] // 2,
                     bbox[1] + bbox[3] // 2,
                 ]  # = y_min + height // 2 => x_center
                 for bbox in pred["boxes"]

@@ -19,7 +19,7 @@ from api.model_utils import (
     DEFAULT_CLASS_LABEL_2_NAME,
     MockModel,
     compute_counts_by_species,
-    verify_and_post_process_pred,
+    verify_and_post_process_pred, RawPrediction,
 )
 from api.req_resp_types import (
     AppInfoResponse,
@@ -122,7 +122,7 @@ def predict_one(url: str, *, counts_score_thresh: float) -> PredictionResult:
             model_outputs = model_pack.model(image_tensor)
 
         pred = model_outputs[0]  # just the first one since we only passed one image in the batch
-        pred_obj = {k: v.tolist() for k, v in pred.items()}
+        pred_obj: RawPrediction = {k: v.tolist() for k, v in pred.items()}  # type: ignore
         pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=model_pack.bbox_format)
 
         counts_at_thresh = compute_counts_by_species(

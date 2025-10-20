@@ -53,7 +53,7 @@ def download_file_from_s3(url: str) -> bytes:
     return resp_content
 
 
-def upload_json_to_s3(prediction: dict, image_url: str) -> str:
+def upload_json_to_s3(prediction: dict[str, object], image_url: str) -> str:
     """Sube un diccionario de predicción como JSON a S3.
 
     Convierte la URL de la imagen en la clave JSON, cambia la extensión y guarda el archivo.
@@ -116,7 +116,7 @@ def list_flyover_folders(region: str) -> list[str]:
     return folders
 
 
-def get_predictions_from_s3_folder(region: str, flyover: str) -> list[dict]:
+def get_predictions_from_s3_folder(region: str, flyover: str) -> list[dict[str, object]]:
     """Obtiene predicciones JSON desde una carpeta en S3.
 
     Args:

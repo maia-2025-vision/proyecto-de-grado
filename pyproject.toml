@@ -17,6 +17,7 @@ dev = [
     "poethepoet",
     "marimo",
     "mypy",
+    "loguru",
     "pandas-stubs",
     "types-requests",
     "boto3-stubs[s3]>=1.40.55",
