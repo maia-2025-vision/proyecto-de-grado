@@ -13,13 +13,11 @@ __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
 __version__ = "0.2.1"
 
+# ruff: noqa: C408  # Unnecessary `dict` call (rewrite as a literal)
 
 import os
 from collections.abc import Callable
 
-from albumentations import Normalize
-
-# ruff: noqa: C408  # Unnecessary `dict` call (rewrite as a literal)
 import albumentations as A  # noqa: N812  # Lowercase `albumentations` imported as non-lowercase `A`
 import animaloc
 import hydra
