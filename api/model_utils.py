@@ -1,27 +1,41 @@
+from collections import Counter
 from pathlib import Path
 from pprint import pformat
-from typing import Literal
+from typing import Literal, TypedDict
 
 import numpy as np
 import torch
-import torchvision
+import torchvision  # type: ignore [import-untyped]
 from loguru import logger
 from torch import nn
-from torchvision.models.detection.faster_rcnn import (
+from torchvision import transforms
+from torchvision.models.detection.faster_rcnn import (  # type: ignore [import-untyped]
     FasterRCNN,
     FasterRCNN_ResNet50_FPN_Weights,
     FastRCNNPredictor,
 )
 
-CLASS_LABEL_2_NAME = {
+from api.internal_types import ModelPackType
+from api.req_resp_types import ThresholdCounts
+
+DEFAULT_CLASS_LABEL_2_NAME = {
     0: "background",
-    1: "PENDING-name-1",
-    2: "PENDING-name-2",
-    3: "PENDING-name-3",
-    4: "PENDING-name-4",
-    5: "PENDING-name-5",
-    6: "PENDING-name-6",
+    1: "Alcelaphinae",
+    2: "Buffalo",
+    3: "Kob",
+    4: "Warthog",
+    5: "Waterbuck",
+    6: "Elephant",
 }
+
+
+class RawPrediction(TypedDict):
+    """Prediction coming from a model, after converting tensors to lists."""
+
+    points: list[list[float]]
+    labels: list[int]
+    scores: list[float]
+    boxes: list[list[float]]
 
 
 def make_faster_rcnn_model(num_classes: int) -> FasterRCNN:  # type: ignore[no-any-unimported]
@@ -70,7 +84,7 @@ class MockModel(nn.Module):
             xs = torch.randint(low=0, high=width, size=(n_detections, 1))
             ys = torch.randint(low=0, high=height, size=(n_detections, 1))
 
-            labels = torch.randint(low=1, high=self.num_classes + 1, size=(n_detections,))
+            labels = torch.randint(low=1, high=self.num_classes, size=(n_detections,))
             scores = torch.rand(size=(n_detections,))  # uniform distribution on [0, 1)
 
             one_result = {"points": torch.hstack([xs, ys]), "labels": labels, "scores": scores}
@@ -88,14 +102,14 @@ def determine_model_arch(weights_path: Path) -> Literal["faster-rcnn", "herdnet"
 
     for p in ["faster-rcnn", "herdnet", "mock"]:
         if p in weights_path_str:
-            return p
+            return p  # type: ignore [return-value]
 
     raise ValueError("Could not determine model architecture from model_path ")
 
 
-def get_prediction_model(weights_path: Path) -> nn.Module:
+def load_model_pack(weights_path: Path) -> ModelPackType:
     """Restore and return a prediction model from a weights file."""
-    num_classes = len(CLASS_LABEL_2_NAME)
+    num_classes = len(DEFAULT_CLASS_LABEL_2_NAME)
 
     model_arch = determine_model_arch(weights_path)
 
@@ -107,17 +121,33 @@ def get_prediction_model(weights_path: Path) -> nn.Module:
         state_dict = torch.load(weights_path)
         model.load_state_dict(state_dict)
         assert isinstance(model, nn.Module)
-        return model
+
+        return ModelPackType(
+            model=model,
+            model_path=weights_path,
+            model_arch="faster-rcnn",
+            pre_transform=transforms.ToTensor(),
+            bbox_format="xyxy",
+            idx2species=DEFAULT_CLASS_LABEL_2_NAME,
+        )
+
     elif model_arch == "mock":
         model = MockModel(num_classes=num_classes)
-        return model
+        return ModelPackType(
+            model=model,
+            model_path=weights_path,
+            model_arch="mock",
+            pre_transform=transforms.ToTensor(),
+            bbox_format=None,
+            idx2species=DEFAULT_CLASS_LABEL_2_NAME,
+        )
     else:
         raise NotImplementedError(f"model_arch=`{model_arch}` not implemented yet")
 
 
 def verify_and_post_process_pred(
-    pred: dict[str, list], bbox_format: Literal["xyxy", "xywh"] | None
-) -> dict[str, list]:
+    pred: RawPrediction, bbox_format: Literal["xyxy", "xywh"] | None
+) -> RawPrediction:
     """Make sure pred has a labels key AND (either boxes or points).
 
     If only boxes, compute box centers and add them.
@@ -137,7 +167,8 @@ def verify_and_post_process_pred(
             # compute points from bboxes, assuming bbox in COCO format x_min, y_min, width, height
             points = [
                 [
-                    bbox[0] + bbox[2] // 2,  # = x_min + width // 2 => x_center
+                    # = x_min + width // 2 => x_center
+                    bbox[0] + bbox[2] // 2,
                     bbox[1] + bbox[3] // 2,
                 ]  # = y_min + height // 2 => x_center
                 for bbox in pred["boxes"]
@@ -160,3 +191,25 @@ def verify_and_post_process_pred(
     assert len(pred["points"]) == len(pred["labels"]), pformat(pred)
 
     return pred
+
+
+def compute_counts_by_species(
+    labels: list[int], scores: list[float], thresh: float, idx2species: dict[int, str]
+) -> ThresholdCounts:
+    assert len(labels) == len(scores)
+    filtered_species = [
+        idx2species[idx] for idx, scores in zip(labels, scores, strict=False) if scores > thresh
+    ]
+    counts = Counter(filtered_species)
+    # Fill all missing slots with 0's for downstream tools to work more smoothly...
+    for idx, species_name in idx2species.items():
+        if idx == 0:  # background
+            continue
+
+        if species_name not in counts:
+            counts[species_name] = 0
+
+    return ThresholdCounts(
+        score_thresh=thresh,
+        counts=counts,
+    )

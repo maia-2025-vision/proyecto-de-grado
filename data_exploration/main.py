@@ -1,5 +1,4 @@
 import pandas as pd
-
 from utils import (
     analyze_area_statistics,
     analyze_dataset,
@@ -36,7 +35,7 @@ def generate_markdown_report(
         f.write(f"![Gráfica comparativa]({class_distribution_image_name})\n\n")
 
         f.write("## Distribución de Áreas de Bounding Boxes por Clase\n\n")
-        for split in ['train', 'val', 'test']:
+        for split in ["train", "val", "test"]:
             f.write(f"### Histograma de Áreas - Split `{split}`\n\n")
             f.write(f"![Histograma áreas {split}](bbox_area_{split}.png)\n\n")
 
