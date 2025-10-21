@@ -1,0 +1,138 @@
+stages:
+  fix-headers-train-csv:
+    cmd: >
+      sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
+      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv
+      > data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    deps:
+      - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv
+    outs:
+      - data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+  fix-headers-val-csv:
+    cmd: >
+      sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
+      data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB.csv
+      > data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    deps:
+      - data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB.csv
+    outs:
+      - data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+  fix-headers-test-csv:
+    cmd: >
+      sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
+      data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB.csv
+      > data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    deps:
+      - data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB.csv
+    outs:
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+
+  patches-512-ol-160-mv0.3-train:
+    cmd: >
+      python oficial_herdnet/tools/patcher.py   
+      -csv data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      -min 0.3
+      data/train/ 
+      512 512 160 
+      data/patches-512-ol-160-m0.3/train
+    deps:
+      - oficial_herdnet/tools/patcher.py
+      - data/train/
+      - data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    outs:
+      - data/patches-512-ol-160-m0.3/train
+
+  patches-512-ol-160-mv0.3-val:
+    cmd: >
+      python oficial_herdnet/tools/patcher.py   
+      -csv data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      -min 0.3      
+      data/val/ 
+      512 512 160 
+      data/patches-512-ol-160-m0.3/val
+    deps:
+      - oficial_herdnet/tools/patcher.py
+      - data/val/
+      - data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    outs:
+      - data/patches-512-ol-160-m0.3/val
+
+  patches-512-ol-160-mv0.3-test:
+    cmd: >
+      python oficial_herdnet/tools/patcher.py   
+      -csv data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      -min 0.3
+      data/test/ 
+      512 512 160 
+      data/patches-512-ol-160-m0.3/test
+    deps:
+      - oficial_herdnet/tools/patcher.py
+      - data/test/
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    outs:
+      - data/patches-512-ol-160-m0.3/test/
+
+  patches-512-ol-160-mv0.3-train-tiny:
+    desc: Seleccionar un subconjunto diminuto del conjunto de parches de entrenamiento para hacer tests rápidos
+      del flujo de train.
+    cmd: >
+      mkdir -p data/patches-512-ol-160-m0.3/train-tiny && head -n 200 data/patches-512-ol-160-m0.3/train/gt.csv
+      > data/patches-512-ol-160-m0.3/train-tiny/gt-head-200.csv
+    deps:
+      - data/patches-512-ol-160-m0.3/train/gt.csv
+    outs:
+      - data/patches-512-ol-160-m0.3/train-tiny/gt-head-200.csv
+
+  patches-512-ol-160-mv0.3-valid-tiny:
+    desc: Seleccionar un subconjunto diminuto del conjunto de parches de validación para hacer tests rápidos
+      del flujo de train.
+    cmd: >
+      mkdir -p data/patches-512-ol-160-m0.3/val-tiny && 
+      head -n 25 data/patches-512-ol-160-m0.3/val/gt.csv
+      > data/patches-512-ol-160-m0.3/val-tiny/gt-head-25.csv
+    deps:
+      - data/patches-512-ol-160-m0.3/val/gt.csv
+    outs:
+      - data/patches-512-ol-160-m0.3/val-tiny/gt-head-25.csv
+
+
+  train-faster-rcnn-hn-trainer:
+    desc: Entrenar faster-rcnn via trainer from Herdnet/tools/train.py
+    cmd: >
+       python oficial_herdnet/tools/train.py  --config-path $PWD/configs/
+       train=faster_rcnn_herdnet_trainer 
+       train.training_settings.work_dir=data/models/faster-rcnn/resnet50-100-epochs-tbl4
+       train.training_settings.epochs=100
+    deps:
+      - configs/train/faster_rcnn_herdnet_trainer.yaml
+      - oficial_herdnet/tools/train.py
+      - data/patches-512-ol-160-m0.3/train/gt.csv
+    outs:
+      - data/models/faster-rcnn/resnet50-100-epochs-tbl4
+
+  train-faster-rcnn-hn-trainer-tiny:
+    desc: >
+      Entrenar faster-rcnn via trainer from Herdnet/tools/train.py con datasets mucho mas pequeños para probar
+      todo el flujo rápido
+    cmd: >
+       python oficial_herdnet/tools/train.py  --config-path $PWD/configs/
+       train=faster_rcnn_herdnet_trainer
+       train.training_settings.work_dir=data/models/faster-rcnn-tiny
+       train.training_settings.epochs=3
+       train.datasets.train.csv_file=data/patches-512-ol-160-m0.3/train-tiny/gt-head-200.csv
+       train.datasets.validate.csv_file=data/patches-512-ol-160-m0.3/val-tiny/gt-head-25.csv
+       train.training_settings.print_freq=10
+    deps:
+      - oficial_herdnet/tools/train.py
+      - data/patches-512-ol-160-m0.3/train-tiny/gt-head-200.csv
+      - data/patches-512-ol-160-m0.3/val-tiny/gt-head-25.csv
+    outs:
+      - data/models/faster-rcnn-tiny
+
+  add-info-to-tmp-model:
+    desc: >
+      Add metadata and transforms to a model that comes from an intermediate epoch.
+    cmd: >
+      python tools/add_info_to_model.py --config-path $PWD/configs/
+      train=faster_rcnn_herdnet_trainer        
+      add_info.best_model_pth_path=data/models/tmp/faster-rcnn/best_model-by-epoch-70.pth

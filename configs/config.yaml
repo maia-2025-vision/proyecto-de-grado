@@ -1,0 +1,12 @@
+hydra:
+  job:
+    chdir: False
+  # TODO: the following doesn´t actually work, figure out how to do it...
+  # runtime:
+  #  # output_dir controls where hydra output goes, usually to `./outputs/`
+  #  output_dir: data/hydra-outputs/
+
+defaults:
+  - train: herdnet
+  - add_info: default
+  # - test: herdnet  # uncomment once we add at least a config under configs/test/

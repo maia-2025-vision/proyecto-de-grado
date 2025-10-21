@@ -1,7 +1,7 @@
 from collections import Counter
 from pathlib import Path
 from pprint import pformat
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, NotRequired
 
 import numpy as np
 import torch
@@ -35,7 +35,17 @@ class RawPrediction(TypedDict):
     points: list[list[float]]
     labels: list[int]
     scores: list[float]
-    boxes: list[list[float]]
+    boxes: NotRequired[list[list[float]]]
+
+
+def pick_torch_device() -> str:
+    """Pick best accelerator device for current machine or default to cpu."""
+    if torch.cuda.is_available():
+        return "cuda"
+    elif torch.mps.is_available():
+        return "mps"
+    else:
+        return "cpu"
 
 
 def make_faster_rcnn_model(num_classes: int) -> FasterRCNN:  # type: ignore[no-any-unimported]
