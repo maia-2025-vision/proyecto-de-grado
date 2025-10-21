@@ -18,7 +18,7 @@ __version__ = "0.2.1"
 import os
 from collections.abc import Callable
 
-import albumentations as A  # noqa: N912
+import albumentations as A  # noqa: N812 # Lowercase `albumentations` imported as non-lowercase `A`
 import animaloc
 import hydra
 import pandas
@@ -194,7 +194,7 @@ def main(cfg: DictConfig) -> None:
 
     # Start testing
     print("Starting testing ...")
-    out = evaluator.evaluate(wandb_flag=True, viz=False)
+    evaluator.evaluate(wandb_flag=True, viz=False)
 
     # Save results
     print("Saving the results ...")

@@ -4,8 +4,11 @@ __copyright__ = """
 
     This source code is under the MIT License.
 
-    Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be)
-    for any questions.
+    This script is a slightly modified version of the original code at:
+    https://github.com/Alexandre-Delplanque/HerdNet/blob/main/tools/patcher.py
+
+    CHANGES:
+      1.  Added line to create directory args.dest at startup.
 
     Last modification: March 18, 2024
     """
@@ -98,7 +101,7 @@ def main():
                 padder = PadIfNeeded(
                     args.height,
                     args.width,
-                    position="top_left",
+                    position=PadIfNeeded.PositionType.TOP_LEFT,
                     border_mode=cv2.BORDER_CONSTANT,
                     value=0,
                 )

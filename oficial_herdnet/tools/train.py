@@ -236,6 +236,7 @@ def main(cfg: DictConfig) -> None:
     print(f"Setting the seed to {cfg.seed}")
     set_seed(cfg.seed)
 
+    print(f"Current working directory: {Path.cwd()}")
     # Prepare datasets and dataloaders
     print("Building datasets ...")
     device = torch.device(cfg.device_name)
