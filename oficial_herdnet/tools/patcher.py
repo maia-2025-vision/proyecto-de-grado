@@ -10,7 +10,7 @@ __copyright__ = """
     CHANGES:
       1.  Added line to create directory args.dest at startup.
 
-    Last modification: March 18, 2024
+    Last modification: October 21, 2025
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
