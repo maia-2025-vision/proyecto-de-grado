@@ -20,6 +20,7 @@ dev = [
     "pandas-stubs",
     "types-requests",
     "boto3-stubs[s3]>=1.40.55",
+    "types-pyyaml>=6.0.12.20250915",
 ]
 
 herdnet = [
@@ -138,7 +139,7 @@ extend-immutable-calls = [
 python_version = "3.13"
 # TODO: fix typing errors in dashboard
 # TODO: fix typing errors in api...
-exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|data_exploration|notebooks|oficial_herdnet)/'
+exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|data_exploration|notebooks|oficial_herdnet/tools)/'
 strict=true
 disallow_untyped_defs = true
 disallow_any_unimported = true
@@ -147,6 +148,10 @@ no_implicit_optional = true
 check_untyped_defs = true
 warn_return_any = true
 show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["animaloc.*", "albumentations"]
+ignore_missing_imports = true
 
 
 [tool.poe.env]
