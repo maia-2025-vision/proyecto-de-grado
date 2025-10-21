@@ -1,23 +1,36 @@
 import io
 import traceback
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections import Counter, defaultdict
+from collections.abc import Mapping
 from http import HTTPStatus
-from typing import Literal, TypedDict
+from pathlib import Path
 
+import pydantic
 import requests
 import torch
-import torchvision.transforms as transforms
+import torchvision.transforms as transforms  # type: ignore [import-untyped]
 from fastapi import APIRouter, HTTPException
+from loguru import logger
 from PIL import Image
-from torch import nn
 
 from api.config import SETTINGS
-from api.model_utils import MockModel, verify_and_post_process_pred
+from api.internal_types import ModelPackType
+from api.model_utils import (
+    DEFAULT_CLASS_LABEL_2_NAME,
+    MockModel,
+    RawPrediction,
+    compute_counts_by_species,
+    verify_and_post_process_pred,
+)
 from api.req_resp_types import (
     AppInfoResponse,
+    CollectedCountsFlyover,
+    CollectedCountsRegion,
+    CountsRow,
     Detections,
+    FlyoverCountsRow,
     ModelInfo,
+    PredictionApiError,
     PredictionError,
     PredictionResult,
     PredictManyRequest,
@@ -32,29 +45,20 @@ from api.s3_utils import (
     upload_json_to_s3,
 )
 
-
-@dataclass
-class ModelPackType:
-    """Declare types for stuffed stored in model_pack global below."""
-
-    model: nn.Module
-    model_arch: str
-    pre_transform: Callable[[Image.Image], torch.Tensor]
-    bbox_format: Literal["xywh", "xyxy"] | None
-
-
-# This gets properly initialized in api.main.lifespan
+# This structure gets properly initialized in api.main.lifespan
 model_pack: ModelPackType = ModelPackType(
-    model=MockModel(num_classes=0),
+    model=MockModel(num_classes=len(DEFAULT_CLASS_LABEL_2_NAME)),
     model_arch="mock",
+    model_path=Path("undefined/"),
     pre_transform=transforms.ToTensor(),
-    bbox_format="xyxy",
+    bbox_format=None,
+    idx2species=DEFAULT_CLASS_LABEL_2_NAME,
 )
 
 router = APIRouter()
 
 
-def download_image_from_url(url: str):
+def download_image_from_url(url: str) -> Image.Image:
     if url.startswith("s3://"):  # an s3 url that might not be public!
         file_bytes = download_file_from_s3(url)
     else:  # regular "public" url
@@ -66,7 +70,7 @@ def download_image_from_url(url: str):
 
 
 @router.get("/app-info")
-async def get_app_info():
+async def get_app_info() -> AppInfoResponse:
     return AppInfoResponse(
         model_info=ModelInfo(
             path=str(SETTINGS.model_path),
@@ -84,13 +88,14 @@ async def predict_many_endpoint(req: PredictManyRequest) -> PredictManyResult:
     Descarga cada imagen, la transforma en tensor, ejecuta el modelo de predicción
     y sube los resultados a S3. Devuelve una lista con los resultados o errores por imagen.
     """
-    results = []
+    results: list[PredictionResult | PredictionApiError] = []
 
+    result: PredictionResult | PredictionApiError
     for url in req.urls:
         try:
-            result = predict_one(url)
+            result = predict_one(url, counts_score_thresh=req.counts_score_thresh)
         except PredictionError as err:
-            result = PredictionError(url, status=HTTPStatus.INTERNAL_SERVER_ERROR, error=str(err))
+            result = PredictionApiError.from_prediction_error(err)
 
         results.append(result)
 
@@ -99,10 +104,10 @@ async def predict_many_endpoint(req: PredictManyRequest) -> PredictManyResult:
 
 @router.post("/predict")
 def predict_one_endpoint(req: PredictOneRequest) -> PredictionResult:
-    return predict_one(url=req.s3_path)
+    return predict_one(url=req.s3_path, counts_score_thresh=req.counts_score_thresh)
 
 
-def predict_one(url: str) -> PredictionResult:
+def predict_one(url: str, *, counts_score_thresh: float) -> PredictionResult:
     try:
         image = download_image_from_url(url)
     except Exception as exc:
@@ -118,9 +123,21 @@ def predict_one(url: str) -> PredictionResult:
             model_outputs = model_pack.model(image_tensor)
 
         pred = model_outputs[0]  # just the first one since we only passed one image in the batch
-        pred_obj = {k: v.tolist() for k, v in pred.items()}
+        pred_obj: RawPrediction = {k: v.tolist() for k, v in pred.items()}  # type: ignore
         pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=model_pack.bbox_format)
-        pred_result = PredictionResult(url=url, detections=Detections.model_validate(pred_obj2))
+
+        counts_at_thresh = compute_counts_by_species(
+            labels=pred_obj2["labels"],
+            scores=pred_obj2["scores"],
+            thresh=counts_score_thresh,
+            idx2species=model_pack.idx2species,
+        )
+
+        pred_result = PredictionResult(
+            url=url,
+            detections=Detections.model_validate(pred_obj2),
+            counts_at_threshold=counts_at_thresh,
+        )
 
     except Exception as exc:
         print(exc, traceback.format_exc())
@@ -164,7 +181,7 @@ def list_flyovers(region: str) -> dict[str, list[str]]:
 
 
 @router.get("/results/{region}/{flyover}")
-def get_predictions_from_folder(region: str, flyover: str):
+def get_predictions_from_folder(region: str, flyover: str) -> dict[str, list[dict[str, object]]]:
     """Obtiene las predicciones almacenadas en S3 para una region y sobrevuelo dadas."""
     try:
         results = get_predictions_from_s3_folder(region, flyover)
@@ -173,3 +190,76 @@ def get_predictions_from_folder(region: str, flyover: str):
         raise HTTPException(
             status_code=500, detail=f"Error al reconstruir predicciones: {str(e)}"
         ) from e
+
+
+@router.get("/counts/{region}/{flyover}")
+def collect_counts_for_flyover(region: str, flyover: str) -> CollectedCountsFlyover:
+    """Reune los diccionarios de conteo por especie de todas las imagenes de un sobrevuelo dada."""
+    results = get_predictions_from_s3_folder(region, flyover)
+
+    rows: list[CountsRow] = []
+    total_counts: Counter[str] = Counter()
+
+    for result in results:
+        try:
+            pred_result = PredictionResult.model_validate(result)
+        except pydantic.ValidationError:
+            # logger.warning(f"Validation error: result='{str(result)[:100]}...'")
+            continue
+
+        row = CountsRow(
+            url=pred_result.url,
+            counts_at_threshold=pred_result.counts_at_threshold,
+        )
+        total_counts += Counter(pred_result.counts_at_threshold.counts)
+        rows.append(row)
+
+    return CollectedCountsFlyover(
+        region=region,
+        flyover=flyover,
+        total_counts=total_counts,
+        rows=rows,
+    )
+
+
+@router.get("/counts/{region}")
+def collect_counts_for_region(region: str) -> CollectedCountsRegion:
+    """Reune los diccionarios de conteos por especie de todas las imagenes de una region.
+
+    (sobre todos los sobrevuelos)
+    """
+    flyovers = list_flyover_folders(region=region)
+    logger.info(f"Flyovers for region={region}, flyovers={flyovers}")
+
+    rows: list[FlyoverCountsRow] = []
+
+    totals_by_flyover: dict[str, Counter[str]] = {}
+    grand_totals: Counter[str] = Counter()
+
+    for flyover in flyovers:
+        results = get_predictions_from_s3_folder(region, flyover)
+        totals_by_flyover[flyover] = Counter()
+
+        for result in results:
+            try:
+                pred_result = PredictionResult.model_validate(result)
+            except pydantic.ValidationError:
+                # logger.warning(f"Validation error: result='{str(result)[:100]}...'")
+                continue
+
+            row = FlyoverCountsRow(
+                flyover=flyover,
+                url=pred_result.url,
+                counts_at_threshold=pred_result.counts_at_threshold,
+            )
+            totals_by_flyover[flyover] += Counter(pred_result.counts_at_threshold.counts)
+            rows.append(row)
+        # End of loop over results of flyover
+        grand_totals += totals_by_flyover[flyover]
+
+    return CollectedCountsRegion(
+        grand_totals=grand_totals,
+        totals_by_flyover=totals_by_flyover,
+        region=region,
+        rows=rows,
+    )
