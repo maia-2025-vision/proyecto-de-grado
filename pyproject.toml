@@ -138,7 +138,7 @@ extend-immutable-calls = [
 python_version = "3.13"
 # TODO: fix typing errors in dashboard
 # TODO: fix typing errors in api...
-exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|data_exploration)/'
+exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|data_exploration|notebooks|oficial_herdnet)/'
 strict=true
 disallow_untyped_defs = true
 disallow_any_unimported = true
