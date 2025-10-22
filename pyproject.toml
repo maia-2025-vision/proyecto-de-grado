@@ -126,6 +126,9 @@ exclude = [
     "pages/2_View_Detections.py"
 ]
 
+[tool.ruff.lint.isort]
+known-third-party = ["wandb"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 

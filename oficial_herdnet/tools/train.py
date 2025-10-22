@@ -33,14 +33,13 @@ import hydra
 import pandas
 import torch
 import torchvision
+import wandb
 from animaloc.eval import BoxesMetrics, Evaluator, ImageLevelMetrics, PointsMetrics, Stitcher
 from animaloc.models.utils import LossWrapper, load_model
 from animaloc.utils.seed import set_seed
 from animaloc.utils.useful_funcs import current_date
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Dataset
-
-import wandb
 
 
 def _set_species_labels(cls_dict: dict, df: pandas.DataFrame) -> None:
