@@ -21,6 +21,7 @@ repos:
         exclude: research/.+\.py
         args: [
           "--verbose",
+          "--show-fixes",
           "--fix",
           "--ignore",
           "F401" # ignore unused imports, as these are sometimes used for side effects,
