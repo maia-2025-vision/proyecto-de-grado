@@ -13,6 +13,7 @@ __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
 __version__ = "0.2.1"
 
+# ruff: noqa: C408
 
 import os
 from collections.abc import Callable
@@ -140,12 +141,12 @@ def main(cfg: DictConfig) -> None:
     wandb.init(
         project=cfg.wandb_project,
         entity=cfg.wandb_entity,
-        config={
-            "model": cfg.model,
-            "down_ratio": down_ratio,
-            "num_classes": cfg.dataset.num_classes,
-            "threshold": cfg.evaluator.threshold,
-        },
+        config=dict(
+            model=cfg.model,
+            down_ratio=down_ratio,
+            num_classes=cfg.dataset.num_classes,
+            threshold=cfg.evaluator.threshold,
+        ),
     )
 
     date = current_date()
@@ -195,7 +196,7 @@ def main(cfg: DictConfig) -> None:
 
     # Start testing
     print("Starting testing ...")
-    _ = evaluator.evaluate(wandb_flag=True, viz=False)
+    evaluator.evaluate(wandb_flag=True, viz=False)
 
     # Save results
     print("Saving the results ...")

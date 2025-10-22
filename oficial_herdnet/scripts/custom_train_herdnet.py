@@ -2,15 +2,16 @@ import argparse
 import os
 import warnings
 
-import albumentations as A
+import albumentations as A  # noqa: N812
 import yaml
-from animaloc.data.batch_utils import collate_fn
 from animaloc.data.transforms import FIDT, DownSample, MultiTransformsWrapper, PointsToMask
 from animaloc.datasets import CSVDataset
-from animaloc.eval import HerdNetEvaluator, HerdNetStitcher, PointsMetrics
+from animaloc.eval import HerdNetEvaluator
+from animaloc.eval.metrics import PointsMetrics
 from animaloc.models import HerdNet, LossWrapper
 from animaloc.train import Trainer
 from animaloc.train.losses import FocalLoss
+from omegaconf import DictConfig
 from torch import Tensor
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
@@ -18,7 +19,7 @@ from torch.utils.data import DataLoader
 
 
 # Silenciar warnings específicos
-def configure_warnings(verbose=False):
+def configure_warnings(verbose: bool = False) -> None:
     """Configura warnings para el entrenamiento."""
     if not verbose:
         warnings.filterwarnings("ignore", category=UserWarning, module="albumentations")
@@ -44,12 +45,12 @@ model_config = config["model"]
 
 
 # Guardar configuraciones en un archivo de reporte
-def save_config_report(config_dict, work_dir):
+def save_config_report(config_dict: DictConfig, work_dir: str) -> None:
     report_path = os.path.join(work_dir, "training_config_report.txt")
     with open(report_path, "w") as f:
-        f.write("------------------------------------------\n")
+        f.write("==========================================\n")
         f.write("      HERDNET TRAINING CONFIGURATION      \n")
-        f.write("----------------------------------------\n\n")
+        f.write("==========================================\n\n")
 
         # Hyperparameters
         f.write("HYPERPARAMETERS:\n")
@@ -117,12 +118,12 @@ def save_config_report(config_dict, work_dir):
         from datetime import datetime
 
         f.write(f"\nReport generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write("------------------------------\n")
+        f.write("==========================================\n")
 
     print(f"Configuration report saved to: {report_path}")
 
 
-def main():
+def main() -> None:
     # Trainer configuration (paths and settings)
     train_csv = os.path.abspath(trainer_config["paths"]["train_csv"])
     val_csv = os.path.abspath(trainer_config["paths"]["val_csv"])

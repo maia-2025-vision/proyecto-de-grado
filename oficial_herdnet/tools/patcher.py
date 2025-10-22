@@ -4,10 +4,13 @@ __copyright__ = """
 
     This source code is under the MIT License.
 
-    Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be)
-    for any questions.
+    This script is a slightly modified version of the original code at:
+    https://github.com/Alexandre-Delplanque/HerdNet/blob/main/tools/patcher.py
 
-    Last modification: March 18, 2024
+    CHANGES:
+      1.  Added line to create directory args.dest at startup.
+
+    Last modification: October 21, 2025
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
@@ -47,8 +50,8 @@ parser.add_argument(
     "-all",
     type=bool,
     default=False,
-    help="set to True to save all patches, not only those containing "
-    "annotations (bool). Defaults to False",
+    help="set to True to save all patches, not only those containing annotations (bool). "
+    "Defaults to False",
 )
 
 args = parser.parse_args()

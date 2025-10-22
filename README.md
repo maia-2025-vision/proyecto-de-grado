@@ -39,3 +39,10 @@ poe serve
 
 Para cambiar el modelo usado por la API cambiar el valor de MODEL_PATH en la sección `[poe.tasks.serve]` 
 de pyproject.toml. 
+
+
+### Enlaces para miembros del equipo
+
+1. [Carpeta compartida en google drive](https://drive.google.com/drive/folders/1zJC_QlJhYr01Lml5BTW8EZx73Uyl1Myi?usp=drive_link)
+2. [Carpeta con Artículos bajados en PDF](https://drive.google.com/drive/folders/1JAqXpCSRE6jkqYFGxdxsxtr8hDjmOQ8F?usp=drive_link)
+

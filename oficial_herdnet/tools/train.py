@@ -14,17 +14,21 @@ __copyright__ = """
       2. Accessing cfg.work_dir (from train config) and creating this dir if it doesn't exist.
 
       This requires work_dir to be a key with a valid value in train.yaml file.
+
+      Last modification: October 21, 2025
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
 __version__ = "0.2.1"
+
+# ruff: noqa: C408 #  Unnecessary `dict` call (rewrite as a literal)
 
 import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import Optional
 
-import albumentations as A
+import albumentations as A  # noqa: N812
 import animaloc
 import hydra
 import pandas
@@ -246,6 +250,7 @@ def main(cfg: DictConfig) -> None:
     print(f"Setting the seed to {cfg.seed}")
     set_seed(cfg.seed)
 
+    print(f"Current working directory: {Path.cwd()}")
     # Prepare datasets and dataloaders
     print("Building datasets ...")
     device = torch.device(cfg.device_name)

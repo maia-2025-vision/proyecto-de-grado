@@ -13,12 +13,13 @@ __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
 __version__ = "0.2.1"
 
+# ruff: noqa: C408  # Unnecessary `dict` call (rewrite as a literal)
 
 import argparse
 import os
 import warnings
 
-import albumentations as A
+import albumentations as A  # noqa: N812
 import numpy
 import pandas
 import PIL
@@ -127,8 +128,7 @@ def main():
         model=model,
         dataloader=dataloader,
         metrics=metrics,
-        # CHANGE by aalea C408 Unnecessary `dict`
-        lmds_kwargs={"kernel_size": (3, 3), "adapt_ts": 0.2, "neg_ts": 0.1},
+        lmds_kwargs=dict(kernel_size=(3, 3), adapt_ts=0.2, neg_ts=0.1),  # noqa: C408
         device_name=device,
         print_freq=args.pf,
         stitcher=stitcher,
@@ -138,7 +138,7 @@ def main():
 
     # Start inference
     print("Starting inference ...")
-    _ = evaluator.evaluate(wandb_flag=False, viz=False, log_meters=False)
+    evaluator.evaluate(wandb_flag=False, viz=False, log_meters=False)
 
     # Save the detections
     print("Saving the detections ...")
@@ -162,6 +162,9 @@ def main():
         img_cpy = img.copy()
         pts = list(detections[detections["images"] == img_name][["y", "x"]].to_records(index=False))
         pts = list(pts)  # CHANGE by aalea prev [(y, x) for y, x in pts]
+        output = draw_points(img, pts, color="red", size=10)
+        pts = list(detections[detections["images"] == img_name][["y", "x"]].to_records(index=False))
+        pts = [(y, x) for y, x in pts]  # noqa: C416
         output = draw_points(img, pts, color="red", size=10)
         output.save(os.path.join(dest_plots, img_name), quality=95)
 
