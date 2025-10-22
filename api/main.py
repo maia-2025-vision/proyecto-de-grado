@@ -12,7 +12,7 @@ from loguru import logger
 from api.config import SETTINGS
 from api.model_utils import load_model_pack
 from api.req_resp_types import PredictionError
-from api.routes import model_pack, router
+from api.routes import model_pack, router  # noqa: F401
 
 
 # Proper way to load a model on startup

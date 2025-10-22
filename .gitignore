@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
-
-# Pycharm IDE
+/wandb
+/outputs
 .idea
 wandb/

@@ -1,0 +1,23 @@
+# Configuration file for training HerdNet
+
+hyperparameters:
+  epochs: 1
+  batch_size: 8
+  optimizer: "adam"
+  learning_rate: 1e-4
+  weight_decay: 0.0005
+
+trainer:
+  csv_logger: True
+  paths:
+    train_csv: "data/patches-512-ol-160-m01/train_points_gt.csv"
+    val_csv: "data/patches-512-ol-160-m01/gt/val_points_gt.csv"
+    train_root: "data/patches-512-ol-160-m01/train"
+    val_root: "data/patches-512-ol-160-m01/val"
+    work_dir: "data/models/herdnet_v1"
+
+
+model:
+  pretrained: True
+  num_classes: 7
+  down_ratio: 2

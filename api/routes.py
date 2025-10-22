@@ -1,7 +1,6 @@
 import io
 import traceback
-from collections import Counter, defaultdict
-from collections.abc import Mapping
+from collections import Counter
 from http import HTTPStatus
 from pathlib import Path
 

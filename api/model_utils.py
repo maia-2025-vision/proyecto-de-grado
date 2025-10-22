@@ -68,9 +68,9 @@ class MockModel(nn.Module):
         It is assumed in the batch has the shape (batch_size, n_ch, height, width).
         Returns list of dicts of length batch_size
         """
-        assert (
-            image_batch.dim() == 4
-        ), "expected shape of size 4 (batch_size, channels, height, width) but got {image.shape}"
+        assert image_batch.dim() == 4, (
+            "expected shape of size 4 (batch_size, channels, height, width) but got {image.shape}"
+        )
 
         batch_size = image_batch.shape[0]
 
