@@ -116,7 +116,8 @@ ignore = [
 # TODO: remove this excludes of pages/ and fix issues, there are only a few of them
 exclude = [
     "pages/1_Upload_Images.py",
-    "pages/2_View_Detections.py"
+    "pages/2_View_Detections.py",
+    "notebooks/"
 ]
 
 [tool.ruff.format]

@@ -26,6 +26,10 @@ jobs:
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - name: Setup pre-commit
         run: pip install pre-commit && pre-commit install-hooks
+      - name: Check pre-commit and ruff versions
+        run: pre-commit --version && ruff --version
+      - name: Run ruff check
+        run: ruff check --config pyproject.toml ./
       - name: Run pre-commit
         run: pre-commit run --hook-stage pre-merge-commit --all-files
 
