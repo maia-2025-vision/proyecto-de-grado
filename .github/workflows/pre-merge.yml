@@ -16,22 +16,25 @@ jobs:
     steps:
       - name: Repo checkout
         uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-      - name: set PY
-        run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+          version: "0.8.x"
+      - name: Install Dependencies
+        run: |
+          uv pip install ruff
+          uv pip install pre-commit
       - uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
           key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: Setup pre-commit
-        run: pip install pre-commit && pre-commit install-hooks
       - name: Check pre-commit and ruff versions
-        run: pre-commit --version && ruff --version
+        run: uv run pre-commit --version && uv run ruff --version
       - name: Run ruff check
-        run: ruff check --config pyproject.toml ./
+        run: uv run ruff check --config pyproject.toml ./
       - name: Run pre-commit
-        run: pre-commit run --hook-stage pre-merge-commit --all-files
+        run: uv run pre-commit run --hook-stage pre-merge-commit --all-files
 
   Type-Checking:
     runs-on: ubuntu-latest
