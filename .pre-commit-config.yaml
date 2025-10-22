@@ -20,6 +20,7 @@ repos:
       - id: ruff
         exclude: research/.+\.py
         args: [
+          "--verbose",
           "--fix",
           "--ignore",
           "F401" # ignore unused imports, as these are sometimes used for side effects,
