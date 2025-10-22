@@ -1,4 +1,56 @@
 stages:
+  patches-512-ol-160-mv01-train:
+    cmd: python oficial_herdnet/tools/patcher.py data/train 512 512 160 
+      data/patches-512-ol-160-m01/train  -csv 
+      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv && python 
+      oficial_herdnet/tools/csv_to_points.py 
+      -i data/patches-512-ol-160-m01/train/gt.csv -o data/patches-512-ol-160-m01/train_points_gt.csv
+    deps:
+    - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    - data/train/
+    - oficial_herdnet/tools/patcher.py
+    outs:
+    - data/patches-512-ol-160-m01/train_points_gt.csv
+    - data/patches-512-ol-160-m01/train/
+
+  patches-512-ol-160-mv01-val:
+    cmd: python oficial_herdnet/tools/patcher.py data/val 512 512 160 
+      data/patches-512-ol-160-m01/val  -csv 
+      data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv && python 
+      oficial_herdnet/tools/csv_to_points.py 
+      -i data/patches-512-ol-160-m01/val/gt.csv -o data/patches-512-ol-160-m01/val_points_gt.csv
+    deps:
+    - data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    - data/val/
+    - oficial_herdnet/tools/patcher.py
+    outs:
+    - data/patches-512-ol-160-m01/val_points_gt.csv
+    - data/patches-512-ol-160-m01/val/
+
+  patches-512-ol-160-mv01-test:
+    cmd: python oficial_herdnet/tools/patcher.py data/test 512 512 160 
+      data/patches-512-ol-160-m01/test  -csv 
+      data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv && python 
+      oficial_herdnet/tools/csv_to_points.py 
+      -i data/patches-512-ol-160-m01/test/gt.csv -o data/patches-512-ol-160-m01/test_points_gt.csv
+    deps:
+    - data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    - data/test/
+    - oficial_herdnet/tools/patcher.py
+    outs:
+    - data/patches-512-ol-160-m01/test_points_gt.csv
+    - data/patches-512-ol-160-m01/test/
+
+  train-herdnet-v1:
+    cmd: python oficial_herdnet/tools/train.py train.training_settings.work_dir=data/models/herdnet_v1/
+    deps:
+    - data/patches-512-ol-160-m01/train_points_gt.csv
+    - data/patches-512-ol-160-m01/train/
+    - data/patches-512-ol-160-m01/val_points_gt.csv
+    - data/patches-512-ol-160-m01/val/
+    outs:
+    - data/models/herdnet_v1/
+
   fix-headers-train-csv:
     cmd: >
       sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
@@ -8,6 +60,7 @@ stages:
       - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv
     outs:
       - data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+
   fix-headers-val-csv:
     cmd: >
       sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
@@ -17,6 +70,7 @@ stages:
       - data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB.csv
     outs:
       - data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+
   fix-headers-test-csv:
     cmd: >
       sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
@@ -94,7 +148,6 @@ stages:
       - data/patches-512-ol-160-m0.3/val/gt.csv
     outs:
       - data/patches-512-ol-160-m0.3/val-tiny/gt-head-25.csv
-
 
   train-faster-rcnn-hn-trainer:
     desc: Entrenar faster-rcnn via trainer from Herdnet/tools/train.py

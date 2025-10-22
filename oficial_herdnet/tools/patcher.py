@@ -9,6 +9,8 @@ __copyright__ = """
 
     CHANGES:
       1.  Added line to create directory args.dest at startup.
+
+    Last modification: October 21, 2025
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
@@ -95,10 +97,11 @@ def main():
 
             # or only annotated ones
             else:
+                # position = 'top_left', updated by aalea
                 padder = PadIfNeeded(
                     args.height,
                     args.width,
-                    position=PadIfNeeded.PositionType.TOP_LEFT,
+                    position="top_left",
                     border_mode=cv2.BORDER_CONSTANT,
                     value=0,
                 )

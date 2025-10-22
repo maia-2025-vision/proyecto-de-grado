@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from http import HTTPStatus
+from pathlib import Path
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
@@ -104,9 +105,11 @@ class PredictManyResult(BaseModel):
 class ModelInfo(BaseModel):
     """Basic info about model used by endpoints."""
 
-    path: str
-    model_arch: str
-    bbox_format: str | None
+    weights_path: str
+    cfg_path: str
+    model_metadata: dict[str, int | float | Path | None]
+    # model_arch: str
+    # bbox_format: str | None
 
 
 class AppInfoResponse(BaseModel):

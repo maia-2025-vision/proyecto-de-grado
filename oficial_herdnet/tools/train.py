@@ -4,10 +4,18 @@ __copyright__ = """
 
     This source code is under the MIT License.
 
-    Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be)
-    for any questions.
+    This script is a slightly modified version of the original code at:
+    https://github.com/Alexandre-Delplanque/HerdNet/blob/main/tools/train.py
 
-    Last modification: March 18, 2024
+    CHANGES (marked with '# CHANGE by ...' comments) :
+      1. Change in _set_species_labels to no add a labels column (with label indices)
+      if CSV file already contains it.
+
+      2. Accessing cfg.work_dir (from train config) and creating this dir if it doesn't exist.
+
+      This requires work_dir to be a key with a valid value in train.yaml file.
+
+      Last modification: October 21, 2025
     """
 __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
@@ -17,6 +25,7 @@ __version__ = "0.2.1"
 
 import os
 from collections.abc import Callable
+from pathlib import Path
 
 import albumentations as A  # noqa: N812  # Lowercase `albumentations` imported as non-lowercase `A`
 import animaloc
@@ -24,6 +33,7 @@ import hydra
 import pandas
 import torch
 import torchvision
+import wandb
 from animaloc.eval import BoxesMetrics, Evaluator, ImageLevelMetrics, PointsMetrics, Stitcher
 from animaloc.models.utils import LossWrapper, load_model
 from animaloc.utils.seed import set_seed
@@ -31,13 +41,13 @@ from animaloc.utils.useful_funcs import current_date
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Dataset
 
-import wandb
-
 
 def _set_species_labels(cls_dict: dict, df: pandas.DataFrame) -> None:
+    # CHANGE by cuckookernel
     if "labels" in df.columns:
         print("labels already set, not setting again...")
         return
+    # END of CHANGE by cuckookernel
 
     assert "species" in df.columns
     cls_dict = dict(map(reversed, cls_dict.items()))
@@ -81,11 +91,22 @@ def _build_sampler(sampler_cfg: DictConfig, dl_kwargs: dict, dataset: Dataset) -
     else:
         raise NotImplementedError
 
+    # CHANGE by aalea C408 Unnecessary `dict`
     if sampler_cfg.batch:
-        dl_kwargs.update(dict(batch_size=1, shuffle=False, batch_sampler=sampler))
+        dl_kwargs.update(
+            {
+                "batch_size": 1,
+                "shuffle": False,
+                "batch_sampler": sampler,
+            }
+        )
     else:
-        dl_kwargs.update(dict(shuffle=False, sampler=sampler))
-
+        dl_kwargs.update(
+            {
+                "shuffle": False,
+                "sampler": sampler,
+            }
+        )
     return dl_kwargs
 
 
@@ -101,16 +122,16 @@ def _build_model(cfg: DictConfig) -> torch.nn.Module:
     from_torchvision = cfg.model.from_torchvision
 
     if from_torchvision:
-        assert (
-            name in torchvision.models.__dict__.keys()
-        ), f"'{name}' unfound in torchvision's models"
+        assert name in torchvision.models.__dict__.keys(), (
+            f"'{name}' unfound in torchvision's models"
+        )
 
         model = torchvision.models.__dict__[name]
 
     else:
-        assert (
-            name in animaloc.models.__dict__.keys()
-        ), f"'{name}' class unfound, make sure you have included the class in the models list"
+        assert name in animaloc.models.__dict__.keys(), (
+            f"'{name}' class unfound, make sure you have included the class in the models list"
+        )
 
         model = animaloc.models.__dict__[name]
 
@@ -176,9 +197,9 @@ def _define_evaluator(
     name = cfg.training_settings.evaluator.name
     anno_type = cfg.datasets.anno_type
 
-    assert (
-        name in animaloc.eval.evaluators.__dict__.keys()
-    ), f"'{name}' class unfound, make sure you have included the class in the evaluators list"
+    assert name in animaloc.eval.evaluators.__dict__.keys(), (
+        f"'{name}' class unfound, make sure you have included the class in the evaluators list"
+    )
 
     if anno_type == "point":
         metrics = PointsMetrics(
@@ -227,16 +248,13 @@ def main(cfg: DictConfig) -> None:
     print(f"Setting the seed to {cfg.seed}")
     set_seed(cfg.seed)
 
+    print(f"Current working directory: {Path.cwd()}")
     # Prepare datasets and dataloaders
     print("Building datasets ...")
     device = torch.device(cfg.device_name)
 
     train_args = cfg.datasets.train
     val_args = cfg.datasets.validate
-
-    from pathlib import Path
-
-    print(f"Current working directory: {Path.cwd()}")
 
     train_df = pandas.read_csv(train_args.csv_file)
     _set_species_labels(dict(cfg.datasets.class_def), train_df)
@@ -248,9 +266,12 @@ def main(cfg: DictConfig) -> None:
         end_transforms=_load_end_transforms(train_args.end_transforms),
     )
 
-    train_dl_kwargs = dict(
-        batch_size=cfg.training_settings.batch_size, shuffle=True, collate_fn=_get_collate_fn(cfg)
-    )
+    # CHANGE by aalea C408 Unnecessary `dict`
+    train_dl_kwargs = {
+        "batch_size": cfg.training_settings.batch_size,
+        "shuffle": True,
+        "collate_fn": _get_collate_fn(cfg),
+    }
 
     if train_args.sampler is not None:
         train_dl_kwargs = _build_sampler(
@@ -275,8 +296,12 @@ def main(cfg: DictConfig) -> None:
             val_dataset, batch_size=1, shuffle=False, collate_fn=_get_collate_fn(cfg)
         )
 
+    # CHANGE by: cuckookernel # create cfg.work_dir if it doesn´t exist.
+    # (previous version: work_dir = None)
+    # This work_dir is passed to trainer to save model checkpoints into.
     work_dir = cfg.training_settings.work_dir
     Path(work_dir).mkdir(parents=True, exist_ok=True)
+    # END of CHANGE
 
     # Set up wandb
     print("Connecting to Weights & Biases ...")
@@ -344,9 +369,9 @@ def main(cfg: DictConfig) -> None:
     validate_on = "recall"
     select = "min"
     if cfg.training_settings.evaluator is not None:
-        assert (
-            val_dataloader is not None
-        ), "A validation dataset must be defined to build an evaluator"
+        assert val_dataloader is not None, (
+            "A validation dataset must be defined to build an evaluator"
+        )
 
         evaluator = _define_evaluator(model, val_dataloader, cfg)
         select = cfg.training_settings.evaluator.select_mode
@@ -397,7 +422,11 @@ def main(cfg: DictConfig) -> None:
 
     # Add information in .pth files
     for pth_name in ["best_model.pth", "latest_model.pth"]:
+        # CHANGE by: aalea # Control the path according to the trainer's work_dir.
+        # (previous version:  path = os.path.join(os.curdir, pth_name))
         path = os.path.join(work_dir, pth_name)
+        # END of CHANGE
+
         pth_file = torch.load(path)
         norm_trans = _load_albu_transforms(train_args.albu_transforms)[-1]
         pth_file["classes"] = dict(cfg.datasets.class_def)

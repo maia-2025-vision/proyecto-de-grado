@@ -40,11 +40,9 @@ def generate_markdown_report(
             f.write(f"![Histograma áreas {split}](bbox_area_{split}.png)\n\n")
 
         f.write("## Estadísticas Descriptivas de Áreas\n\n")
-
         f.write("### Estadísticas de Áreas Absolutas (px²)\n\n")
         f.write(stats_absolute.round(2).to_markdown())
         f.write("\n\n")
-
         f.write("### Estadísticas de Áreas Relativas (% de imagen)\n\n")
         f.write(stats_relative_global.round(4).to_markdown())
         f.write("\n\n")
@@ -112,6 +110,7 @@ def main():
 
     # Generar markdown
     md_path = "data_exploration/result/exploracion_datos.md"
+
     generate_markdown_report(
         dataset_summaries,
         md_path,

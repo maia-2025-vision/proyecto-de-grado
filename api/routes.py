@@ -1,7 +1,6 @@
 import io
 import traceback
-from collections import Counter, defaultdict
-from collections.abc import Mapping
+from collections import Counter
 from http import HTTPStatus
 from pathlib import Path
 
@@ -14,11 +13,11 @@ from loguru import logger
 from PIL import Image
 
 from api.config import SETTINGS
-from api.internal_types import ModelPackType
+from api.internal_types import DetectorHandle
 from api.model_utils import (
     DEFAULT_CLASS_LABEL_2_NAME,
-    MockModel,
-    RawPrediction,
+    MockDetector,
+    RawDetections,
     compute_counts_by_species,
     verify_and_post_process_pred,
 )
@@ -46,14 +45,7 @@ from api.s3_utils import (
 )
 
 # This structure gets properly initialized in api.main.lifespan
-model_pack: ModelPackType = ModelPackType(
-    model=MockModel(num_classes=len(DEFAULT_CLASS_LABEL_2_NAME)),
-    model_arch="mock",
-    model_path=Path("undefined/"),
-    pre_transform=transforms.ToTensor(),
-    bbox_format=None,
-    idx2species=DEFAULT_CLASS_LABEL_2_NAME,
-)
+DETECTOR = DetectorHandle(detector=MockDetector(idx2species={}))
 
 router = APIRouter()
 
@@ -73,9 +65,10 @@ def download_image_from_url(url: str) -> Image.Image:
 async def get_app_info() -> AppInfoResponse:
     return AppInfoResponse(
         model_info=ModelInfo(
-            path=str(SETTINGS.model_path),
-            model_arch=model_pack.model_arch,
-            bbox_format=model_pack.bbox_format,
+            weights_path=str(SETTINGS.model_weights_path),
+            cfg_path=str(SETTINGS.model_cfg_path),
+            # model_arch=model_pack.model_arch,
+            # bbox_format=model_pack.bbox_format,
         ),
         s3_bucket=SETTINGS.s3_bucket,
     )
@@ -117,20 +110,17 @@ def predict_one(url: str, *, counts_score_thresh: float) -> PredictionResult:
             error=f"No se pudo descargar o abrir la imagen: {str(exc)}",
         ) from exc
 
-    image_tensor = model_pack.pre_transform(image).unsqueeze(0)  # batch size 1
+    detector = DETECTOR.detector
     try:
-        with torch.no_grad():
-            model_outputs = model_pack.model(image_tensor)
-
-        pred = model_outputs[0]  # just the first one since we only passed one image in the batch
-        pred_obj: RawPrediction = {k: v.tolist() for k, v in pred.items()}  # type: ignore
-        pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=model_pack.bbox_format)
+        pred = detector.detect_one_image(image)
+        pred_obj: RawDetections = {k: v.tolist() for k, v in pred.items()}  # type: ignore
+        pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=detector.bbox_format())
 
         counts_at_thresh = compute_counts_by_species(
             labels=pred_obj2["labels"],
             scores=pred_obj2["scores"],
             thresh=counts_score_thresh,
-            idx2species=model_pack.idx2species,
+            idx2species=detector.get_idx_2_species_dict(),
         )
 
         pred_result = PredictionResult(
