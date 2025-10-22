@@ -1,24 +1,19 @@
 from collections import Counter
 from pathlib import Path
 from pprint import pformat
-from typing import Literal, NotRequired, TypedDict
+from typing import Literal
 
 import numpy as np
 import torch
-import torchvision  # type: ignore [import-untyped]
+import torchvision
 from loguru import logger
 from omegaconf import OmegaConf
 from PIL import Image
 from torch import nn
-from torchvision.models.detection.faster_rcnn import (  # type: ignore [import-untyped]
-    FasterRCNN,
-    FasterRCNN_ResNet50_FPN_Weights,
-    FastRCNNPredictor,
-)
 
 from api.animaloc_utils import faster_rcnn_detector_from_cfg_file
-from api.detector import Detector
-from api.internal_types import BBoxFormat, DetectorHandle
+from api.detector import DetectionsDict, Detector, RawDetections
+from api.internal_types import BBoxFormat, ModelMetadata
 from api.req_resp_types import ThresholdCounts
 
 DEFAULT_CLASS_LABEL_2_NAME = {
@@ -32,25 +27,6 @@ DEFAULT_CLASS_LABEL_2_NAME = {
 }
 
 
-class RawDetections(TypedDict):
-    """Prediction coming from a model, after converting tensors to lists."""
-
-    points: NotRequired[list[list[float]]]
-    labels: list[int]
-    scores: list[float]
-    boxes: NotRequired[list[list[float]]]
-
-
-def pick_torch_device() -> str:
-    """Pick best accelerator device for current machine, or default to cpu."""
-    if torch.cuda.is_available():
-        return "cuda"
-    elif torch.mps.is_available():
-        return "mps"
-    else:
-        return "cpu"
-
-
 class MockDetector(nn.Module, Detector):
     """A model that just generates random predictions."""
 
@@ -59,19 +35,19 @@ class MockDetector(nn.Module, Detector):
         num_classes: int,
         idx2species: dict[int, str],
         bbox_format: Literal["xywh", "xyxy"] | None,
-        model_metadata: dict[str, int | float | str | None],
     ) -> None:
         super().__init__()
         self.num_classes = num_classes  # total number of classes including background at index 0
         self.idx2species = idx2species
-        self.model_metadata = model_metadata
         self.bbox_format_ = bbox_format
+        self.to_tensor = torchvision.transforms.ToTensor()
+        self.eval()
 
     def bbox_format(self) -> BBoxFormat:
         """Get bounding box format of generated detections."""
         return self.bbox_format_
 
-    def detect_one_img(self, image: Image.Image) -> RawDetections:
+    def detect_one_image(self, image: Image.Image) -> RawDetections:
         """Get detections on one image."""
         return self.detect_on_many([image])[0]
 
@@ -81,17 +57,19 @@ class MockDetector(nn.Module, Detector):
         It is assumed in the batch has the shape (batch_size, n_ch, height, width).
         Returns list of dicts of length batch_size
         """
-        img_tensors = [self.to_tensor(np.array(img.convert("RGB"))) for img in image_batch]
+        img_tensors = torch.vstack(
+            [self.to_tensor(np.array(img.convert("RGB"))) for img in image_batch]
+        )
 
         assert img_tensors.dim() == 4, (
             "expected shape of size 4 (batch_size, channels, height, width) but got {image.shape}"
         )
 
         batch_size = img_tensors.shape[0]
-        results = []
+        results: list[RawDetections] = []
 
         for _ in range(batch_size):
-            height, width = image_batch.shape[-2:]
+            height, width = img_tensors.shape[-2:]
 
             n_detections = np.random.randint(low=20, high=50)
 
@@ -101,11 +79,15 @@ class MockDetector(nn.Module, Detector):
             labels = torch.randint(low=1, high=self.num_classes, size=(n_detections,))
             scores = torch.rand(size=(n_detections,))  # uniform distribution on [0, 1)
 
-            one_result = {"points": torch.hstack([xs, ys]), "labels": labels, "scores": scores}
+            one_result: RawDetections = {
+                "points": torch.hstack([xs, ys]),
+                "labels": labels,
+                "scores": scores,
+            }
             results.append(one_result)
 
             # just log:
-            shapes = {k: v.shape for k, v in one_result.items()}
+            shapes = {k: v.shape for k, v in one_result.items()}  # type: ignore[attr-defined]
             logger.info(f"Mock model returning ret: {shapes}")
 
         return results
@@ -115,7 +97,7 @@ class MockDetector(nn.Module, Detector):
         return self.idx2species
 
 
-def make_detector(weights_path: Path, cfg_path: Path) -> Detector:
+def make_detector(weights_path: Path, cfg_path: Path) -> tuple[Detector, ModelMetadata]:
     """Restore and return a prediction model from a weights file."""
     num_classes = len(DEFAULT_CLASS_LABEL_2_NAME)
 
@@ -135,16 +117,15 @@ def make_detector(weights_path: Path, cfg_path: Path) -> Detector:
             num_classes=num_classes,
             idx2species=DEFAULT_CLASS_LABEL_2_NAME,
             bbox_format=None,
-            model_metadata=dict(
-                model_path=weights_path,
-                model_arch="mock",
-            ),
+        ), dict(
+            model_path=weights_path,
+            model_arch="mock",
         )
     else:
         raise NotImplementedError(f"Loading of model.name=`{cfg.model.name}` not implemented yet")
 
 
-def verify_and_post_process_pred(pred: RawDetections, bbox_format: BBoxFormat) -> RawDetections:
+def verify_and_post_process_pred(pred: DetectionsDict, bbox_format: BBoxFormat) -> DetectionsDict:
     """Make sure pred has a labels key AND (either boxes or points).
 
     If only boxes, compute box centers and add them.

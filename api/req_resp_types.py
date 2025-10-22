@@ -5,6 +5,8 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
 
+from api.internal_types import ModelMetadata
+
 
 class PredictionError(Exception):
     """Signals any error in the whole prediction process."""
@@ -107,9 +109,7 @@ class ModelInfo(BaseModel):
 
     weights_path: str
     cfg_path: str
-    model_metadata: dict[str, int | float | Path | None]
-    # model_arch: str
-    # bbox_format: str | None
+    model_metadata: ModelMetadata
 
 
 class AppInfoResponse(BaseModel):

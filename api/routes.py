@@ -2,22 +2,18 @@ import io
 import traceback
 from collections import Counter
 from http import HTTPStatus
-from pathlib import Path
 
 import pydantic
 import requests
-import torch
-import torchvision.transforms as transforms  # type: ignore [import-untyped]
 from fastapi import APIRouter, HTTPException
 from loguru import logger
 from PIL import Image
 
 from api.config import SETTINGS
+from api.detector import DetectionsDict
 from api.internal_types import DetectorHandle
 from api.model_utils import (
-    DEFAULT_CLASS_LABEL_2_NAME,
     MockDetector,
-    RawDetections,
     compute_counts_by_species,
     verify_and_post_process_pred,
 )
@@ -45,7 +41,9 @@ from api.s3_utils import (
 )
 
 # This structure gets properly initialized in api.main.lifespan
-DETECTOR = DetectorHandle(detector=MockDetector(idx2species={}))
+DETECTOR = DetectorHandle(
+    detector=MockDetector(idx2species={}, num_classes=0, bbox_format=None), model_metadata={}
+)
 
 router = APIRouter()
 
@@ -67,8 +65,7 @@ async def get_app_info() -> AppInfoResponse:
         model_info=ModelInfo(
             weights_path=str(SETTINGS.model_weights_path),
             cfg_path=str(SETTINGS.model_cfg_path),
-            # model_arch=model_pack.model_arch,
-            # bbox_format=model_pack.bbox_format,
+            model_metadata=DETECTOR.model_metadata,
         ),
         s3_bucket=SETTINGS.s3_bucket,
     )
@@ -113,7 +110,7 @@ def predict_one(url: str, *, counts_score_thresh: float) -> PredictionResult:
     detector = DETECTOR.detector
     try:
         pred = detector.detect_one_image(image)
-        pred_obj: RawDetections = {k: v.tolist() for k, v in pred.items()}  # type: ignore
+        pred_obj: DetectionsDict = {k: v.tolist() for k, v in pred.items()}  # type: ignore
         pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=detector.bbox_format())
 
         counts_at_thresh = compute_counts_by_species(

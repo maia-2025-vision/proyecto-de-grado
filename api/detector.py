@@ -1,9 +1,26 @@
 from abc import ABC, abstractmethod
-from typing import Literal
+from typing import Literal, NotRequired, TypedDict
 
+import torch
 from PIL import Image
 
-from api.model_utils import RawDetections
+
+class RawDetections(TypedDict):
+    """Predictions coming directly from a model."""
+
+    points: NotRequired[torch.Tensor]
+    labels: torch.Tensor  # of ints...
+    scores: torch.Tensor
+    boxes: NotRequired[torch.Tensor]
+
+
+class DetectionsDict(TypedDict):
+    """Predictions coming directly from a model after converting to lists."""
+
+    points: list[tuple[int, int]]
+    labels: list[int]
+    scores: list[float]
+    boxes: NotRequired[list[list[float]]]
 
 
 class Detector(ABC):

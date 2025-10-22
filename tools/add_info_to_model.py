@@ -1,13 +1,14 @@
+import albumentations
 import albumentations as alb
 import hydra
 import torch
 from loguru import logger
 from omegaconf import DictConfig
 
-from api.model_utils import pick_torch_device
+from api.torch_utils import pick_torch_device
 
 
-def _load_albu_transforms(tr_cfg: dict) -> list:
+def _load_albu_transforms(tr_cfg: dict[str, object]) -> list[albumentations.transforms.Transform]:  # type: ignore[no-any-unimported]
     transforms = []
     for name, kwargs in tr_cfg.items():
         transforms.append(alb.__dict__[name](**kwargs))

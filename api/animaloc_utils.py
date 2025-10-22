@@ -12,8 +12,9 @@ from omegaconf import DictConfig, OmegaConf
 from PIL import Image
 from torchvision.transforms import ToTensor
 
-from api.detector import Detector
-from api.model_utils import RawDetections, pick_torch_device
+from api.detector import Detector, RawDetections
+from api.internal_types import BBoxFormat, ModelMetadata
+from api.torch_utils import pick_torch_device
 
 
 def build_model_from_cfg(cfg: DictConfig) -> torch.nn.Module:
@@ -52,6 +53,7 @@ def build_model_from_cfg(cfg: DictConfig) -> torch.nn.Module:
     model = model(**kwargs, num_classes=cfg.datasets.num_classes)
     model = LossWrapper(model, [])
     model = load_model(model, cfg.model.pth_file)
+    assert isinstance(model, torch.nn.Module), f"{type(model).__name__}="
 
     logger.info(f"loaded model from: {cfg.model.pth_file}")
     return model
@@ -60,22 +62,22 @@ def build_model_from_cfg(cfg: DictConfig) -> torch.nn.Module:
 class FasterRCNNDetector(torch.nn.Module, Detector):
     """Detector that uses an underlying Faster R-CNN model."""
 
-    def __init__(
+    def __init__(  # type: ignore[no-any-unimported]
         self,
         *,
         model: torch.nn.Module,
         idx2species: dict[int, str],
         norm: Normalize,
         device: torch.device,
-        model_metadata: dict[str, str | int | float | Path],  # any simple metadata about the model
+        bbox_format: BBoxFormat,
     ) -> None:
         super().__init__()
         self.model = model
         self.idx2species = idx2species
         self.norm = norm
         self.device = device
+        self.bbox_format_ = bbox_format
         self.to_tensor = ToTensor()
-        self.model_metadata = model_metadata
 
     def get_idx_2_species_dict(self) -> dict[int, str]:
         """Get the mapping from idx to species name."""
@@ -94,22 +96,27 @@ class FasterRCNNDetector(torch.nn.Module, Detector):
         with torch.no_grad():
             pred, _ = self.model(img_tensor)
 
-        pred = pred[0]
-        assert isinstance(pred, dict), f"{pred} should be a dict\npred={pformat(pred)}"
+        pred0 = pred[0]
+        assert isinstance(pred0, dict), f"{pred0} should be a dict\npred={pformat(pred0)}"
 
-        return pred
+        return pred0  # type: ignore[return-value]
+
+    def bbox_format(self) -> BBoxFormat:
+        """What is the bbox_format of my detections?"""
+        return self.bbox_format_
 
 
 def faster_rcnn_detector_from_cfg_file(
     model_pth_path: Path,
     cfg_file: Path,
-) -> Detector:
+) -> tuple[Detector, ModelMetadata]:
     cfg = OmegaConf.load(cfg_file)
     cfg.model.pth_file = model_pth_path
 
     logger.info(f"Excerpts from cfg:\n{pformat(cfg.model)}\n{cfg.datasets.num_classes=}")
 
     # Build model, set to eval mode and load onto device
+    assert isinstance(cfg, DictConfig), f"{type(cfg).__name__=}, should be a DictConfig..."
     model = build_model_from_cfg(cfg)
     model.eval()
     device_name = pick_torch_device()
@@ -118,18 +125,20 @@ def faster_rcnn_detector_from_cfg_file(
 
     detector = FasterRCNNDetector(
         model=model,
-        norm=Normalize(mean=cfg.model.mean, std=cfg.model.std),
-        model_metadata={
-            "name": cfg.model.name,
-            "class_name": type(model).__name__,
-            "backbone_arch": cfg.model.kwargs.architecture,
-            "trainable_backbone_layers": cfg.model.kwargs.trainable_backbone_layers,
-            "num_classes": cfg.model.kwargs.num_classes,
-            "weights_path": model_pth_path,
-            "cfg_path": cfg_file,
-            "bbox_format": "xyxy",
-        },
+        norm=Normalize(),  # BUILDING transform with default mean/std params for now...
+        bbox_format="xyxy",
+        idx2species=dict(cfg.datasets.class_def),
         device=torch.device(device_name),
     )
 
-    return detector
+    metadata = {
+        "name": cfg.model.name,
+        "class_name": type(model).__name__,
+        "backbone_arch": cfg.model.kwargs.architecture,
+        "trainable_backbone_layers": cfg.model.kwargs.trainable_backbone_layers,
+        "num_classes": cfg.model.kwargs.num_classes,
+        "weights_path": model_pth_path,
+        "cfg_path": cfg_file,
+    }
+
+    return detector, metadata

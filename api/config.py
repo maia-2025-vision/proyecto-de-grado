@@ -35,7 +35,7 @@ if "S3_BUCKET" in os.environ:
 if "MODEL_WEIGHTS_PATH" in os.environ:
     SETTINGS.model_weights_path = Path(os.environ["MODEL_WEIGHTS_PATH"])
 
-if "MODEL_PATH" in os.environ:
+if "MODEL_CFG_PATH" in os.environ:
     SETTINGS.model_cfg_path = Path(os.environ["MODEL_CFG_PATH"])
 
 if "AWS_PROFILE" in os.environ:

@@ -158,7 +158,7 @@ warn_return_any = true
 show_error_codes = true
 
 [[tool.mypy.overrides]]
-module = ["animaloc.*", "albumentations"]
+module = ["animaloc.*", "albumentations.*", "torchvision.*"]
 ignore_missing_imports = true
 
 
@@ -173,10 +173,18 @@ cmd="pre-commit run --all-files"
 help="run type-checking on the whole project with mypy (takes a couple of secs)"
 cmd="mypy --config pyproject.toml ./"
 
-[tool.poe.tasks.serve]
+[tool.poe.tasks.serve-mock]
 help="Start the prediction API service, MODEL_PATH needs set by caller first"
-env={MODEL_PATH="data/models/mock/model.pth"}
+env={MODEL_WEIGHTS_PATH="data/models/mock/model.pth", MODEL_CFG_PATH="configs/train/mock.yaml"}
 cmd="python api/run_api.py"
+
+[tool.poe.tasks.serve-frc]
+help="Start the prediction API service, MODEL_PATH needs set by caller first"
+cmd="python api/run_api.py"
+[tool.poe.tasks.serve-frc.env]
+MODEL_WEIGHTS_PATH="data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth"
+MODEL_CFG_PATH="configs/train/faster_rcnn_herdnet_trainer.yaml"
+
 
 [tool.poe.tasks.dockerize-api]
 help="Package the API in as a docker image"

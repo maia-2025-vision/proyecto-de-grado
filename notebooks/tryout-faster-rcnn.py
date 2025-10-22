@@ -19,7 +19,7 @@ def _():
 
     from loguru import logger
 
-    from api.model_utils import pick_torch_device
+    from api.torch_utils import pick_torch_device
 
     return (
         DictConfig,

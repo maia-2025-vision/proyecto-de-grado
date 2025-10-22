@@ -1,9 +1,12 @@
 from dataclasses import dataclass
-from typing import Literal
+from pathlib import Path
+from typing import Literal, TypeAlias
 
 from api.detector import Detector
 
 BBoxFormat = Literal["xyxy", "xywh"] | None
+Metadatum: TypeAlias = int | float | str | None | Path
+ModelMetadata: TypeAlias = dict[str, Metadatum]
 
 
 @dataclass
@@ -14,3 +17,4 @@ class DetectorHandle:
     """
 
     detector: Detector
+    model_metadata: ModelMetadata
