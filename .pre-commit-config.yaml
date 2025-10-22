@@ -20,9 +20,9 @@ repos:
       - id: ruff
         exclude: research/.+\.py
         args: [
+          "--verbose",
           "--fix",
           "--ignore",
-          "--verbose",
           "F401" # ignore unused imports, as these are sometimes used for side effects,
           # e.g. "import torch_neuron"
         ]
