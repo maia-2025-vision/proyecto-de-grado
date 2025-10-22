@@ -23,6 +23,7 @@ jobs:
           version: "0.8.x"
       - name: Install Dependencies
         run: |
+          uv venv
           uv pip install ruff
           uv pip install pre-commit
       - uses: actions/cache@v4
