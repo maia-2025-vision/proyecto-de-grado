@@ -1,4 +1,3 @@
-import argparse
 import os
 import warnings
 
@@ -83,7 +82,7 @@ def save_config_report(config_dict: DictConfig, work_dir: str) -> None:
             train_df = pd.read_csv(os.path.abspath(config_dict["trainer"]["paths"]["train_csv"]))
             f.write(f"Training samples: {len(train_df)}\n")
             f.write(f"Unique images: {train_df['images'].nunique()}\n")
-            f.write(f"Annotations per image: {len(train_df)/train_df['images'].nunique():.2f}\n")
+            f.write(f"Annotations per image: {len(train_df) / train_df['images'].nunique():.2f}\n")
         except Exception as e:
             f.write(f"Error reading training dataset: {str(e)}\n")
 

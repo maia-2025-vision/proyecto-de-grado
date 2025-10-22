@@ -4,13 +4,13 @@ repos:
     hooks:
       - id: check-added-large-files
       - id: check-toml
-      # - id: detect-aws-credentials
-      #   args: [ --allow-missing-credentials ]
+      - id: detect-aws-credentials
+        args: [ --allow-missing-credentials ]
       - id: check-merge-conflict
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.4.3
+    rev: v0.14.1
     hooks:
       # Run the Ruff formatter.
       - id: ruff-format

@@ -26,7 +26,6 @@ __version__ = "0.2.1"
 import os
 from collections.abc import Callable
 from pathlib import Path
-from typing import Optional
 
 import albumentations as A  # noqa: N812
 import animaloc
@@ -124,16 +123,16 @@ def _build_model(cfg: DictConfig) -> torch.nn.Module:
     from_torchvision = cfg.model.from_torchvision
 
     if from_torchvision:
-        assert (
-            name in torchvision.models.__dict__.keys()
-        ), f"'{name}' unfound in torchvision's models"
+        assert name in torchvision.models.__dict__.keys(), (
+            f"'{name}' unfound in torchvision's models"
+        )
 
         model = torchvision.models.__dict__[name]
 
     else:
-        assert (
-            name in animaloc.models.__dict__.keys()
-        ), f"'{name}' class unfound, make sure you have included the class in the models list"
+        assert name in animaloc.models.__dict__.keys(), (
+            f"'{name}' class unfound, make sure you have included the class in the models list"
+        )
 
         model = animaloc.models.__dict__[name]
 
@@ -199,9 +198,9 @@ def _define_evaluator(
     name = cfg.training_settings.evaluator.name
     anno_type = cfg.datasets.anno_type
 
-    assert (
-        name in animaloc.eval.evaluators.__dict__.keys()
-    ), f"'{name}' class unfound, make sure you have included the class in the evaluators list"
+    assert name in animaloc.eval.evaluators.__dict__.keys(), (
+        f"'{name}' class unfound, make sure you have included the class in the evaluators list"
+    )
 
     if anno_type == "point":
         metrics = PointsMetrics(
@@ -371,9 +370,9 @@ def main(cfg: DictConfig) -> None:
     validate_on = "recall"
     select = "min"
     if cfg.training_settings.evaluator is not None:
-        assert (
-            val_dataloader is not None
-        ), "A validation dataset must be defined to build an evaluator"
+        assert val_dataloader is not None, (
+            "A validation dataset must be defined to build an evaluator"
+        )
 
         evaluator = _define_evaluator(model, val_dataloader, cfg)
         select = cfg.training_settings.evaluator.select_mode

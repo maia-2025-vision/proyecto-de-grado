@@ -47,16 +47,16 @@ def _build_model(cfg: DictConfig) -> torch.nn.Module:
     from_torchvision = cfg.model.from_torchvision
 
     if from_torchvision:
-        assert (
-            name in torchvision.models.__dict__.keys()
-        ), f"'{name}' unfound in torchvision's models"
+        assert name in torchvision.models.__dict__.keys(), (
+            f"'{name}' unfound in torchvision's models"
+        )
 
         model = torchvision.models.__dict__[name]
 
     else:
-        assert (
-            name in animaloc.models.__dict__.keys()
-        ), f"'{name}' class unfound, make sure you have included the class in the models list"
+        assert name in animaloc.models.__dict__.keys(), (
+            f"'{name}' class unfound, make sure you have included the class in the models list"
+        )
 
         model = animaloc.models.__dict__[name]
 
@@ -80,9 +80,9 @@ def _get_collate_fn(cfg: DictConfig) -> Callable:
 def _define_stitcher(model: torch.nn.Module, cfg: DictConfig) -> Stitcher:
     name = cfg.stitcher.name
 
-    assert (
-        name in animaloc.eval.stitchers.__dict__.keys()
-    ), f"'{name}' class unfound, make sure you have included the class in the stitchers list"
+    assert name in animaloc.eval.stitchers.__dict__.keys(), (
+        f"'{name}' class unfound, make sure you have included the class in the stitchers list"
+    )
 
     kwargs = dict(cfg.stitcher.kwargs)
     for k in ["model", "size", "device_name"]:
@@ -103,9 +103,9 @@ def _define_evaluator(
 ) -> Evaluator:
     name = cfg.evaluator.name
 
-    assert (
-        name in animaloc.eval.evaluators.__dict__.keys()
-    ), f"'{name}' class unfound, make sure you have included the class in the evaluators list"
+    assert name in animaloc.eval.evaluators.__dict__.keys(), (
+        f"'{name}' class unfound, make sure you have included the class in the evaluators list"
+    )
 
     stitcher = None
     if cfg.stitcher is not None:

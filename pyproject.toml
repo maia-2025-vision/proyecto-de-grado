@@ -21,6 +21,7 @@ dev = [
     "types-requests",
     "boto3-stubs[s3]>=1.40.55",
     "types-pyyaml>=6.0.12.20250915",
+    "ruff>=0.14.1",
 ]
 
 herdnet = [
