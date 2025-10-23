@@ -1,0 +1,80 @@
+import requests
+
+API_BASE_URL = "http://localhost:8000"  # Asumimos que la API corre localmente
+
+
+def get_regions() -> list[str]:
+    """Obtiene la lista de regiones disponibles desde la API."""
+    endpoint = f"{API_BASE_URL}/regions"
+    try:
+        response = requests.get(endpoint)
+        response.raise_for_status()
+        return response.json().get("regions", [])
+    except requests.exceptions.RequestException as e:
+        print(f"Error al obtener regiones: {e}")
+        return []
+
+
+def get_flyovers(region: str) -> list[str]:
+    """Obtiene la lista de sobrevuelos para una región específica."""
+    endpoint = f"{API_BASE_URL}/flyovers/{region}"
+    try:
+        response = requests.get(endpoint)
+        response.raise_for_status()
+        return response.json().get("flyovers", [])
+    except requests.exceptions.RequestException as e:
+        print(f"Error al obtener sobrevuelos para {region}: {e}")
+        return []
+
+
+def get_detection_results(region: str, flyover: str) -> dict:
+    """Obtiene los resultados de detección para un sobrevuelo específico."""
+    endpoint = f"{API_BASE_URL}/results/{region}/{flyover}"
+    try:
+        response = requests.get(endpoint)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error al obtener resultados para {region}/{flyover}: {e}")
+        return {"error": str(e)}
+
+
+def process_images(image_urls: list[str], confidence_threshold: float) -> dict:
+    """Llama al endpoint de la API para procesar una lista de URLs de imágenes."""
+    endpoint = f"{API_BASE_URL}/predict-many"
+    payload = {
+        "urls": image_urls,
+        "counts_score_thresh": confidence_threshold,
+    }
+
+    try:
+        response = requests.post(endpoint, json=payload, timeout=300)  # Timeout extendido
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error al llamar a la API de procesamiento: {e}")
+        return {"error": str(e)}
+
+
+def get_counts_for_flyover(region: str, flyover: str) -> dict:
+    """Obtiene los conteos de un sobrevuelo específico."""
+    endpoint = f"{API_BASE_URL}/counts/{region}/{flyover}"
+    try:
+        response = requests.get(endpoint)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error al obtener conteos para {region}/{flyover}: {e}")
+        return {"error": str(e)}
+
+
+def get_counts_for_region(region: str) -> dict:
+    """Obtiene los conteos agregados para una región específica."""
+    endpoint = f"{API_BASE_URL}/counts/{region}"
+    try:
+        response = requests.get(endpoint)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error al obtener conteos para {region}: {e}")
+        return {"error": str(e)}
