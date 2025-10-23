@@ -163,6 +163,21 @@ stages:
     outs:
       - data/models/faster-rcnn/resnet50-100-epochs-tbl4
 
+  train-faster-rcnn-resnet-101:
+    desc: Entrenar faster-rcnn via trainer from Herdnet/tools/train.py
+    cmd: >
+      python oficial_herdnet/tools/train.py  --config-path $PWD/configs/
+      train=faster_rcnn_herdnet_trainer
+      train.wandb_run=faster-rcnn-resnet-101
+      train.training_settings.work_dir=data/models/faster-rcnn/resnet101-100-epochs-tbl4
+      train.training_settings.epochs=100
+    deps:
+      - configs/train/faster_rcnn_herdnet_trainer.yaml
+      - oficial_herdnet/tools/train.py
+      - data/patches-512-ol-160-m0.3/train/gt.csv
+    outs:
+      - data/models/faster-rcnn/resnet101-100-epochs-tbl4
+
   train-faster-rcnn-hn-trainer-tiny:
     desc: >
       Entrenar faster-rcnn via trainer from Herdnet/tools/train.py con datasets mucho mas pequeños para probar
