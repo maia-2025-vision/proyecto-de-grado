@@ -123,40 +123,42 @@ stages:
       nfiles: 4
   fix-headers-train-csv:
     cmd: "sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
-      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv > data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv\n"
+      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv > data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv\n"
     deps:
     - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv
       hash: md5
       md5: b9a83adcb4338121b4a29bb538223069
       size: 362510
     outs:
-    - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    - path:
+        data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
       hash: md5
       md5: 4df85b8755658f264f15ab15aa3b7ef3
       size: 362524
   fix-headers-val-csv:
     cmd: "sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
-      data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB.csv > data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv\n"
+      data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB.csv > data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv\n"
     deps:
     - path: data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB.csv
       hash: md5
       md5: 670bc1087d9255d49156e84fa95ef4d7
       size: 50608
     outs:
-    - path: data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    - path: data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
       hash: md5
       md5: 15acbab82e8022090098948c43ebff89
       size: 50622
   fix-headers-test-csv:
     cmd: "sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
-      data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB.csv > data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv\n"
+      data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB.csv > data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv\n"
     deps:
     - path: data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB.csv
       hash: md5
       md5: f9f826c539574dbd80c8a8e70ff9e2cf
       size: 120371
     outs:
-    - path: data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    - path:
+        data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
       hash: md5
       md5: 30731a9a455b58e36394dd89e24849dc
       size: 120385
@@ -283,3 +285,27 @@ stages:
   add-info-to-tmp-model:
     cmd: "python tools/add_info_to_model.py --config-path $PWD/configs/ train=faster_rcnn_herdnet_trainer\
       \         add_info.best_model_pth_path=data/models/tmp/faster-rcnn/best_model-by-epoch-70.pth\n"
+
+  train-faster-rcnn-hn-trainer:
+    cmd: "python oficial_herdnet/tools/train.py  --config-path $PWD/configs/ train=faster_rcnn_herdnet_trainer\
+      \  train.training_settings.work_dir=data/models/faster-rcnn/resnet50-100-epochs-tbl4
+      train.training_settings.epochs=100\n"
+    deps:
+    - path: configs/train/faster_rcnn_herdnet_trainer.yaml
+      hash: md5
+      md5: ff9f05a188d5325a613d5ee5769db05d
+      size: 2265
+    - path: data/patches-512-ol-160-m0.3/train/gt.csv
+      hash: md5
+      md5: ab0941404acb2006ee1e210438de8c4c
+      size: 1212027
+    - path: oficial_herdnet/tools/train.py
+      hash: md5
+      md5: e2bfa812a8a05e5ac2f44125f26d90ec
+      size: 13040
+    outs:
+    - path: data/models/faster-rcnn/resnet50-100-epochs-tbl4
+      hash: md5
+      md5: d81b61b11fb66679e17cbea3d2b3325e.dir
+      size: 1490431295
+      nfiles: 5
