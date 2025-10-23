@@ -1,12 +1,18 @@
+import pandas as pd
 import streamlit as st
 from PIL import Image
 
-from dashboard.utils.api_client import get_detection_results, get_flyovers, get_regions
+from dashboard.utils.api_client import (
+    get_counts_for_flyover,
+    get_detection_results,
+    get_flyovers,
+    get_regions,
+)
 from dashboard.utils.visualization import SPECIES_MAP, download_image, draw_detections_on_image
 
-st.set_page_config(page_title="View Detections", layout="wide")
+st.set_page_config(page_title="Resultados de Detección", layout="wide")
 
-st.title("Visualizador de Detecciones Comparativo")
+st.title("Visualizador y Métricas de Detección")
 
 # --- Sidebar Controls ---
 with st.sidebar:
@@ -29,13 +35,22 @@ with st.sidebar:
         selected_flyover = None
 
     if st.button("Cargar Resultados", disabled=not selected_flyover, type="primary"):
-        with st.spinner("Cargando resultados..."):
-            results = get_detection_results(selected_region, selected_flyover)
-            if "error" in results:
-                st.error(f"Error al cargar: {results['error']}")
+        with st.spinner("Cargando resultados y conteos..."):
+            # Cargar ambos, detecciones y conteos
+            det_results = get_detection_results(selected_region, selected_flyover)
+            count_results = get_counts_for_flyover(selected_region, selected_flyover)
+
+            if "error" in det_results:
+                st.error(f"Error al cargar detecciones: {det_results['error']}")
                 st.session_state.detection_results = {}
             else:
-                st.session_state.detection_results = results
+                st.session_state.detection_results = det_results
+
+            if "error" in count_results:
+                st.error(f"Error al cargar conteos: {count_results['error']}")
+                st.session_state.count_results = {}
+            else:
+                st.session_state.count_results = count_results
 
     st.markdown("---")
     st.header("Opciones de Visualización")
@@ -54,7 +69,7 @@ with st.sidebar:
         }
         selected_species_names = st.multiselect(
             "Especies a mostrar:",
-            options=species_options.values(),
+            options=list(species_options.values()),
             default=list(species_options.values()),
         )
         selected_labels = [
@@ -65,7 +80,30 @@ with st.sidebar:
         selected_labels = []
 
 # --- Main Display Area ---
+
+# 1. Metrics and Counts Section
+if "count_results" in st.session_state and st.session_state.count_results:
+    st.subheader(f"Métricas para: {selected_region} / {selected_flyover}")
+    counts_data = st.session_state.count_results.get("total_counts", {})
+
+    if not counts_data:
+        st.warning("No hay datos de conteo para este sobrevuelo.")
+    else:
+        # Mapear IDs de especies a nombres
+        named_counts = {SPECIES_MAP.get(int(k), f"ID_{k}"): v for k, v in counts_data.items()}
+        df_counts = pd.DataFrame(list(named_counts.items()), columns=["Especie", "Conteo"])
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.dataframe(df_counts)
+        with col2:
+            st.bar_chart(df_counts.set_index("Especie"))
+
+st.markdown("---")
+
+# 2. Detections Visualization Section
 if "detection_results" in st.session_state and st.session_state.detection_results:
+    st.subheader("Visualización de Detecciones")
     results_data = st.session_state.detection_results.get("results", [])
     image_urls = [res["url"] for res in results_data if "url" in res]
 
@@ -99,7 +137,7 @@ if "detection_results" in st.session_state and st.session_state.detection_result
                     st.image(
                         image_with_detections,
                         caption="Detecciones con Faster R-CNN",
-                        use_column_width=True,
+                        use_container_width=True,
                     )
 
         with col2:
@@ -107,7 +145,7 @@ if "detection_results" in st.session_state and st.session_state.detection_result
             st.image(
                 Image.new("RGB", (800, 600), color="darkgrey"),
                 caption="Visualización de HerdNet",
-                use_column_width=True,
+                use_container_width=True,
             )
 else:
     st.info(

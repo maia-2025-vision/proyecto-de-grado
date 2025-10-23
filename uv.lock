@@ -3017,6 +3017,7 @@ api = [
 ]
 dashboard = [
     { name = "boto3" },
+    { name = "pandas" },
     { name = "requests" },
     { name = "streamlit" },
 ]
@@ -3072,6 +3073,7 @@ api = [
 ]
 dashboard = [
     { name = "boto3", specifier = ">=1.34.0" },
+    { name = "pandas", specifier = ">=2.3.3" },
     { name = "requests", specifier = ">=2.31.0" },
     { name = "streamlit", specifier = ">=1.33.0" },
 ]

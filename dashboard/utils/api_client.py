@@ -39,12 +39,11 @@ def get_detection_results(region: str, flyover: str) -> dict:
         return {"error": str(e)}
 
 
-def process_images(image_urls: list[str], confidence_threshold: float) -> dict:
+def process_images(image_urls: list[str]) -> dict:
     """Llama al endpoint de la API para procesar una lista de URLs de imágenes."""
     endpoint = f"{API_BASE_URL}/predict-many"
     payload = {
         "urls": image_urls,
-        "counts_score_thresh": confidence_threshold,
     }
 
     try:

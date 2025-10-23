@@ -1,8 +1,11 @@
 import io
 from typing import Any
+from urllib.parse import urlparse
 
+import boto3
 import requests
 import streamlit as st
+from botocore.exceptions import ClientError
 from PIL import Image, ImageDraw, ImageFont
 
 # Paleta de colores para las especies
@@ -28,13 +31,33 @@ SPECIES_MAP = {
 
 @st.cache_data
 def download_image(url: str) -> Image.Image:
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return Image.open(io.BytesIO(response.content)).convert("RGB")
-    except requests.exceptions.RequestException as e:
-        st.error(f"No se pudo descargar la imagen desde {url}: {e}")
-        return None
+    """Descarga una imagen desde una URL S3 o HTTP."""
+    if url.startswith("s3://"):
+        try:
+            s3_client = boto3.client("s3")
+            parsed_url = urlparse(url)
+            bucket_name = parsed_url.netloc
+            object_key = parsed_url.path.lstrip("/")
+
+            s3_response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+            image_content = s3_response["Body"].read()
+
+            return Image.open(io.BytesIO(image_content)).convert("RGB")
+        except ClientError as e:
+            st.error(f"Error al descargar desde S3 ({url}): {e}")
+            return None
+        except Exception as e:
+            st.error(f"Error inesperado al procesar imagen S3 ({url}): {e}")
+            return None
+    else:
+        # Fallback for standard HTTP(S) URLs
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return Image.open(io.BytesIO(response.content)).convert("RGB")
+        except requests.exceptions.RequestException as e:
+            st.error(f"No se pudo descargar la imagen desde {url}: {e}")
+            return None
 
 
 def draw_detections_on_image(

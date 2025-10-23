@@ -109,6 +109,13 @@ def determine_model_arch(weights_path: Path) -> Literal["faster-rcnn", "herdnet"
 
 def load_model_pack(weights_path: Path) -> ModelPackType:
     """Restore and return a prediction model from a weights file."""
+    # check for mps (apple silicon) availability, otherwise use cpu
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+    logger.info(f"Using device: {device}")
+
     num_classes = len(DEFAULT_CLASS_LABEL_2_NAME)
 
     model_arch = determine_model_arch(weights_path)
@@ -118,8 +125,14 @@ def load_model_pack(weights_path: Path) -> ModelPackType:
     elif model_arch == "faster-rcnn":
         model = make_faster_rcnn_model(num_classes=num_classes)
         logger.info(f"Loading weights from: {weights_path} onto faster-rcnn model")
-        state_dict = torch.load(weights_path)
-        model.load_state_dict(state_dict)
+        checkpoint = torch.load(weights_path, map_location=device)
+
+        # The stored weights are prefixed with 'model.', so we need to remove it
+        state_dict = checkpoint["model_state_dict"]
+        new_state_dict = {k.replace("model.", ""): v for k, v in state_dict.items()}
+
+        model.load_state_dict(new_state_dict)
+        model.to(device)  # move model to correct device
         assert isinstance(model, nn.Module)
 
         return ModelPackType(
