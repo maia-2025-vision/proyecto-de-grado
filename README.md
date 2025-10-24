@@ -33,12 +33,23 @@ dvc pull  # .venv debe estar activado
 ### Arrancar api en local 
 
 
+Ejecutar una de las siguientes
 ```bash
-poe serve
+poe serve-mock  # Arranca el servicio con un Detector "mock" que genera detecciones aleatorias
+poe serve-frc  #  Arranca el servicio con un modelo Faster-RCNN
+poe serve-hn   # Arrance el servicio con un modelo Herdnet (WORK IN PROGRESS...)
 ```
 
-Para cambiar el modelo usado por la API cambiar el valor de MODEL_PATH en la sección `[poe.tasks.serve]` 
-de pyproject.toml. 
+Para cambiar el modelo usado por la API cambiar el valor de MODEL_PATH y MODEL_CFG_PATH 
+en la sección `[poe.tasks.serve]` de pyproject.toml.
+
+## Ejecución de pruebas e2e
+
+```bash
+poe e2e predict-one
+poe e2e predict-many
+poe e2e predict-one-mult
+```
 
 
 ### Enlaces para miembros del equipo
@@ -46,3 +57,13 @@ de pyproject.toml.
 1. [Carpeta compartida en google drive](https://drive.google.com/drive/folders/1zJC_QlJhYr01Lml5BTW8EZx73Uyl1Myi?usp=drive_link)
 2. [Carpeta con Artículos bajados en PDF](https://drive.google.com/drive/folders/1JAqXpCSRE6jkqYFGxdxsxtr8hDjmOQ8F?usp=drive_link)
 
+## Papers que tal vez podríamos revisar después si tenemos tiempo...
+
+1. [WildlifeMapper: Aerial Image Analysis for Multi-Species Detection and Identification](https://openaccess.thecvf.com/content/CVPR2024/papers/Kumar_WildlifeMapper_Aerial_Image_Analysis_for_Multi-Species_Detection_and_Identification_CVPR_2024_paper.pdf)
+   - Código aquí: https://github.com/UCSB-VRL/WildlifeMapper
+2. [Naidu et. al. 2025 - DEAL-YOLO: DRONE-BASED EFFICIENT ANIMAL LOCALIZATION USING YOLO](https://arxiv.org/pdf/2503.04698)
+2. [Wang, Gao 2025 - SF-DETR: A Scale-Frequency Detection Transformer for Drone-View Object Detection](https://pmc.ncbi.nlm.nih.gov/articles/PMC11991380/) (No parece tener código asociado)
+3. [Zhu, Zhang 2025 - Efficient vision transformers with edge enhancement for robust small target detection in drone-based remote sensing](https://www.frontiersin.org/journals/remote-sensing/articles/10.3389/frsen.2025.1599099/full)
+  (No parece tener código asociado)
+4. [Jie Hu et. al. 2025 - A small object detection model for drone images based on multi-attention fusion network](https://www.sciencedirect.com/science/article/abs/pii/S0262885625000241)
+   (No parece tener código asociado)

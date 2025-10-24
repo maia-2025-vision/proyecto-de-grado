@@ -8,4 +8,6 @@ hydra:
 
 defaults:
   - train: herdnet
+  - add_info: default
+
   # - test: herdnet  # uncomment once we add at least a config under configs/test/

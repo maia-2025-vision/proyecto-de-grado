@@ -11,7 +11,7 @@ model:
   resume_from: null
   kwargs:
     architecture: 'resnet50'
-    num_classes: ${train.datasets.num_classes}
+    num_classes: 7
     pretrained_backbone: True
     trainable_backbone_layers: 4
     # Class weights in inverse proportion to number of annotations in train :
@@ -26,6 +26,9 @@ model:
     class_weights: [0.1, 1.2, 1.9, 1.16, 6.4, 12.1, 1.0]
     min_size: 512
     max_size: 512
+
+inference_settings:
+   batch_size: 8
 
 losses: null
 

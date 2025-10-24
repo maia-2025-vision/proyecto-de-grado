@@ -1,20 +1,20 @@
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeAlias
 
-import torch
-from PIL import Image
-from torch import nn
+from api.detector import Detector
+
+BBoxFormat = Literal["xyxy", "xywh"] | None
+Metadatum: TypeAlias = int | float | str | None | Path
+ModelMetadata: TypeAlias = dict[str, Metadatum]
 
 
 @dataclass
-class ModelPackType:
-    """Declare types for stuffed stored in model_pack global below."""
+class DetectorHandle:
+    """Just a container for a reference to a detector.
 
-    model: nn.Module
-    model_arch: str
-    model_path: Path
-    pre_transform: Callable[[Image.Image], torch.Tensor]
-    bbox_format: Literal["xywh", "xyxy"] | None
-    idx2species: dict[int, str]  # Map of label int index to species name
+    This way we can have a single global object and overwrite that reference on lifespan.
+    """
+
+    detector: Detector
+    model_metadata: ModelMetadata
