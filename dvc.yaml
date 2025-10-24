@@ -194,13 +194,16 @@ stages:
     desc: >
       Ejecutar el script de test sobre el modelo faster-rcnn-resnet50.
     # TODO: when running on linux change device_name to "cuda"
+    # test.sticher=null because we are running over patches of size 512x512
     cmd: >
-      python oficial_herdnet/tools/train.py  --config-path $PWD/configs/
+      python oficial_herdnet/tools/test.py  --config-path $PWD/configs/
       test=faster_rcnn
       test.device_name="cpu"
+      test.wandb_mode="disabled"
       test.wandb_run=test-frcnn-resnet50
-      test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4
+      test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
       test.model.kwargs.architecture=resnet50
+      test.stitcher=null
       test.dataset.csv_file=data/patches-512-ol-160-m0.3/test/gt.csv
       test.dataset.root_dir=data/patches-512-ol-160-m0.3/test/
       test.results_dir=data/test_results/frcnn-resnet50

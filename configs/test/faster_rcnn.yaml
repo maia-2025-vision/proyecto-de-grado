@@ -1,7 +1,7 @@
 wandb_project: 'Herdnet'
 wandb_entity: 'maiavision2025-universidad-de-los-andes'
 wandb_run: 'test-faster-rcnn'
-wandb_mode: "offline"
+wandb_mode: "online"
 device_name: 'cuda'
 results_dir: '/override/me/via/commandline'
 
@@ -22,6 +22,7 @@ dataset:
   anno_type: 'bbox'
   num_classes: 7
   collate_fn: 'collate_fn'
+  batch_size: 8
 
   class_def:
     1: 'Alcelaphinae'
@@ -44,7 +45,8 @@ evaluator:
   kwargs:
     print_freq: 10
 
-# TODO: maybe not use a stitcher since we are evaluating on patches already (?)
+# sticher can be overriden to null via command line,
+# if running test over dataset of 512x512 patches
 stitcher:
   name: 'FasterRCNNStitcherV2'
   batch_size: 8

@@ -20,6 +20,7 @@ __version__ = "0.2.1"
 
 # ruff: noqa: C408
 
+import warnings
 from collections.abc import Callable
 from pathlib import Path
 from pprint import pformat
@@ -41,10 +42,16 @@ from loguru import logger
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader
 
+# do not remove the following registers StitcherV2 by side effect!
+import animaloc_improved.eval.stitchers  # noqa
+
+warnings.filterwarnings("ignore", message=".*", module="albumentations.core.composition")
+warnings.filterwarnings("ignore", message=".*", module="pydantic._internal._generate_schema")
+
 
 def _set_species_labels(cls_dict: dict, df: pd.DataFrame) -> None:
     if "labels" in df.columns:
-        logger.info("df already has labels column , not overwriting it")
+        logger.info("df already has labels column, not overwriting it")
         return
 
     assert "species" in df.columns
@@ -90,7 +97,7 @@ def _get_collate_fn(cfg: DictConfig) -> Callable:
 def _define_stitcher(model: torch.nn.Module, cfg: DictConfig) -> Stitcher:
     name = cfg.stitcher.name
 
-    assert name in animaloc.eval.stitchers.__dict__.keys(), (
+    assert name in animaloc.eval.stitchers.STITCHERS._registered_objects, (
         f"'{name}' class not found, make sure you have included the class in the stitchers list"
     )
 
@@ -99,7 +106,7 @@ def _define_stitcher(model: torch.nn.Module, cfg: DictConfig) -> Stitcher:
         kwargs.pop(k, None)
 
     logger.info(f"Creating stitcher of class={name}, type(model)={type(model).__name__}")
-    stitcher = animaloc.eval.stitchers.__dict__[name](
+    stitcher = animaloc.eval.stitchers.STITCHERS[name](
         model=model, size=cfg.dataset.img_size, **kwargs, device_name=cfg.device_name
     )
 
@@ -139,16 +146,14 @@ def _define_evaluator(
     return evaluator
 
 
-@hydra.main(config_path="./configs", config_name="test")
+@hydra.main(config_path="./configs", config_name="config", version_base="1.1")
 def main(cfg: DictConfig) -> None:
     cfg = cfg.test
     logger.info(f"Full test config:\n{pformat(dict(cfg))}")
 
-    down_ratio = 1
-    if "down_ratio" in cfg.model.kwargs.keys():
-        down_ratio = cfg.model.kwargs.down_ratio
-
+    down_ratio = cfg.model.kwargs.get("down_ratio", 1)
     wandb_mode = cfg.get("wandb_mode", "online")
+
     logger.info(f"Before wandb_int, wandb_mode={wandb_mode}")
     # Set up wandb
     wandb.init(
@@ -168,9 +173,10 @@ def main(cfg: DictConfig) -> None:
     logger.info(f"{wandb.run.name=}")
 
     device = torch.device(cfg.device_name)
+    batch_size = cfg.dataset.get("batch_size", 1)
 
     # Prepare dataset and dataloader
-    logger.info("Building the test dataset ...")
+    logger.info(f"Building the test dataset ...(batch_size={batch_size})")
     cls_dict = dict(cfg.dataset.class_def)
     cls_names = list(cls_dict.values())
 
