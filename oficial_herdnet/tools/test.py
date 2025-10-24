@@ -7,6 +7,11 @@ __copyright__ = """
     Please contact the author Alexandre Delplanque (alexandre.delplanque@uliege.be)
     for any questions.
 
+    Minor changes by MAIA team:
+    1. Added #ruff: noqa: C408
+    2. Added logging with loguru.logger
+    3. Getting new key results_dir from config
+
     Last modification: March 18, 2024
     """
 __author__ = "Alexandre Delplanque"
@@ -15,13 +20,14 @@ __version__ = "0.2.1"
 
 # ruff: noqa: C408
 
-import os
 from collections.abc import Callable
+from pathlib import Path
+from pprint import pformat
 
 import albumentations as A
 import animaloc
 import hydra
-import pandas
+import pandas as pd
 import torch
 import torchvision
 import wandb
@@ -29,13 +35,18 @@ from animaloc.data.transforms import DownSample
 from animaloc.eval import BoxesMetrics, Evaluator, Metrics, PointsMetrics
 from animaloc.eval.stitchers import Stitcher
 from animaloc.models.utils import LossWrapper, load_model
-from animaloc.utils.useful_funcs import current_date, mkdir
+from animaloc.utils.useful_funcs import current_date
 from animaloc.vizual import PlotPrecisionRecall
+from loguru import logger
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader
 
 
-def _set_species_labels(cls_dict: dict, df: pandas.DataFrame) -> None:
+def _set_species_labels(cls_dict: dict, df: pd.DataFrame) -> None:
+    if "labels" in df.columns:
+        logger.info("df already has labels column , not overwriting it")
+        return
+
     assert "species" in df.columns
     cls_dict = dict(map(reversed, cls_dict.items()))
     df["labels"] = df["species"].map(cls_dict)
@@ -47,14 +58,14 @@ def _build_model(cfg: DictConfig) -> torch.nn.Module:
 
     if from_torchvision:
         assert name in torchvision.models.__dict__.keys(), (
-            f"'{name}' unfound in torchvision's models"
+            f"'{name}' not found in torchvision's models"
         )
 
         model = torchvision.models.__dict__[name]
 
     else:
         assert name in animaloc.models.__dict__.keys(), (
-            f"'{name}' class unfound, make sure you have included the class in the models list"
+            f"'{name}' class not found, make sure you have included the class in the models list"
         )
 
         model = animaloc.models.__dict__[name]
@@ -80,13 +91,14 @@ def _define_stitcher(model: torch.nn.Module, cfg: DictConfig) -> Stitcher:
     name = cfg.stitcher.name
 
     assert name in animaloc.eval.stitchers.__dict__.keys(), (
-        f"'{name}' class unfound, make sure you have included the class in the stitchers list"
+        f"'{name}' class not found, make sure you have included the class in the stitchers list"
     )
 
     kwargs = dict(cfg.stitcher.kwargs)
     for k in ["model", "size", "device_name"]:
         kwargs.pop(k, None)
 
+    logger.info(f"Creating stitcher of class={name}, type(model)={type(model).__name__}")
     stitcher = animaloc.eval.stitchers.__dict__[name](
         model=model, size=cfg.dataset.img_size, **kwargs, device_name=cfg.device_name
     )
@@ -103,7 +115,7 @@ def _define_evaluator(
     name = cfg.evaluator.name
 
     assert name in animaloc.eval.evaluators.__dict__.keys(), (
-        f"'{name}' class unfound, make sure you have included the class in the evaluators list"
+        f"'{name}' class not found, make sure you have included the class in the evaluators list"
     )
 
     stitcher = None
@@ -127,19 +139,22 @@ def _define_evaluator(
     return evaluator
 
 
-@hydra.main(config_path="../configs", config_name="config")
+@hydra.main(config_path="./configs", config_name="test")
 def main(cfg: DictConfig) -> None:
     cfg = cfg.test
+    logger.info(f"Full test config:\n{pformat(dict(cfg))}")
 
     down_ratio = 1
     if "down_ratio" in cfg.model.kwargs.keys():
         down_ratio = cfg.model.kwargs.down_ratio
 
+    wandb_mode = cfg.get("wandb_mode", "online")
+    logger.info(f"Before wandb_int, wandb_mode={wandb_mode}")
     # Set up wandb
-    # CHANGE by aalea ruff C408
     wandb.init(
         project=cfg.wandb_project,
         entity=cfg.wandb_entity,
+        mode=wandb_mode,
         config=dict(
             model=cfg.model,
             down_ratio=down_ratio,
@@ -150,16 +165,16 @@ def main(cfg: DictConfig) -> None:
 
     date = current_date()
     wandb.run.name = f"{date}_" + cfg.wandb_run + f"_RUN_{wandb.run.id}"
+    logger.info(f"{wandb.run.name=}")
 
     device = torch.device(cfg.device_name)
 
     # Prepare dataset and dataloader
-    print("Building the test dataset ...")
-
+    logger.info("Building the test dataset ...")
     cls_dict = dict(cfg.dataset.class_def)
     cls_names = list(cls_dict.values())
 
-    test_df = pandas.read_csv(cfg.dataset.csv_file)
+    test_df = pd.read_csv(cfg.dataset.csv_file)
     _set_species_labels(cls_dict, df=test_df)
 
     test_dataset = animaloc.datasets.__dict__[cfg.dataset.name](
@@ -178,11 +193,11 @@ def main(cfg: DictConfig) -> None:
     )
 
     # Build the trained model
-    print("Building the trained model ...")
+    logger.info("Building the trained model ...")
     model = _build_model(cfg).to(device)
 
     # Build the evaluator
-    print("Preparing for testing ...")
+    logger.info("Preparing for testing ...")
     anno_type = cfg.dataset.anno_type
     if anno_type == "point":
         metrics = PointsMetrics(radius=cfg.evaluator.threshold, num_classes=cfg.dataset.num_classes)
@@ -194,22 +209,27 @@ def main(cfg: DictConfig) -> None:
     evaluator = _define_evaluator(model, test_dataloader, metrics, cfg)
 
     # Start testing
-    print("Starting testing ...")
+    logger.info("Starting testing ...")
     evaluator.evaluate(wandb_flag=True, viz=False)
 
     # Save results
-    print("Saving the results ...")
+    logger.info("Saving the results ...")
+
+    results_dir = Path(cfg.results_dir)
+    results_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Results directory: {results_dir}")
 
     # 1) PR curves
-    plots_path = os.path.join(os.getcwd(), "plots")
-    mkdir(plots_path)
+    plots_path = results_dir / "plots"
+    plots_path.mkdir(parents=True, exist_ok=True)
+
     pr_curve = PlotPrecisionRecall(legend=True)
     metrics = evaluator._stored_metrics
     for c in range(1, metrics.num_classes):
         rec, pre = metrics.rec_pre_lists(c)
         pr_curve.feed(rec, pre, label=cls_dict[c])
 
-    pr_curve.save(os.path.join(plots_path, "precision_recall_curve.png"))
+    pr_curve.save(str(plots_path / "precision_recall_curve.png"))
 
     # 2) metrics per class
     res = evaluator.results
@@ -218,19 +238,19 @@ def main(cfg: DictConfig) -> None:
     str_cls_dict.update({"binary": "binary"})
     res["species"] = res["class"].map(str_cls_dict)
     res = res[["class", "species"] + cols[1:]]
-    print(res)
+    logger.info(f"Metrics per class:\n{res}")
 
-    res.to_csv(os.path.join(os.getcwd(), "metrics_results.csv"), index=False)
+    res.to_csv(results_dir / "metrics_results.csv", index=False)
 
     # 3) confusion matrix
-    cm = pandas.DataFrame(metrics.confusion_matrix, columns=cls_names, index=cls_names)
-    cm.to_csv(os.path.join(os.getcwd(), "confusion_matrix.csv"))
-    print(cm)
+    cm = pd.DataFrame(metrics.confusion_matrix, columns=cls_names, index=cls_names)
+    cm.to_csv(results_dir / "confusion_matrix.csv")
+    logger.info(f"Confusion matrix:\n{cm}")
 
     # 4) detections
     detections = evaluator.detections
     detections["species"] = detections["labels"].map(cls_dict)
-    detections.to_csv(os.path.join(os.getcwd(), "detections.csv"), index=False)
+    detections.to_csv(results_dir / "detections.csv", index=False)
 
 
 if __name__ == "__main__":
