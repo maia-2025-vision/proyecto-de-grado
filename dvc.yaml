@@ -189,3 +189,27 @@ stages:
       python tools/add_info_to_model.py --config-path $PWD/configs/
       train=faster_rcnn_herdnet_trainer        
       add_info.best_model_pth_path=data/models/tmp/faster-rcnn/best_model-by-epoch-70.pth
+
+  test-faster-rcnn-resnet50:
+    desc: >
+      Ejecutar el script de test sobre el modelo faster-rcnn-resnet50.
+    # TODO: when running on linux change device_name to "cuda"
+    # test.sticher=null because we are running over patches of size 512x512
+    cmd: >
+      python oficial_herdnet/tools/test.py  --config-path $PWD/configs/
+      test=faster_rcnn
+      test.device_name="cuda"
+      test.wandb_mode="online"
+      test.wandb_run=test-frcnn-resnet50
+      test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
+      test.model.kwargs.architecture=resnet50
+      test.stitcher=null
+      test.dataset.csv_file=data/patches-512-ol-160-m0.3/test/gt.csv
+      test.dataset.root_dir=data/patches-512-ol-160-m0.3/test/
+      test.results_dir=data/test_results/frcnn-resnet50
+    deps:
+      - ./configs/test/faster_rcnn.yaml
+      - data/models/faster-rcnn/resnet50-100-epochs-tbl4
+      - data/patches-512-ol-160-m0.3/test/
+    outs:
+      - data/test_results/frcnn-resnet50
