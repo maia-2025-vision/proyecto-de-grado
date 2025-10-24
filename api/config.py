@@ -42,4 +42,4 @@ if "MODEL_CFG_PATH" in os.environ:
 if "AWS_PROFILE" in os.environ:
     SETTINGS.aws_profile = os.environ["AWS_PROFILE"]
 
-logger.info(f"SETTINGS:\n{pformat(SETTINGS)}")
+logger.info(f"SETTINGS:\n{pformat(asdict(SETTINGS))}")

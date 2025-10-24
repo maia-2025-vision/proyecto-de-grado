@@ -6,13 +6,13 @@ import numpy as np
 import torch
 import torchvision
 from albumentations.augmentations import Normalize
-from animaloc.eval.stitchers import Stitcher
 from animaloc.models.utils import LossWrapper, load_model
 from loguru import logger
 from omegaconf import DictConfig, OmegaConf
 from PIL import Image
 from torchvision.transforms import ToTensor
 
+from animaloc_improved.eval.stitchers import FasterRCNNStitcherV2
 from api.detector import Detector, RawDetections
 from api.internal_types import BBoxFormat, ModelMetadata
 from api.torch_utils import pick_torch_device
@@ -82,12 +82,15 @@ class FasterRCNNDetector(torch.nn.Module, Detector):
         self.bbox_format_ = bbox_format
         self.to_tensor = ToTensor()
 
-        self.stitcher = Stitcher(
+        self.stitcher = FasterRCNNStitcherV2(
             model=model,
             size=(patch_size, patch_size),
             overlap=100,
             batch_size=batch_size,
             device_name=device_name,
+            # TODO: should we override these at prediction time?
+            score_threshold=0.0,
+            nms_threshold=0.5,
         )
 
     def get_idx_2_species_dict(self) -> dict[int, str]:
@@ -95,11 +98,22 @@ class FasterRCNNDetector(torch.nn.Module, Detector):
         return self.idx2species
 
     def detect_one_image(self, image: Image.Image) -> RawDetections:
-        """Get all detections on one image."""
+        """Get all detections on one image of any size, by using the appropriate stitcher"""
+        img_np = np.array(image.convert("RGB"))
+        img_normalized = self.norm(image=img_np)
+        img_pt = self.to_tensor(img_normalized["image"])
+        logger.info(f"img_pt: {img_pt.shape}")
+        # No need to move to device_name, stitcher does it internally
+        preds = self.stitcher(img_pt)
+
+        return preds  # type: ignore[no-any-return]
+
+    def detect_one_img_patch_size(self, image: Image.Image) -> RawDetections:
+        """Get all detections on one image, assumming it's size is exactly equal to patch size"""
         img = image.convert("RGB")
         img_np = np.array(img)
-        img_tr = self.norm(image=img_np)
-        img_tensor = self.to_tensor(img_tr["image"])
+        img_normalized = self.norm(image=img_np)
+        img_tensor = self.to_tensor(img_normalized["image"])
 
         img_tensor = img_tensor.unsqueeze(0).to(self.device_name)
         assert img_tensor.dim() == 4, f"{img_tensor.shape} expected to have len=4"

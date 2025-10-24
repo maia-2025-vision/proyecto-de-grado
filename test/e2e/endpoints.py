@@ -50,13 +50,16 @@ def invoke_predict_one() -> None:
 
 
 DEFAULT_FILE = Path(
+    # Big image (~3600 * 5400) takes about 40 seconds on CPU
+    # "data/train/006b4661847b82acfb2b6a3e3677f4ae63f1dd5c.JPG"
+    # Individual patch: 512 x 512, takes 1.2 seconds on CPU
     "data/patches-512-ol-160-m0.3/train/006b4661847b82acfb2b6a3e3677f4ae63f1dd5c_101.JPG"
 )
 
 
 @cli.command("pred-on-upl", help="Call /predict-on-uploaded endpoint once")
 def invoke_predict_on_upload(file_path: Path = DEFAULT_FILE) -> None:
-    logger.info("Uploading image file: {file_path}")
+    logger.info(f"Uploading image file: {file_path}")
 
     tic = perf_counter()
     with file_path.open("rb") as f:

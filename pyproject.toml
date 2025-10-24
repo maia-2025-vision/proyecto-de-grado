@@ -173,6 +173,10 @@ AWS_PROFILE="dvc-user"
 help="runs formatting checks (e.g. ruff) on commited files"
 cmd="pre-commit run --all-files"
 
+[tool.poe.tasks.check]
+help="run code style checks"
+cmd="ruff check --config pyproject.toml ./"
+
 [tool.poe.tasks.type-check]
 help="run type-checking on the whole project with mypy (takes a couple of secs)"
 cmd="mypy --config pyproject.toml ./"

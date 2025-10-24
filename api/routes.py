@@ -117,12 +117,11 @@ def predict_one_endpoint(req: PredictOneRequest) -> PredictionResult:
     "(used for more direct testing)",
 )
 async def predict_on_uploaded_image(
-    counts_score_thresh: float = 0.5,
+    counts_score_thresh: float = 0.7,
     file: UploadFile = File("Uploaded image file"),
 ) -> PredictionResult:
     logger.info("About to read uploaded file")
     file_bytes: bytes = await file.read()
-    logger.info(f"{type(file_bytes)=}")
 
     image = Image.open(io.BytesIO(file_bytes))
     return predict_one(
