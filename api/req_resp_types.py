@@ -1,6 +1,5 @@
 from collections.abc import Mapping
 from http import HTTPStatus
-from pathlib import Path
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
@@ -45,7 +44,7 @@ class PredictManyRequest(BaseModel):
     """Request for processing many images."""
 
     urls: Annotated[
-        str, Field(description="The input images' uris on s3, in the form s3://bucket/path")
+        list[str], Field(description="The input images' uris on s3, in the form s3://bucket/path")
     ]
     counts_score_thresh: Annotated[
         float, Field(description="score threshold above which to include a detection in the counts")
@@ -79,6 +78,10 @@ class Detections(BaseModel):
         ),
     ] = None
 
+    total_detections: Annotated[
+        int, Field(description="total number of detections, irrespective of score threshold")
+    ]
+
 
 class ThresholdCounts(BaseModel):
     """Counts by species for detections having score above a certain threshold."""
@@ -88,6 +91,7 @@ class ThresholdCounts(BaseModel):
         dict[str, int],
         Field(description="map of species name to count of detections above the threshold"),
     ]
+    total_count: int
 
 
 class PredictionResult(BaseModel):

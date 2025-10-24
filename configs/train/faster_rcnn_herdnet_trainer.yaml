@@ -27,6 +27,9 @@ model:
     min_size: 512
     max_size: 512
 
+inference_settings:
+   batch_size: 8
+
 losses: null
 
 datasets:

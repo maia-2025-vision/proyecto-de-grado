@@ -9,10 +9,13 @@ from fastapi import FastAPI, requests
 from fastapi.responses import JSONResponse
 from loguru import logger
 
+import api.routes
 from api.config import SETTINGS
 from api.model_utils import make_detector
 from api.req_resp_types import PredictionError
-from api.routes import DETECTOR, router  # noqa: F401
+from api.routes import router  # noqa: F401
+
+DETECTOR = api.routes.DETECTOR
 
 
 # Proper way to load a model on startup
@@ -43,7 +46,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Never]:
 
     yield  # type: ignore # this works but not sure what to do about type error...
     # Clean up the ML models and release the resources
-    DETECTOR.detector = None  # type: ignore [assignment]  # this member will never be used from here on
+    DETECTOR.detector = None  # type: ignore[assignment]  # this member will never be used from here on
     gc.collect()
 
 

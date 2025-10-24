@@ -1,6 +1,7 @@
 import os
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
+from pprint import pformat
 
 from loguru import logger
 
@@ -30,7 +31,7 @@ if "UVICORN_RELOAD" in os.environ:
     SETTINGS.reload = bool(os.environ["UVICORN_RELOAD"])
 
 if "S3_BUCKET" in os.environ:
-    SETTINGS.s3_bucket = os.getenv("S3_BUCKET", "cow-detect-maia")
+    SETTINGS.s3_bucket = os.environ["S3_BUCKET"]
 
 if "MODEL_WEIGHTS_PATH" in os.environ:
     SETTINGS.model_weights_path = Path(os.environ["MODEL_WEIGHTS_PATH"])
@@ -41,4 +42,4 @@ if "MODEL_CFG_PATH" in os.environ:
 if "AWS_PROFILE" in os.environ:
     SETTINGS.aws_profile = os.environ["AWS_PROFILE"]
 
-logger.info(f"SETTINGS: {SETTINGS}")
+logger.info(f"SETTINGS:\n{pformat(SETTINGS)}")

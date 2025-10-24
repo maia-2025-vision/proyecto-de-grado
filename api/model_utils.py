@@ -167,6 +167,7 @@ def verify_and_post_process_pred(pred: DetectionsDict, bbox_format: BBoxFormat) 
             raise ValueError("box_format must be COCO or PASCAL_VOC when boxes are given")
 
     assert len(pred["points"]) == len(pred["labels"]), pformat(pred)
+    pred["total_detections"] = len(pred["points"])
 
     return pred
 
@@ -190,4 +191,5 @@ def compute_counts_by_species(
     return ThresholdCounts(
         score_thresh=thresh,
         counts=counts,
+        total_count=sum(counts.values()),
     )

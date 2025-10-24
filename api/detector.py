@@ -21,6 +21,7 @@ class DetectionsDict(TypedDict):
     labels: list[int]
     scores: list[float]
     boxes: NotRequired[list[list[float]]]
+    total_detections: int
 
 
 class Detector(ABC):

@@ -33,12 +33,23 @@ dvc pull  # .venv debe estar activado
 ### Arrancar api en local 
 
 
+Ejecutar una de las siguientes
 ```bash
-poe serve
+poe serve-mock  # Arranca el servicio con un Detector "mock" que genera detecciones aleatorias
+poe serve-frc  #  Arranca el servicio con un modelo Faster-RCNN
+poe serve-hn   # Arrance el servicio con un modelo Herdnet (WORK IN PROGRESS...)
 ```
 
-Para cambiar el modelo usado por la API cambiar el valor de MODEL_PATH en la sección `[poe.tasks.serve]` 
-de pyproject.toml. 
+Para cambiar el modelo usado por la API cambiar el valor de MODEL_PATH y MODEL_CFG_PATH 
+en la sección `[poe.tasks.serve]` de pyproject.toml.
+
+## Ejecución de pruebas e2e
+
+```bash
+poe e2e predict-one
+poe e2e predict-many
+poe e2e predict-one-mult
+```
 
 
 ### Enlaces para miembros del equipo

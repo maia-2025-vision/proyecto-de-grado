@@ -6,6 +6,6 @@ def pick_torch_device() -> str:
     if torch.cuda.is_available():
         return "cuda"
     elif torch.mps.is_available():
-        return "mps"
+        return "cpu"  # seems model doesn't work on mps...
     else:
         return "cpu"
