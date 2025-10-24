@@ -198,7 +198,7 @@ stages:
     cmd: >
       python oficial_herdnet/tools/test.py  --config-path $PWD/configs/
       test=faster_rcnn
-      test.device_name="cpu"
+      test.device_name="cuda"
       test.wandb_mode="disabled"
       test.wandb_run=test-frcnn-resnet50
       test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
