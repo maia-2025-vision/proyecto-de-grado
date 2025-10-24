@@ -1,6 +1,7 @@
 wandb_project: 'Herdnet'
 wandb_entity: 'teo-cornell-university'
 wandb_run: 'faster-rcnn-tiny'
+wandb_mode: "disabled"
 seed: 17
 device_name: 'cuda'
 
