@@ -9,10 +9,13 @@ from fastapi import FastAPI, requests
 from fastapi.responses import JSONResponse
 from loguru import logger
 
+import api.routes
 from api.config import SETTINGS
-from api.model_utils import load_model_pack
+from api.model_utils import make_detector
 from api.req_resp_types import PredictionError
-from api.routes import model_pack, router  # noqa: F401
+from api.routes import router  # noqa: F401
+
+DETECTOR = api.routes.DETECTOR
 
 
 # Proper way to load a model on startup
@@ -21,7 +24,8 @@ from api.routes import model_pack, router  # noqa: F401
 async def lifespan(app: FastAPI) -> AsyncIterator[Never]:
     # Load the ML model
 
-    logger.info(f"MODEL_PATH={SETTINGS.model_path}")
+    logger.info(f"MODEL_WEIGHTS_PATH={SETTINGS.model_weights_path}")
+    logger.info(f"MODEL_CFG_PATH={SETTINGS.model_cfg_path}")
 
     logger.info(f"AWS_PROFILE={SETTINGS.aws_profile!r}")
     aws_key_id = os.getenv("AWS_ACCESS_KEY_ID")
@@ -34,13 +38,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Never]:
         )
         raise RuntimeError("No AWS credentials!")
 
-    global model_pack
-    model_pack = load_model_pack(SETTINGS.model_path)
-    model_pack.model.eval()
+    global DETECTOR
+    DETECTOR.detector, DETECTOR.model_metadata = make_detector(
+        weights_path=SETTINGS.model_weights_path,
+        cfg_path=SETTINGS.model_cfg_path,
+    )
 
     yield  # type: ignore # this works but not sure what to do about type error...
     # Clean up the ML models and release the resources
-    model_pack.model = None  # type: ignore [assignment]  # this member will never be used from here on
+    DETECTOR.detector = None  # type: ignore[assignment]  # this member will never be used from here on
     gc.collect()
 
 

@@ -7,5 +7,9 @@ hydra:
   #  output_dir: data/hydra-outputs/
 
 defaults:
-  - train: herdnet
+  # - train: herdnet
+  - train: faster_rcnn_herdnet_trainer
+  - test: faster_rcnn
+  - add_info: default
+
   # - test: herdnet  # uncomment once we add at least a config under configs/test/

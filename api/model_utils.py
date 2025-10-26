@@ -1,21 +1,19 @@
 from collections import Counter
 from pathlib import Path
 from pprint import pformat
-from typing import Literal, TypedDict
+from typing import Literal
 
 import numpy as np
 import torch
-import torchvision  # type: ignore [import-untyped]
+import torchvision
 from loguru import logger
+from omegaconf import OmegaConf
+from PIL import Image
 from torch import nn
-from torchvision import transforms
-from torchvision.models.detection.faster_rcnn import (  # type: ignore [import-untyped]
-    FasterRCNN,
-    FasterRCNN_ResNet50_FPN_Weights,
-    FastRCNNPredictor,
-)
 
-from api.internal_types import ModelPackType
+from api.animaloc_utils import faster_rcnn_detector_from_cfg_file
+from api.detector import DetectionsDict, Detector, RawDetections
+from api.internal_types import BBoxFormat, ModelMetadata
 from api.req_resp_types import ThresholdCounts
 
 DEFAULT_CLASS_LABEL_2_NAME = {
@@ -29,55 +27,49 @@ DEFAULT_CLASS_LABEL_2_NAME = {
 }
 
 
-class RawPrediction(TypedDict):
-    """Prediction coming from a model, after converting tensors to lists."""
-
-    points: list[list[float]]
-    labels: list[int]
-    scores: list[float]
-    boxes: list[list[float]]
-
-
-def make_faster_rcnn_model(num_classes: int) -> FasterRCNN:  # type: ignore[no-any-unimported]
-    """Get a faster-rcnn model with a box_predictor head for the given number of classes."""
-    # Load a pre-trained Faster R-CNN model with a ResNet-50 backbone
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
-        weights=FasterRCNN_ResNet50_FPN_Weights.COCO_V1
-    )
-
-    # Get the number of input features for the classifier
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-
-    # Replace the pre-trained head with a new one that has the number of classes we need
-    # (plus 1 for the background class)
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-
-    return model
-
-
-class MockModel(nn.Module):
+class MockDetector(nn.Module, Detector):
     """A model that just generates random predictions."""
 
-    def __init__(self, num_classes: int):
+    def __init__(
+        self,
+        num_classes: int,
+        idx2species: dict[int, str],
+        bbox_format: Literal["xywh", "xyxy"] | None,
+    ) -> None:
         super().__init__()
         self.num_classes = num_classes  # total number of classes including background at index 0
+        self.idx2species = idx2species
+        self.bbox_format_ = bbox_format
+        self.to_tensor = torchvision.transforms.ToTensor()
+        self.eval()
 
-    def __call__(self, image_batch: torch.Tensor) -> list[dict[str, torch.Tensor]]:
+    def bbox_format(self) -> BBoxFormat:
+        """Get bounding box format of generated detections."""
+        return self.bbox_format_
+
+    def detect_one_image(self, image: Image.Image) -> RawDetections:
+        """Get detections on one image."""
+        return self.detect_on_many([image])[0]
+
+    def detect_on_many(self, image_batch: list[Image.Image]) -> list[RawDetections]:
         """Generate a list of predictions for a batch of images.
 
         It is assumed in the batch has the shape (batch_size, n_ch, height, width).
         Returns list of dicts of length batch_size
         """
-        assert image_batch.dim() == 4, (
+        img_tensors = torch.vstack(
+            [self.to_tensor(np.array(img.convert("RGB"))) for img in image_batch]
+        )
+
+        assert img_tensors.dim() == 4, (
             "expected shape of size 4 (batch_size, channels, height, width) but got {image.shape}"
         )
 
-        batch_size = image_batch.shape[0]
-
-        results = []
+        batch_size = img_tensors.shape[0]
+        results: list[RawDetections] = []
 
         for _ in range(batch_size):
-            height, width = image_batch.shape[-2:]
+            height, width = img_tensors.shape[-2:]
 
             n_detections = np.random.randint(low=20, high=50)
 
@@ -87,27 +79,25 @@ class MockModel(nn.Module):
             labels = torch.randint(low=1, high=self.num_classes, size=(n_detections,))
             scores = torch.rand(size=(n_detections,))  # uniform distribution on [0, 1)
 
-            one_result = {"points": torch.hstack([xs, ys]), "labels": labels, "scores": scores}
+            one_result: RawDetections = {
+                "points": torch.hstack([xs, ys]),
+                "labels": labels,
+                "scores": scores,
+            }
             results.append(one_result)
 
             # just log:
-            shapes = {k: v.shape for k, v in one_result.items()}
+            shapes = {k: v.shape for k, v in one_result.items()}  # type: ignore[attr-defined]
             logger.info(f"Mock model returning ret: {shapes}")
 
         return results
 
-
-def determine_model_arch(weights_path: Path) -> Literal["faster-rcnn", "herdnet", "mock"]:
-    weights_path_str = str(weights_path)
-
-    for p in ["faster-rcnn", "herdnet", "mock"]:
-        if p in weights_path_str:
-            return p  # type: ignore [return-value]
-
-    raise ValueError("Could not determine model architecture from model_path ")
+    def get_idx_2_species_dict(self) -> dict[int, str]:
+        """Get mapping of label idx to species name."""
+        return self.idx2species
 
 
-def load_model_pack(weights_path: Path) -> ModelPackType:
+def make_detector(weights_path: Path, cfg_path: Path) -> tuple[Detector, ModelMetadata]:
     """Restore and return a prediction model from a weights file."""
     # check for mps (apple silicon) availability, otherwise use cpu
     if torch.backends.mps.is_available():
@@ -118,49 +108,31 @@ def load_model_pack(weights_path: Path) -> ModelPackType:
 
     num_classes = len(DEFAULT_CLASS_LABEL_2_NAME)
 
-    model_arch = determine_model_arch(weights_path)
+    # model_arch = determine_model_arch(weights_path)
+    cfg = OmegaConf.load(cfg_path)
 
-    if model_arch == "herdnet":
+    if cfg.model.name == "Herdnet":
         raise NotImplementedError("Loading of Herdnet model not implemented yet...")
-    elif model_arch == "faster-rcnn":
-        model = make_faster_rcnn_model(num_classes=num_classes)
-        logger.info(f"Loading weights from: {weights_path} onto faster-rcnn model")
-        checkpoint = torch.load(weights_path, map_location=device)
-
-        # The stored weights are prefixed with 'model.', so we need to remove it
-        state_dict = checkpoint["model_state_dict"]
-        new_state_dict = {k.replace("model.", ""): v for k, v in state_dict.items()}
-
-        model.load_state_dict(new_state_dict)
-        model.to(device)  # move model to correct device
-        assert isinstance(model, nn.Module)
-
-        return ModelPackType(
-            model=model,
-            model_path=weights_path,
-            model_arch="faster-rcnn",
-            pre_transform=transforms.ToTensor(),
-            bbox_format="xyxy",
-            idx2species=DEFAULT_CLASS_LABEL_2_NAME,
+    elif cfg.model.name == "FasterRCNNResNetFPN":
+        return faster_rcnn_detector_from_cfg_file(
+            model_pth_path=weights_path,
+            cfg_file=cfg_path,
         )
 
-    elif model_arch == "mock":
-        model = MockModel(num_classes=num_classes)
-        return ModelPackType(
-            model=model,
+    elif cfg.model.name == "mock":
+        return MockDetector(
+            num_classes=num_classes,
+            idx2species=DEFAULT_CLASS_LABEL_2_NAME,
+            bbox_format=None,
+        ), dict(
             model_path=weights_path,
             model_arch="mock",
-            pre_transform=transforms.ToTensor(),
-            bbox_format=None,
-            idx2species=DEFAULT_CLASS_LABEL_2_NAME,
         )
     else:
-        raise NotImplementedError(f"model_arch=`{model_arch}` not implemented yet")
+        raise NotImplementedError(f"Loading of model.name=`{cfg.model.name}` not implemented yet")
 
 
-def verify_and_post_process_pred(
-    pred: RawPrediction, bbox_format: Literal["xyxy", "xywh"] | None
-) -> RawPrediction:
+def verify_and_post_process_pred(pred: DetectionsDict, bbox_format: BBoxFormat) -> DetectionsDict:
     """Make sure pred has a labels key AND (either boxes or points).
 
     If only boxes, compute box centers and add them.
@@ -202,6 +174,7 @@ def verify_and_post_process_pred(
             raise ValueError("box_format must be COCO or PASCAL_VOC when boxes are given")
 
     assert len(pred["points"]) == len(pred["labels"]), pformat(pred)
+    pred["total_detections"] = len(pred["points"])
 
     return pred
 
@@ -225,4 +198,5 @@ def compute_counts_by_species(
     return ThresholdCounts(
         score_thresh=thresh,
         counts=counts,
+        total_count=sum(counts.values()),
     )

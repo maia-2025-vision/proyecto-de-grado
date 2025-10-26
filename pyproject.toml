@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "python-multipart>=0.0.20",
+]
 
 [dependency-groups]
 dev = [
@@ -112,10 +114,12 @@ select = [
 ]
 
 ignore = [
+    "C408", # Unnecessary dict() call (rewrite as literal)
     "D100", # Missing docstring in public module
     "D103", # Missing docstring in public function
     "D104", # Missing docstring in public package
     "D107", # Missing docstring in __init__
+    "D415", # First line should end with a period, question mark, or exclamation point
     "UP040", # Type alias `X` uses `TypeAlias` annotation instead of the `type` keyword
     "N812", # Allow imports like `import albumentations as A`
 ]
@@ -124,7 +128,7 @@ ignore = [
 exclude = [
     "pages/1_Upload_Images.py",
     "pages/2_View_Detections.py",
-    "notebooks/"
+    "notebooks/**/*.py"
 ]
 
 [tool.ruff.format]
@@ -146,7 +150,8 @@ extend-immutable-calls = [
     "typer.Argument",
     "fastapi.Header",
     "fastapi.Depends",
-    "fastapi.Security"
+    "fastapi.Security",
+    "fastapi.File"
 ]
 
 [tool.mypy]
@@ -164,7 +169,7 @@ warn_return_any = true
 show_error_codes = true
 
 [[tool.mypy.overrides]]
-module = ["animaloc.*", "albumentations"]
+module = ["animaloc.*", "albumentations.*", "torchvision.*"]
 ignore_missing_imports = true
 
 
@@ -175,14 +180,29 @@ AWS_PROFILE="dvc-user"
 help="runs formatting checks (e.g. ruff) on commited files"
 cmd="pre-commit run --all-files"
 
+[tool.poe.tasks.check]
+help="run code style checks"
+cmd="ruff check --config pyproject.toml ./"
+
 [tool.poe.tasks.type-check]
 help="run type-checking on the whole project with mypy (takes a couple of secs)"
 cmd="mypy --config pyproject.toml ./"
 
-[tool.poe.tasks.serve]
+[tool.poe.tasks.serve-mock]
 help="Start the prediction API service, MODEL_PATH needs set by caller first"
-env={MODEL_PATH="data/models/mock/model.pth"}
+env={MODEL_WEIGHTS_PATH="data/models/mock/model.pth", MODEL_CFG_PATH="configs/train/mock.yaml"}
 cmd="python api/run_api.py"
+
+[tool.poe.tasks.serve-frc]
+help="Start the prediction API service with the Faster-RCNN model"
+cmd="python api/run_api.py"
+[tool.poe.tasks.serve-frc.env]
+MODEL_WEIGHTS_PATH="data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth"
+MODEL_CFG_PATH="configs/train/faster_rcnn_herdnet_trainer.yaml"
+
+[tool.poe.tasks.e2e]
+help="Run an e2e test of an endpoint"
+cmd="python test/e2e/endpoints.py"
 
 [tool.poe.tasks.dockerize-api]
 help="Package the API in as a docker image"
