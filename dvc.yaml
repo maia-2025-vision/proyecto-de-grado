@@ -192,8 +192,7 @@ stages:
 
   test-faster-rcnn-resnet50:
     desc: >
-      Ejecutar el script de test sobre el modelo faster-rcnn-resnet50.
-    # TODO: when running on linux change device_name to "cuda"
+      Ejecutar el script de test sobre el modelo faster-rcnn-resnet50 sobre patches
     # test.sticher=null because we are running over patches of size 512x512
     cmd: >
       python oficial_herdnet/tools/test.py  --config-path $PWD/configs/
@@ -213,3 +212,26 @@ stages:
       - data/patches-512-ol-160-m0.3/test/
     outs:
       - data/test_results/frcnn-resnet50
+
+  test-faster-rcnn-resnet50-full:
+    desc: >
+      Ejecutar el script de test sobre el modelo faster-rcnn-resnet50 sobre imágnes full.
+    # Como las imágenes tiene tamaños diversos hay que poner test.datasetbatch_size=1
+    cmd: >
+      python oficial_herdnet/tools/test.py  --config-path $PWD/configs/
+      test=faster_rcnn
+      test.device_name="cpu"
+      test.wandb_mode="online"
+      test.dataset.batch_size=1
+      test.wandb_run=test-frcnn-resnet50
+      test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
+      test.model.kwargs.architecture=resnet50
+      test.dataset.csv_file=data/patches-512-ol-160-m0.3/test/gt.csv
+      test.dataset.root_dir=data/patches-512-ol-160-m0.3/test/
+      test.results_dir=data/test_results/frcnn-resnet50-full-imgs
+    deps:
+      - ./configs/test/faster_rcnn.yaml
+      - data/models/faster-rcnn/resnet50-100-epochs-tbl4
+      - data/test/
+    outs:
+      - data/test_results/frcnn-resnet50-full-imgs
