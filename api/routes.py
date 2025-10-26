@@ -2,22 +2,18 @@ import io
 import traceback
 from collections import Counter
 from http import HTTPStatus
-from pathlib import Path
 
 import pydantic
 import requests
-import torch
-import torchvision.transforms as transforms  # type: ignore [import-untyped]
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from loguru import logger
 from PIL import Image
 
 from api.config import SETTINGS
-from api.internal_types import ModelPackType
+from api.detector import DetectionsDict
+from api.internal_types import DetectorHandle
 from api.model_utils import (
-    DEFAULT_CLASS_LABEL_2_NAME,
-    MockModel,
-    RawPrediction,
+    MockDetector,
     compute_counts_by_species,
     verify_and_post_process_pred,
 )
@@ -45,13 +41,8 @@ from api.s3_utils import (
 )
 
 # This structure gets properly initialized in api.main.lifespan
-model_pack: ModelPackType = ModelPackType(
-    model=MockModel(num_classes=len(DEFAULT_CLASS_LABEL_2_NAME)),
-    model_arch="mock",
-    model_path=Path("undefined/"),
-    pre_transform=transforms.ToTensor(),
-    bbox_format=None,
-    idx2species=DEFAULT_CLASS_LABEL_2_NAME,
+DETECTOR = DetectorHandle(
+    detector=MockDetector(idx2species={}, num_classes=0, bbox_format=None), model_metadata={}
 )
 
 router = APIRouter()
@@ -68,13 +59,24 @@ def download_image_from_url(url: str) -> Image.Image:
     return Image.open(io.BytesIO(file_bytes)).convert("RGB")
 
 
+def try_download_image(url: str) -> Image.Image:
+    try:
+        return download_image_from_url(url)
+    except Exception as exc:
+        raise PredictionError(
+            url=url,
+            status=HTTPStatus.UNAUTHORIZED,
+            error=f"No se pudo descargar o abrir la imagen: {str(exc)}",
+        ) from exc
+
+
 @router.get("/app-info")
 async def get_app_info() -> AppInfoResponse:
     return AppInfoResponse(
         model_info=ModelInfo(
-            path=str(SETTINGS.model_path),
-            model_arch=model_pack.model_arch,
-            bbox_format=model_pack.bbox_format,
+            weights_path=str(SETTINGS.model_weights_path),
+            cfg_path=str(SETTINGS.model_cfg_path),
+            model_metadata=DETECTOR.model_metadata,
         ),
         s3_bucket=SETTINGS.s3_bucket,
     )
@@ -92,7 +94,8 @@ async def predict_many_endpoint(req: PredictManyRequest) -> PredictManyResult:
     result: PredictionResult | PredictionApiError
     for url in req.urls:
         try:
-            result = predict_one(url, counts_score_thresh=req.counts_score_thresh)
+            image = try_download_image(url)
+            result = predict_one(image=image, url=url, counts_score_thresh=req.counts_score_thresh)
         except PredictionError as err:
             result = PredictionApiError.from_prediction_error(err)
 
@@ -101,35 +104,48 @@ async def predict_many_endpoint(req: PredictManyRequest) -> PredictManyResult:
     return PredictManyResult(results=results)
 
 
-@router.post("/predict")
+@router.post("/predict", description="Run detection on an image already uploaded to s3")
 def predict_one_endpoint(req: PredictOneRequest) -> PredictionResult:
-    return predict_one(url=req.s3_path, counts_score_thresh=req.counts_score_thresh)
+    url = req.s3_path
+    image = try_download_image(url=url)
+    return predict_one(image=image, url=url, counts_score_thresh=req.counts_score_thresh)
 
 
-def predict_one(url: str, *, counts_score_thresh: float) -> PredictionResult:
+@router.post(
+    path="/predict-on-upload",
+    description="Run detection on an image that is uploaded directly to the endpoint"
+    "(used for more direct testing)",
+)
+async def predict_on_uploaded_image(
+    counts_score_thresh: float = 0.7,
+    file: UploadFile = File("Uploaded image file"),
+) -> PredictionResult:
+    logger.info("About to read uploaded file")
+    file_bytes: bytes = await file.read()
+
+    image = Image.open(io.BytesIO(file_bytes))
+    return predict_one(
+        image=image,
+        url="__undefined__",
+        counts_score_thresh=counts_score_thresh,
+        upload_result_to_s3=False,
+    )
+
+
+def predict_one(
+    image: Image.Image, url: str, *, counts_score_thresh: float, upload_result_to_s3: bool = True
+) -> PredictionResult:
+    detector = DETECTOR.detector
     try:
-        image = download_image_from_url(url)
-    except Exception as exc:
-        raise PredictionError(
-            url=url,
-            status=HTTPStatus.UNAUTHORIZED,
-            error=f"No se pudo descargar o abrir la imagen: {str(exc)}",
-        ) from exc
-
-    image_tensor = model_pack.pre_transform(image).unsqueeze(0)  # batch size 1
-    try:
-        with torch.no_grad():
-            model_outputs = model_pack.model(image_tensor)
-
-        pred = model_outputs[0]  # just the first one since we only passed one image in the batch
-        pred_obj: RawPrediction = {k: v.tolist() for k, v in pred.items()}  # type: ignore
-        pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=model_pack.bbox_format)
+        pred = detector.detect_one_image(image)
+        pred_obj: DetectionsDict = {k: v.tolist() for k, v in pred.items()}  # type: ignore
+        pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=detector.bbox_format())
 
         counts_at_thresh = compute_counts_by_species(
             labels=pred_obj2["labels"],
             scores=pred_obj2["scores"],
             thresh=counts_score_thresh,
-            idx2species=model_pack.idx2species,
+            idx2species=detector.get_idx_2_species_dict(),
         )
 
         pred_result = PredictionResult(
@@ -145,6 +161,9 @@ def predict_one(url: str, *, counts_score_thresh: float) -> PredictionResult:
             status=HTTPStatus.INTERNAL_SERVER_ERROR,
             error=f"Error durante la predicción: {str(exc)}",
         ) from exc
+
+    if not upload_result_to_s3:
+        return pred_result
 
     try:
         upload_json_to_s3(pred_result.model_dump(), url)

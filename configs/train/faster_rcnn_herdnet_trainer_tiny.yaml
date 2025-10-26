@@ -1,5 +1,5 @@
 wandb_project: 'Herdnet'
-wandb_entity: 'teo-cornell-university'
+wandb_entity: 'maiavision2025-universidad-de-los-andes'
 wandb_run: 'faster-rcnn-tiny'
 wandb_mode: "disabled"
 seed: 17

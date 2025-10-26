@@ -1,0 +1,3 @@
+# used for constructing a mock model in the api
+model:
+  name: "mock"
