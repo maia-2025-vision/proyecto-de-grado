@@ -363,3 +363,49 @@ stages:
       md5: 72a230a1dc59c5b3e342fb5a10a52e63.dir
       size: 983590
       nfiles: 4
+  desc-faster-rcnn-resnet50:
+    cmd: "python tools/describe_model.py --config-path=$PWD/configs  test=faster_rcnn
+      test.device_name=\"cpu\" test.model.kwargs.architecture=resnet50 test.model.kwargs.trainable_backbone_layers=4
+      test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
+      +test.group_depth=2 +test.results_file=data/model_descs/parameters-frcnn-resnet-50.csv\n"
+    deps:
+    - path: ./configs/test/faster_rcnn.yaml
+      hash: md5
+      md5: 200dc9587b7fc6c99328563464cebef5
+      size: 1203
+    - path: data/models/faster-rcnn/resnet50-100-epochs-tbl4
+      hash: md5
+      md5: d81b61b11fb66679e17cbea3d2b3325e.dir
+      size: 1490431295
+      nfiles: 5
+    - path: tools/describe_model.py
+      hash: md5
+      md5: a77d72cf42f37765396a1590a123ca2f
+      size: 1924
+    outs:
+    - path: data/model_descs/parameters-frcnn-resnet-50.csv
+      hash: md5
+      md5: d4804f6913553b04731e25ba51b3fd48
+      size: 145
+  desc-herdnet-v1:
+    cmd: "python tools/describe_model.py --config-path=$PWD/configs  test=herdnet
+      test.device_name=\"cpu\" test.model.pth_file=data/models/herdnet_v1/best_model.pth
+      +test.group_depth=2 +test.results_file=data/model_descs/parameters-herdnet-v1.csv\n"
+    deps:
+    - path: data/models/herdnet_v1/best_model.pth
+      hash: md5
+      md5: 42e16db884bb86fed58d7b5e7dd60e01
+      size: 219993031
+    - path: oficial_herdnet/configs/test/herdnet.yaml
+      hash: md5
+      md5: e6865b870a7ed44d90ac202a8a937a94
+      size: 868
+    - path: tools/describe_model.py
+      hash: md5
+      md5: a77d72cf42f37765396a1590a123ca2f
+      size: 1924
+    outs:
+    - path: data/model_descs/parameters-herdnet-v1.csv
+      hash: md5
+      md5: b500d8213f3144d096d7282eacd461b3
+      size: 177
