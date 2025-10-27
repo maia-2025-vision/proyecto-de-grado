@@ -1,3 +1,5 @@
+"""Página principal de la aplicación de Streamlit."""
+
 import streamlit as st
 
 st.set_page_config(

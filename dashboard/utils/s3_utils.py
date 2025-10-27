@@ -1,16 +1,18 @@
+"""Utilidades para la interacción con S3."""
+
 from datetime import datetime
-from typing import Optional
 
 import boto3
 import streamlit as st
 from botocore.exceptions import NoCredentialsError
+from mypy_boto3_s3.client import S3Client
 
 # El nombre del bucket debería coincidir con el configurado en la API
 S3_BUCKET_NAME = "cow-detect-maia"
 
 
 @st.cache_resource
-def get_s3_client():
+def get_s3_client() -> S3Client | None:
     """Crea y devuelve un cliente de S3 cacheado."""
     try:
         return boto3.client("s3")

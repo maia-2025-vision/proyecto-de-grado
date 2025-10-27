@@ -1,6 +1,7 @@
 wandb_project: 'Herdnet'
 wandb_entity: 'maiavision2025-universidad-de-los-andes'
-wandb_run: 'faster-rcnn-tiny'
+wandb_run: 'faster-rcnn'
+wandb_mode: "offline"
 seed: 17
 device_name: 'cuda'
 
