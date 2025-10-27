@@ -338,10 +338,10 @@ stages:
       nfiles: 4
   test-faster-rcnn-resnet50-full:
     cmd: "python oficial_herdnet/tools/test.py  --config-path $PWD/configs/ test=faster_rcnn
-      test.device_name=\"cpu\" test.wandb_mode=\"online\" test.dataset.batch_size=1
+      test.device_name=\"cuda\" test.wandb_mode=\"online\" test.dataset.batch_size=1
       test.wandb_run=test-frcnn-resnet50 test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
-      test.model.kwargs.architecture=resnet50 test.dataset.csv_file=data/patches-512-ol-160-m0.3/test/gt.csv
-      test.dataset.root_dir=data/patches-512-ol-160-m0.3/test/ test.results_dir=data/test_results/frcnn-resnet50-full-imgs\n"
+      test.model.kwargs.architecture=resnet50 test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      test.dataset.root_dir=data/test/ test.results_dir=data/test_results/frcnn-resnet50-full-imgs\n"
     deps:
     - path: ./configs/test/faster_rcnn.yaml
       hash: md5
@@ -360,8 +360,8 @@ stages:
     outs:
     - path: data/test_results/frcnn-resnet50-full-imgs
       hash: md5
-      md5: 72a230a1dc59c5b3e342fb5a10a52e63.dir
-      size: 983590
+      md5: 67ba715b47bc3e01aad498392943b781.dir
+      size: 1245499
       nfiles: 4
   desc-faster-rcnn-resnet50:
     cmd: "python tools/describe_model.py --config-path=$PWD/configs  test=faster_rcnn
