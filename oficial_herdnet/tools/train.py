@@ -303,16 +303,19 @@ def main(cfg: DictConfig) -> None:
     Path(work_dir).mkdir(parents=True, exist_ok=True)
     # END of CHANGE
 
-    # Set up wandb
-    print("Connecting to Weights & Biases ...")
     settings = cfg.training_settings
     losses = cfg.losses
     if losses is not None:
         losses = list(cfg.losses.keys())
 
+    # Set up wandb
+    wandb_mode = cfg.get("wandb_mode") or "online"
+    print("Connecting to Weights & Biases ... wandb_mode:", wandb_mode)
+
     wandb.init(
         project=cfg.wandb_project,
         entity=cfg.wandb_entity,
+        mode=wandb_mode,
         config=dict(
             batch_size=settings.batch_size,
             optimizer=settings.optimizer,
