@@ -50,8 +50,8 @@ stages:
       nfiles: 258
     - path: oficial_herdnet/tools/patcher.py
       hash: md5
-      md5: d2a425277992cba02663f97de6ff6fdb
-      size: 3940
+      md5: c07f8d75238ff27ea1404b230d36bb88
+      size: 4295
     outs:
     - path: data/patches-512-ol-160-m01/test/
       hash: md5
@@ -388,4 +388,23 @@ stages:
       hash: md5
       md5: ea48f6a005445c58f46ff4b0ab5e1bcb.dir
       size: 1120993
+      nfiles: 4
+  test-herdnet-v1:
+    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
+      config\" test.results_dir=data/test_results/herdnet_v1/ test.stitcher=null\n"
+    deps:
+    - path: data/patches-512-ol-160-m01/test/
+      hash: md5
+      md5: 71eb378f9db92d36b358703d400013cd.dir
+      size: 75831301
+      nfiles: 2559
+    - path: data/patches-512-ol-160-m01/test_points_gt.csv
+      hash: md5
+      md5: d637312c2d5d6bd6acb1d05ac5560362
+      size: 230725
+    outs:
+    - path: data/test_results/herdnet_v1/
+      hash: md5
+      md5: 11d9a2d0f294b65055806808006a14e4.dir
+      size: 805188
       nfiles: 4
