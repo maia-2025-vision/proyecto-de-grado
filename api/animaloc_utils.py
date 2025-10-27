@@ -156,7 +156,7 @@ def faster_rcnn_detector_from_cfg_file(
         model=model,
         norm=Normalize(),  # BUILDING transform with default mean/std params for now...
         patch_size=patch_size,
-        batch_size=cfg.inference_settings.batch_size,
+        batch_size=1,  # cfg.inference_settings.batch_size,
         bbox_format="xyxy",
         idx2species=dict(cfg.dataset.class_def),
         device_name=device_name,

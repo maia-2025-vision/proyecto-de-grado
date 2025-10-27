@@ -1,3 +1,5 @@
+"""Utilidades de visualización para dibujar detecciones en imágenes."""
+
 import io
 from typing import Any
 from urllib.parse import urlparse
@@ -7,6 +9,7 @@ import requests
 import streamlit as st
 from botocore.exceptions import ClientError
 from PIL import Image, ImageDraw, ImageFont
+from PIL.ImageFont import FreeTypeFont
 
 # Paleta de colores para las especies
 SPECIES_COLORS = {
@@ -30,8 +33,15 @@ SPECIES_MAP = {
 
 
 @st.cache_data
-def download_image(url: str) -> Image.Image:
-    """Descarga una imagen desde una URL S3 o HTTP."""
+def download_image(url: str) -> Image.Image | None:
+    """Descarga una imagen desde una URL S3 o HTTP y la devuelve como objeto PIL.
+
+    Args:
+        url: La URL de la imagen a descargar. Puede ser una URL `s3://` o `http(s)://`.
+
+    Returns:
+        Un objeto `PIL.Image.Image` si la descarga es exitosa, o `None` si falla.
+    """
     if url.startswith("s3://"):
         try:
             s3_client = boto3.client("s3")
@@ -62,17 +72,31 @@ def download_image(url: str) -> Image.Image:
 
 def draw_detections_on_image(
     image: Image.Image,
-    detections: dict,
+    detections: dict[str, Any],
     confidence_threshold: float,
     selected_labels: list[int],
     text_color: str = "#FFFFFF",
     line_width: int = 3,
 ) -> Image.Image:
+    """Dibuja cajas delimitadoras (bounding boxes) y etiquetas sobre una imagen.
+
+    Args:
+        image: El objeto de imagen PIL sobre el cual dibujar.
+        detections: Un diccionario con las detecciones, que debe contener
+                    'boxes', 'labels' y 'scores'.
+        confidence_threshold: El umbral de confianza mínimo para mostrar una detección.
+        selected_labels: Una lista de IDs de etiquetas para filtrar qué especies mostrar.
+        text_color: El color del texto de las etiquetas.
+        line_width: El grosor de la línea de las cajas delimitadoras.
+
+    Returns:
+        Un nuevo objeto de imagen PIL con las detecciones dibujadas.
+    """
     img_with_boxes = image.copy()
     draw = ImageDraw.Draw(img_with_boxes)
 
     try:
-        font = ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
+        font: FreeTypeFont | ImageFont.ImageFont = ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
     except OSError:
         font = ImageFont.load_default()
 
@@ -114,12 +138,24 @@ def draw_detections_on_image(
 
 def draw_centroids_on_image(
     image: Image.Image,
-    detections: dict,
+    detections: dict[str, Any],
     confidence_threshold: float,
     selected_labels: list[int],
     point_size: int = 5,
 ) -> Image.Image:
-    """Dibuja los centroides de las detecciones en una imagen."""
+    """Dibuja los centroides de las detecciones como puntos en una imagen.
+
+    Args:
+        image: El objeto de imagen PIL sobre el cual dibujar.
+        detections: Un diccionario con las detecciones, que debe contener
+                    'boxes', 'labels' y 'scores'.
+        confidence_threshold: El umbral de confianza mínimo para mostrar una detección.
+        selected_labels: Una lista de IDs de etiquetas para filtrar qué especies mostrar.
+        point_size: El radio en píxeles de los puntos a dibujar.
+
+    Returns:
+        Un nuevo objeto de imagen PIL con los centroides dibujados.
+    """
     img_with_points = image.copy()
     draw = ImageDraw.Draw(img_with_points)
 

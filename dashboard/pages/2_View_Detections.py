@@ -1,6 +1,7 @@
+"""Página de Streamlit para visualizar los resultados de las detecciones."""
+
 import pandas as pd
 import streamlit as st
-from PIL import Image
 
 from dashboard.utils.api_client import (
     get_counts_for_flyover,
@@ -42,27 +43,34 @@ with st.sidebar:
             selected_flyover = None
 
         if st.button("Cargar Resultados", disabled=not selected_flyover, type="primary"):
-            with st.spinner("Cargando resultados y conteos..."):
-                det_results = get_detection_results(selected_region, selected_flyover)
-                count_results = get_counts_for_flyover(selected_region, selected_flyover)
+            # Nos aseguramos de que las variables no son None antes de llamar a la API
+            if selected_region and selected_flyover:
+                with st.spinner("Cargando resultados y conteos..."):
+                    det_results = get_detection_results(selected_region, selected_flyover)
+                    count_results = get_counts_for_flyover(selected_region, selected_flyover)
 
-                if "error" in det_results:
-                    st.error(f"Error al cargar detecciones: {det_results['error']}")
-                    st.session_state.detection_results = {}
-                else:
-                    st.session_state.detection_results = det_results
+                    if "error" in det_results:
+                        st.error(f"Error al cargar detecciones: {det_results['error']}")
+                        st.session_state.detection_results = {}
+                    else:
+                        st.session_state.detection_results = det_results
 
-                if "error" in count_results:
-                    st.error(f"Error al cargar conteos: {count_results['error']}")
-                    st.session_state.count_results = {}
-                else:
-                    st.session_state.count_results = count_results
+                    if "error" in count_results:
+                        st.error(f"Error al cargar conteos: {count_results['error']}")
+                        st.session_state.count_results = {}
+                    else:
+                        st.session_state.count_results = count_results
     else:
         selected_region = "Ejemplo"
         selected_flyover = "Corrida_1"
 
     st.markdown("---")
     st.header("Opciones de Visualización")
+    display_mode = st.selectbox(
+        "Modo de Visualización",
+        options=["Ambos", "Cajas Delimitadoras", "Centroides"],
+        index=0,  # "Ambos" por defecto
+    )
     confidence_threshold = st.slider("Umbral de Confianza", 0.0, 1.0, 0.5, 0.05)
     line_width = st.slider("Grosor de Línea (Cajas)", 1, 10, 3)
     point_size = st.slider("Tamaño de Punto (Centroides)", 1, 20, 5)
@@ -102,8 +110,7 @@ if "count_results" in st.session_state and st.session_state.count_results:
     if not counts_data:
         st.warning("No hay datos de conteo para este sobrevuelo.")
     else:
-        named_counts = {SPECIES_MAP.get(int(k), f"ID_{k}"): v for k, v in counts_data.items()}
-        df_counts = pd.DataFrame(list(named_counts.items()), columns=["Especie", "Conteo"])
+        df_counts = pd.DataFrame(counts_data.items(), columns=["Especie", "Conteo"])
 
         col1, col2 = st.columns(2)
         with col1:
@@ -128,51 +135,63 @@ if "detection_results" in st.session_state and st.session_state.detection_result
             format_func=lambda url: url.split("/")[-1],
         )
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("Modelo: Cajas Delimitadoras")
-            selected_result = next(
-                (res for res in results_data if res.get("url") == selected_image_url), None
-            )
+        # --- Lógica de visualización condicional ---
 
-            if selected_result and selected_image_url:
-                # Si es modo mock, la imagen está en el session_state, si no, la descargamos.
-                if is_mock_mode:
-                    image = st.session_state.original_images.get(selected_image_url)
-                else:
-                    image = download_image(selected_image_url)
+        selected_result = next(
+            (res for res in results_data if res.get("url") == selected_image_url), None
+        )
 
-                if image:
-                    image_with_detections = draw_detections_on_image(
-                        image.copy(),
-                        selected_result.get("detections", {}),
-                        confidence_threshold,
-                        selected_labels,
-                        text_color=text_color,
-                        line_width=line_width,
-                    )
+        if selected_result and selected_image_url:
+            # Descargar la imagen una sola vez
+            if is_mock_mode:
+                image = st.session_state.original_images.get(selected_image_url)
+            else:
+                image = download_image(selected_image_url)
+
+            if image:
+                # Preparar las dos visualizaciones
+                image_with_detections = draw_detections_on_image(
+                    image.copy(),
+                    selected_result.get("detections", {}),
+                    confidence_threshold,
+                    selected_labels,
+                    text_color=text_color,
+                    line_width=line_width,
+                )
+                image_with_centroids = draw_centroids_on_image(
+                    image.copy(),
+                    selected_result.get("detections", {}),
+                    confidence_threshold,
+                    selected_labels,
+                    point_size=point_size,
+                )
+
+                # Mostrar según el modo seleccionado
+                if display_mode == "Ambos":
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.subheader("Modelo: Cajas Delimitadoras")
+                        st.image(
+                            image_with_detections,
+                            caption="Detecciones con Cajas Delimitadoras",
+                            use_container_width=True,
+                        )
+                    with col2:
+                        st.subheader("Modelo: Centroides")
+                        st.image(
+                            image_with_centroids,
+                            caption="Detecciones con Centroides",
+                            use_container_width=True,
+                        )
+                elif display_mode == "Cajas Delimitadoras":
+                    st.subheader("Modelo: Cajas Delimitadoras")
                     st.image(
                         image_with_detections,
                         caption="Detecciones con Cajas Delimitadoras",
                         use_container_width=True,
                     )
-
-        with col2:
-            st.subheader("Modelo: Centroides")
-            if selected_result and selected_image_url:
-                if is_mock_mode:
-                    image = st.session_state.original_images.get(selected_image_url)
-                else:
-                    image = download_image(selected_image_url)
-
-                if image:
-                    image_with_centroids = draw_centroids_on_image(
-                        image.copy(),
-                        selected_result.get("detections", {}),
-                        confidence_threshold,
-                        selected_labels,
-                        point_size=point_size,
-                    )
+                elif display_mode == "Centroides":
+                    st.subheader("Modelo: Centroides")
                     st.image(
                         image_with_centroids,
                         caption="Detecciones con Centroides",
