@@ -110,3 +110,42 @@ def draw_detections_on_image(
             draw.text((text_x + 2, text_y + 2), label_text, fill=text_color, font=font)
 
     return img_with_boxes
+
+
+def draw_centroids_on_image(
+    image: Image.Image,
+    detections: dict,
+    confidence_threshold: float,
+    selected_labels: list[int],
+    point_size: int = 5,
+) -> Image.Image:
+    """Dibuja los centroides de las detecciones en una imagen."""
+    img_with_points = image.copy()
+    draw = ImageDraw.Draw(img_with_points)
+
+    scores = detections.get("scores", [])
+    labels = detections.get("labels", [])
+    boxes = detections.get("boxes", [])
+
+    for i, score in enumerate(scores):
+        label = labels[i]
+        if score >= confidence_threshold and label in selected_labels:
+            box = boxes[i]
+            xmin, ymin, xmax, ymax = box
+
+            # Calcular el centroide
+            center_x = (xmin + xmax) / 2
+            center_y = (ymin + ymax) / 2
+
+            # Definir el color y el radio del punto
+            point_color = SPECIES_COLORS.get(label, "#FFFFFF")
+            radius = point_size
+
+            # Dibujar el círculo (elipse con el mismo radio para x e y)
+            draw.ellipse(
+                (center_x - radius, center_y - radius, center_x + radius, center_y + radius),
+                fill=point_color,
+                outline=point_color,
+            )
+
+    return img_with_points
