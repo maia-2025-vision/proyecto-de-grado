@@ -59,7 +59,12 @@ def _set_species_labels(cls_dict: dict, df: pd.DataFrame) -> None:
     df["labels"] = df["species"].map(cls_dict)
 
 
-def _build_model(cfg: DictConfig) -> torch.nn.Module:
+def build_model(cfg: DictConfig) -> torch.nn.Module:
+    """Build a model specified by cfg and wrap it with LossWrapper.
+
+    Model can be a from torch vision (cfg.mode.from_torchvision: bool)
+    or a model from animaloc.models module.
+    """
     name = cfg.model.name
     from_torchvision = cfg.model.from_torchvision
 
@@ -200,7 +205,7 @@ def main(cfg: DictConfig) -> None:
 
     # Build the trained model
     logger.info("Building the trained model ...")
-    model = _build_model(cfg).to(device)
+    model = build_model(cfg).to(device)
 
     # Build the evaluator
     logger.info("Preparing for testing ...")

@@ -11,7 +11,7 @@ model:
   pth_file: '/override/me/via/commandline'
   kwargs:
     architecture: 'override me via commandline'
-    num_classes: ${train.datasets.num_classes}
+    num_classes: 7
     pretrained_backbone: True
     trainable_backbone_layers: 4
     min_size: 512

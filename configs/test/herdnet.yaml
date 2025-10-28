@@ -1,16 +1,12 @@
-# personalizado de https://github.com/Alexandre-Delplanque/HerdNet/blob/main/configs/test/herdnet.yaml
-
-wandb_project: 'Herdnet'
-wandb_entity: 'maiavision2025-universidad-de-los-andes'
-wandb_run:  null # to be overriden in command line
-wandb_mode: "disabled"
+wandb_project: 'Sample project'
+wandb_entity: 'youraccountname'
+wandb_run: 'myrun'
 device_name: 'cuda'
-results_dir: null # to be overriden in command line
 
-model:
+model: 
   name: 'HerdNet'
   from_torchvision: False
-  pth_file: null # to be overriden in command line
+  pth_file: '/path/to/your/file.pth'
   kwargs:
     num_layers: 34
     pretrained: False
@@ -31,9 +27,10 @@ dataset:
     5: 'Waterbuck'
     6: 'Elephant'
 
+
   name: 'CSVDataset'
-  csv_file: null # to be overriden in command line
-  root_dir: null # to be overriden in command line
+  csv_file: '/path/to/your/file.csv'
+  root_dir: '/path/to/your/images/folder'
 
   mean: [0.485, 0.456, 0.406]
   std: [0.229, 0.224, 0.225]
@@ -49,7 +46,7 @@ evaluator:
 stitcher:
   name: 'HerdNetStitcher'
   kwargs:
-    overlap: 0
+    overlap: 160
     down_ratio: ${test.model.kwargs.down_ratio}
     up: False
     reduction: 'mean'

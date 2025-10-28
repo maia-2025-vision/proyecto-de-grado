@@ -1,11 +1,12 @@
 stages:
   patches-512-ol-160-mv01-train:
     cmd: python oficial_herdnet/tools/patcher.py data/train 512 512 160 
-      data/patches-512-ol-160-m01/train  -csv 
-      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv && 
-      python oficial_herdnet/tools/csv_to_points.py -i 
-      data/patches-512-ol-160-m01/train/gt.csv -o 
-      data/patches-512-ol-160-m01/train_points_gt.csv
+      data/patches-512-ol-160-m01/train
+      -csv data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv 
+      &&
+      python oficial_herdnet/tools/csv_to_points.py
+      -i data/patches-512-ol-160-m01/train/gt.csv
+      -o data/patches-512-ol-160-m01/train_points_gt.csv
     deps:
     - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
     - data/train/
@@ -16,11 +17,12 @@ stages:
 
   patches-512-ol-160-mv01-val:
     cmd: python oficial_herdnet/tools/patcher.py data/val 512 512 160 
-      data/patches-512-ol-160-m01/val  -csv 
-      data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv && python
-      oficial_herdnet/tools/csv_to_points.py -i 
-      data/patches-512-ol-160-m01/val/gt.csv -o 
-      data/patches-512-ol-160-m01/val_points_gt.csv
+      data/patches-512-ol-160-m01/val  
+      -csv data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv 
+      && 
+      python oficial_herdnet/tools/csv_to_points.py
+      -i data/patches-512-ol-160-m01/val/gt.csv
+      -o data/patches-512-ol-160-m01/val_points_gt.csv
     deps:
     - data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
     - data/val/
@@ -31,11 +33,12 @@ stages:
 
   patches-512-ol-160-mv01-test:
     cmd: python oficial_herdnet/tools/patcher.py data/test 512 512 160 
-      data/patches-512-ol-160-m01/test  -csv 
-      data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv && 
-      python oficial_herdnet/tools/csv_to_points.py -i 
-      data/patches-512-ol-160-m01/test/gt.csv -o 
-      data/patches-512-ol-160-m01/test_points_gt.csv
+      data/patches-512-ol-160-m01/test  
+      -csv data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv 
+      && 
+      python oficial_herdnet/tools/csv_to_points.py 
+      -i data/patches-512-ol-160-m01/test/gt.csv 
+      -o data/patches-512-ol-160-m01/test_points_gt.csv
     deps:
     - data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
     - data/test/
@@ -55,17 +58,68 @@ stages:
     outs:
     - data/models/herdnet_v1/
 
+  desc-herdnet-v1:
+    desc: >
+      Generate report of number of params per layer of herdnet-v1
+      # trainable_backbone_layers=5 for this report (to report all layers)
+      # but we trained with just 4 backbone layers
+    cmd: >
+      python tools/describe_model.py --config-path=$PWD/configs
+      test=herdnet
+      test.device_name="cpu"
+      test.model.pth_file=data/models/herdnet_v1/best_model.pth
+      +test.group_depth=2
+      +test.results_file=data/model_descs/parameters-herdnet-v1.csv
+    deps:
+      - tools/describe_model.py
+      - oficial_herdnet/configs/test/herdnet.yaml
+      - data/models/herdnet_v1/best_model.pth
+    outs:
+      - data/model_descs/parameters-herdnet-v1.csv
+
   test-herdnet-v1:
     # test.sticher=null because we are running over patches of size 512x512
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
-      test.results_dir=data/test_results/herdnet_v1/
+      test.wandb_run='Test 1 herdnet_v1'
+      test.wandb_mode=online
+      test.dataset.csv_file=data/patches-512-ol-160-m01/test_points_gt.csv
+      test.dataset.root_dir=data/patches-512-ol-160-m01/test/
       test.stitcher=null
+      test.results_dir=data/test_results/herdnet_v1/
     deps:
+    - oficial_herdnet/configs/test/herdnet.yaml
     - data/patches-512-ol-160-m01/test_points_gt.csv
     - data/patches-512-ol-160-m01/test/
     outs:
     - data/test_results/herdnet_v1/
+
+  test-full-to-points:
+    cmd: python oficial_herdnet/tools/csv_to_points.py
+      -i data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      -o data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+    deps:
+      - oficial_herdnet/tools/csv_to_points.py
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    outs:
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+
+  test-herdnet-v1-fullimgs:
+    cmd: >
+      python oficial_herdnet/tools/test.py --config-path $PWD/oficial_herdnet/configs/
+      test=herdnet
+      test.wandb_run='test-herdnet_v1-full-imgs'
+      test.wandb_mode=offline
+      test.model.pth_file=data/models/herdnet_v1/best_model.pth
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/
+      test.results_dir=data/test_results/herdnet_v1_fullimgs/
+    deps:
+      - oficial_herdnet/configs/test/herdnet.yaml
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      - data/test/
+    outs:
+      - data/test_results/herdnet_v1_fullimgs/
 
   fix-headers-train-csv:
     cmd: >
@@ -250,8 +304,7 @@ stages:
 
   test-faster-rcnn-resnet50:
     desc: >
-      Ejecutar el script de test sobre el modelo faster-rcnn-resnet50.
-    # TODO: when running on linux change device_name to "cuda"
+      Ejecutar el script de test sobre el modelo faster-rcnn-resnet50 sobre patches
     # test.sticher=null because we are running over patches of size 512x512
     cmd: >
       python oficial_herdnet/tools/test.py  --config-path $PWD/configs/
@@ -270,4 +323,71 @@ stages:
     - data/models/faster-rcnn/resnet50-100-epochs-tbl4
     - data/patches-512-ol-160-m0.3/test/
     outs:
-    - data/test_results/frcnn-resnet50
+      - data/test_results/frcnn-resnet50
+
+  desc-faster-rcnn-resnet50:
+    desc: >
+      Generate report of number of params per layer
+      # trainable_backbone_layers=5 for this report (to report all layers)
+      # but we trained with just 4 backbone layers
+    cmd: >
+      python tools/describe_model.py --config-path=$PWD/configs
+      test=faster_rcnn
+      test.device_name="cpu"
+      test.model.kwargs.architecture=resnet50
+      test.model.kwargs.trainable_backbone_layers=4
+      test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
+      +test.group_depth=2
+      +test.results_file=data/model_descs/parameters-frcnn-resnet-50.csv
+
+    deps:
+      - tools/describe_model.py
+      - ./configs/test/faster_rcnn.yaml
+      - data/models/faster-rcnn/resnet50-100-epochs-tbl4
+    outs:
+      - data/model_descs/parameters-frcnn-resnet-50.csv
+
+  desc-faster-rcnn-resnet101:
+    desc: >
+      Generate report of number of params per layer of faster-rcnn-resnet-101
+      # trainable_backbone_layers=5 for this report (to report all layers)
+      # but we trained with just 4 backbone layers
+    cmd: >
+      python tools/describe_model.py --config-path=$PWD/configs
+      test=faster_rcnn
+      test.device_name="cpu"
+      test.model.kwargs.architecture=resnet101
+      test.model.kwargs.trainable_backbone_layers=4
+      test.model.pth_file=data/models/faster-rcnn/resnet101-100-epochs-tbl4/best_model.pth
+      +test.group_depth=2
+      +test.results_file=data/model_descs/parameters-frcnn-resnet-101.csv
+
+    deps:
+      - tools/describe_model.py
+      - ./configs/test/faster_rcnn.yaml
+      - data/models/faster-rcnn/resnet101-100-epochs-tbl4
+    outs:
+      - data/model_descs/parameters-frcnn-resnet-101.csv
+
+  test-faster-rcnn-resnet50-full:
+    desc: >
+      Ejecutar el script de test sobre el modelo faster-rcnn-resnet50 sobre imágenes full.
+    # Como las imágenes tienen tamaños diversos hay que poner test.datasetbatch_size=1
+    cmd: >
+      python oficial_herdnet/tools/test.py  --config-path $PWD/configs/
+      test=faster_rcnn
+      test.device_name="cuda"
+      test.wandb_mode="online"
+      test.dataset.batch_size=1
+      test.wandb_run=test-frcnn-resnet50
+      test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
+      test.model.kwargs.architecture=resnet50
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      test.dataset.root_dir=data/test/
+      test.results_dir=data/test_results/frcnn-resnet50-full-imgs
+    deps:
+      - ./configs/test/faster_rcnn.yaml
+      - data/models/faster-rcnn/resnet50-100-epochs-tbl4
+      - data/test/
+    outs:
+      - data/test_results/frcnn-resnet50-full-imgs
