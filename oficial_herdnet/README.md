@@ -5,86 +5,71 @@
 Antes de comenzar el entrenamiento, es necesario obtener los datos utilizando DVC:
 
 ```bash
-# Obtener los parches de imágenes para entrenamiento
+# Obtener los parches de imágenes
 uv run dvc pull patches-512-ol-160-mv01-train
-
-# Obtener los parches de imágenes para validacion
 uv run dvc pull patches-512-ol-160-mv01-val
-
-# Obtener los parches de imágenes para test
 uv run dvc pull patches-512-ol-160-mv01-test
-
 ```
+
+### Generación de parches desde datos originales
 
 ```bash
 # Para generar los parches desde los datos originales
-# Si se requieren otras configuraciones hay que generar un nuevo stage en dvc.yaml
 uv run dvc repro patches-512-ol-160-mv01-train
-
 uv run dvc repro patches-512-ol-160-mv01-val
-
 uv run dvc repro patches-512-ol-160-mv01-test
 
-#cargar los nuevos datos al dvc remoto
+# Cargar los nuevos datos al DVC remoto
 uv run dvc push
 ```
 
+> **Nota importante**: Si se requieren otras configuraciones, se debe generar un nuevo stage en `dvc.yaml`
+
 ## Configuración y Entrenamiento
 
-Existen dos métodos para entrenar el modelo HerdNet:
+### Método 1: Implementación oficial (Hydra)
 
-### Método 1: Implementación oficial del autor (Hydra)
+#### Configuración de Weights & Biases
 
-La implementación original del autor utiliza Hydra para la gestión de configuraciones. El archivo de configuración principal se encuentra en `oficial_herdnet/configs/train/herdnet.yaml`.
-
-#### Configuración de Weights & Biases (wandb)
-
-La implementación oficial utiliza wandb para registrar el progreso del entrenamiento. Antes de ejecutar el entrenamiento, es necesario configurar wandb:
-
-1. Crear una cuenta en [wandb.ai](https://wandb.ai) si aún no la tienes
-2. Iniciar sesión en la terminal con:
-
-```bash
-wandb login
-```
-
-3. Editar los siguientes parámetros en `oficial_herdnet/configs/train/herdnet.yaml`:
+1. Crear cuenta en [wandb.ai](https://wandb.ai)
+2. Iniciar sesión: `wandb login`
+3. Editar parámetros en `oficial_herdnet/configs/train/herdnet.yaml`:
 
 ```yaml
-wandb_project: 'Herdnet'  # Nombre del proyecto en wandb
-wandb_entity: 'maiavision2025-universidad-de-los-andes'  # Entidad en wandb
-wandb_run: 'Train 1'  # Identificador de esta ejecución ¡Cambiar en cada ejecucion para no mezclar los datos!
+wandb_project: 'Herdnet'
+wandb_entity: 'maiavision2025-universidad-de-los-andes'
+wandb_run: 'Train 1'  # ¡Cambiar en cada ejecución!
 
-# Si en entrenamiento implica cambio de los hiperparametros, es importante cambiar el work_dir para 
-# configurar la salida de un nuevo modelo
 training_settings:
-  work_dir: 'data/models/herdnet_v1' 
+  work_dir: 'data/models/herdnet_v1'  # Cambiar para nuevas versiones
 ```
 
-#### Iniciar el entrenamiento oficial
-
-Para iniciar el entrenamiento utilizando el script oficial con Hydra:  
-**Si cambia la version crear otro stage en el `dvc.yaml`**
+#### Ejecutar entrenamiento
 
 ```bash
-uv run dvc repro train-herdnet-v1  
+uv run dvc repro train-herdnet-v1
 ```
 
-Este comando utilizará la configuración especificada en `configs/train/herdnet.yaml`, y registrará el progreso del entrenamiento en wandb para su visualización y análisis.
+### Método 2: Implementación personalizada
 
-
-### Método 2: Implementación personalizada (Simplificada)
-
-La configuración del entrenamiento se encuentra en el archivo `oficial_herdnet/scripts/custom_train.yaml`:
-
-En el `custom_train.yaml` modificar `work_dir: "data/models/herdnet_v1"` en caso de generar una versión diferente.
-
-Para iniciar el entrenamiento con esta implementación simplificada:
+Configurar `work_dir` en `oficial_herdnet/scripts/custom_train.yaml` y ejecutar:
 
 ```bash
 uv run python -m oficial_herdnet.scripts.custom_train_herdnet
 ```
 
-## Evaluación y Predicción
+## Evaluación y Testing
 
-[Instrucciones para evaluación y predicción pendientes]
+```bash
+uv run dvc repro test-herdnet-v1
+```
+
+> **Nota**: El stitcher se desactiva automáticamente para el conjunto de test con parches fijos de 512x512.
+
+## Inferencia
+
+Colocar imágenes en `outputs/infer/herdnet_v1/` y ejecutar:
+
+```bash
+uv run python oficial_herdnet/tools/infer.py outputs/infer/herdnet_v1/ data/models/herdnet_v1/best_model.pth -size 512 -over 160
+```
