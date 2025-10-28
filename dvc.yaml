@@ -62,20 +62,42 @@ stages:
     # test.sticher=null because we are running over patches of size 512x512
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
-      test.results_dir=data/test_results/herdnet_v1/
+      test.wandb_run='Test 1 herdnet_v1'
+      test.wandb_mode=online
+      test.dataset.csv_file=data/patches-512-ol-160-m01/test_points_gt.csv
+      test.dataset.root_dir=data/patches-512-ol-160-m01/test/
       test.stitcher=null
+      test.results_dir=data/test_results/herdnet_v1/
     deps:
+    - oficial_herdnet/configs/test/herdnet.yaml
     - data/patches-512-ol-160-m01/test_points_gt.csv
     - data/patches-512-ol-160-m01/test/
     outs:
     - data/test_results/herdnet_v1/
 
-  test-herdnet-v1-full-imgs:
+  test-full-to-points:
+    cmd: python oficial_herdnet/tools/csv_to_points.py
+      -i data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      -o data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+    deps:
+      - oficial_herdnet/tools/csv_to_points.py
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    outs:
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+
+  test-herdnet-v1-fullimgs:
     cmd: >
-      python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
+      python oficial_herdnet/tools/test.py --config-path $PWD/oficial_herdnet/configs/
+      test=herdnet
+      test.wandb_run='test-herdnet_v1-full-imgs'
+      test.wandb_mode=offline
+      test.model.pth_file=data/models/herdnet_v1/best_model.pth
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/
       test.results_dir=data/test_results/herdnet_v1_fullimgs/
     deps:
-      - data/test.csv
+      - oficial_herdnet/configs/test/herdnet.yaml
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
       - data/test/
     outs:
       - data/test_results/herdnet_v1_fullimgs/

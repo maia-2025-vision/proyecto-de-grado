@@ -2,14 +2,15 @@
 
 wandb_project: 'Herdnet'
 wandb_entity: 'maiavision2025-universidad-de-los-andes'
-wandb_run: 'Test 1 herdnet_v1'
+wandb_run:  null # to be overriden in command line
+wandb_mode: "disabled"
 device_name: 'cuda'
-results_dir: 'data/test_results/herdnet_v1/'
+results_dir: null # to be overriden in command line
 
-model: 
+model:
   name: 'HerdNet'
   from_torchvision: False
-  pth_file: 'data/models/herdnet_v1/best_model.pth'
+  pth_file: null # to be overriden in command line
   kwargs:
     num_layers: 34
     pretrained: False
@@ -31,8 +32,8 @@ dataset:
     6: 'Elephant'
 
   name: 'CSVDataset'
-  csv_file: 'data/patches-512-ol-160-m01/test_points_gt.csv'
-  root_dir: 'data/patches-512-ol-160-m01/test/'
+  csv_file: null # to be overriden in command line
+  root_dir: null # to be overriden in command line
 
   mean: [0.485, 0.456, 0.406]
   std: [0.229, 0.224, 0.225]
