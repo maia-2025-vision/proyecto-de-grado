@@ -58,6 +58,25 @@ stages:
     outs:
     - data/models/herdnet_v1/
 
+  desc-herdnet-v1:
+    desc: >
+      Generate report of number of params per layer of herdnet-v1
+      # trainable_backbone_layers=5 for this report (to report all layers)
+      # but we trained with just 4 backbone layers
+    cmd: >
+      python tools/describe_model.py --config-path=$PWD/configs
+      test=herdnet
+      test.device_name="cpu"
+      test.model.pth_file=data/models/herdnet_v1/best_model.pth
+      +test.group_depth=2
+      +test.results_file=data/model_descs/parameters-herdnet-v1.csv
+    deps:
+      - tools/describe_model.py
+      - oficial_herdnet/configs/test/herdnet.yaml
+      - data/models/herdnet_v1/best_model.pth
+    outs:
+      - data/model_descs/parameters-herdnet-v1.csv
+
   test-herdnet-v1:
     # test.sticher=null because we are running over patches of size 512x512
     cmd: >
@@ -305,6 +324,50 @@ stages:
     - data/patches-512-ol-160-m0.3/test/
     outs:
       - data/test_results/frcnn-resnet50
+
+  desc-faster-rcnn-resnet50:
+    desc: >
+      Generate report of number of params per layer
+      # trainable_backbone_layers=5 for this report (to report all layers)
+      # but we trained with just 4 backbone layers
+    cmd: >
+      python tools/describe_model.py --config-path=$PWD/configs
+      test=faster_rcnn
+      test.device_name="cpu"
+      test.model.kwargs.architecture=resnet50
+      test.model.kwargs.trainable_backbone_layers=4
+      test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
+      +test.group_depth=2
+      +test.results_file=data/model_descs/parameters-frcnn-resnet-50.csv
+
+    deps:
+      - tools/describe_model.py
+      - ./configs/test/faster_rcnn.yaml
+      - data/models/faster-rcnn/resnet50-100-epochs-tbl4
+    outs:
+      - data/model_descs/parameters-frcnn-resnet-50.csv
+
+  desc-faster-rcnn-resnet101:
+    desc: >
+      Generate report of number of params per layer of faster-rcnn-resnet-101
+      # trainable_backbone_layers=5 for this report (to report all layers)
+      # but we trained with just 4 backbone layers
+    cmd: >
+      python tools/describe_model.py --config-path=$PWD/configs
+      test=faster_rcnn
+      test.device_name="cpu"
+      test.model.kwargs.architecture=resnet101
+      test.model.kwargs.trainable_backbone_layers=4
+      test.model.pth_file=data/models/faster-rcnn/resnet101-100-epochs-tbl4/best_model.pth
+      +test.group_depth=2
+      +test.results_file=data/model_descs/parameters-frcnn-resnet-101.csv
+
+    deps:
+      - tools/describe_model.py
+      - ./configs/test/faster_rcnn.yaml
+      - data/models/faster-rcnn/resnet101-100-epochs-tbl4
+    outs:
+      - data/model_descs/parameters-frcnn-resnet-101.csv
 
   test-faster-rcnn-resnet50-full:
     desc: >
