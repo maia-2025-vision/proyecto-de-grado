@@ -555,3 +555,30 @@ stages:
       md5: 88abf9c1fb52b06777f161f510ccbd20.dir
       size: 1131341
       nfiles: 4
+  test-faster-rcnn-resnet50:
+    cmd: "python oficial_herdnet/tools/test.py  --config-path $PWD/configs/ test=faster_rcnn
+      test.device_name=\"cuda\" test.wandb_mode=\"online\" test.wandb_run=test-frcnn-resnet50
+      test.model.pth_file=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
+      test.model.kwargs.architecture=resnet50 test.stitcher=null test.dataset.csv_file=data/patches-512-ol-160-m0.3/test/gt.csv
+      test.dataset.root_dir=data/patches-512-ol-160-m0.3/test/ test.results_dir=data/test_results/frcnn-resnet50\n"
+    deps:
+    - path: ./configs/test/faster_rcnn.yaml
+      hash: md5
+      md5: 200dc9587b7fc6c99328563464cebef5
+      size: 1203
+    - path: data/models/faster-rcnn/resnet50-100-epochs-tbl4
+      hash: md5
+      md5: d81b61b11fb66679e17cbea3d2b3325e.dir
+      size: 1490431295
+      nfiles: 5
+    - path: data/patches-512-ol-160-m0.3/test/
+      hash: md5
+      md5: 5b82623f43769c275ad2d246baa5ecb3.dir
+      size: 72509931
+      nfiles: 2445
+    outs:
+    - path: data/test_results/frcnn-resnet50
+      hash: md5
+      md5: f5c639b6ebd529040e88d2c26270cd3d.dir
+      size: 1516718
+      nfiles: 4
