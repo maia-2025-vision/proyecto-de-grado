@@ -57,7 +57,7 @@ parser.add_argument(
         Possible values are 'cpu' or 'cuda'. Defaults to 'cuda'.",
 )
 parser.add_argument("-ts", type=int, default=256, help="thumbnail size. Defaults to 256.")
-parser.add_argument("-pf", type=int, default=10, help="print frequence. Defaults to 10.")
+parser.add_argument("-pf", type=int, default=10, help="print frequency. Defaults to 10.")
 parser.add_argument(
     "-rot", type=int, default=0, help="number of times to rotate by 90 degrees. Defaults to 0."
 )

@@ -9,6 +9,14 @@ __copyright__ = """
 
     CHANGES:
       1.  Added line to create directory args.dest at startup.
+      2. Admite un nuevo argumento fpwa (fraction of patches without annotations)
+      (número entre 0 y 1.0) que controla la probabilidad de que un patch que no tenga anotaciones
+      se genere como salida.  Por ejemplo, sobre el conjunto de train con 0.1 genera ~15000
+     patches sin annotaciones. Estos los ponen en un subdirectorio de la carpeta de salida
+     <dest_dir>/patches_wo_annots y la lista de las rutas a todos estos archivos queda en un csv
+     <dest_dir>/gt_wo_annots.csv  (wo = without)
+     3. También, el argumento -csv (anotaciones de entrada) es ahora requerido y las ramas
+     de código donde este era nulo del script original se eliminaron.
 
     Last modification: October 21, 2025
     """
