@@ -1,11 +1,11 @@
 schema: '2.0'
 stages:
   patches-512-ol-160-mv01-val:
-    cmd: python oficial_herdnet/tools/patcher.py data/val 512 512 160 
-      data/patches-512-ol-160-m01/val  -csv 
+    cmd: python oficial_herdnet/tools/patcher.py data/val 512 512 160
+      data/patches-512-ol-160-m01/val  -csv
       data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv && python
-      oficial_herdnet/tools/csv_to_points.py -i 
-      data/patches-512-ol-160-m01/val/gt.csv -o 
+      oficial_herdnet/tools/csv_to_points.py -i
+      data/patches-512-ol-160-m01/val/gt.csv -o
       data/patches-512-ol-160-m01/val_points_gt.csv
     deps:
     - path: data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
@@ -32,11 +32,11 @@ stages:
       md5: 5c329172fbad52ddd362b5e67bccf651
       size: 95080
   patches-512-ol-160-mv01-test:
-    cmd: python oficial_herdnet/tools/patcher.py data/test 512 512 160 
-      data/patches-512-ol-160-m01/test  -csv 
-      data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv && 
-      python oficial_herdnet/tools/csv_to_points.py -i 
-      data/patches-512-ol-160-m01/test/gt.csv -o 
+    cmd: python oficial_herdnet/tools/patcher.py data/test 512 512 160
+      data/patches-512-ol-160-m01/test  -csv
+      data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv &&
+      python oficial_herdnet/tools/csv_to_points.py -i
+      data/patches-512-ol-160-m01/test/gt.csv -o
       data/patches-512-ol-160-m01/test_points_gt.csv
     deps:
     - path: data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
@@ -63,11 +63,11 @@ stages:
       md5: d637312c2d5d6bd6acb1d05ac5560362
       size: 230725
   patches-512-ol-160-mv01-train:
-    cmd: python oficial_herdnet/tools/patcher.py data/train 512 512 160 
-      data/patches-512-ol-160-m01/train  -csv 
-      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv && 
-      python oficial_herdnet/tools/csv_to_points.py -i 
-      data/patches-512-ol-160-m01/train/gt.csv -o 
+    cmd: python oficial_herdnet/tools/patcher.py data/train 512 512 160
+      data/patches-512-ol-160-m01/train  -csv
+      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv &&
+      python oficial_herdnet/tools/csv_to_points.py -i
+      data/patches-512-ol-160-m01/train/gt.csv -o
       data/patches-512-ol-160-m01/train_points_gt.csv
     deps:
     - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
@@ -94,7 +94,7 @@ stages:
       md5: 4f162229d5e0c3bb1b92e44132e5e4a0
       size: 707567
   train-herdnet-v1:
-    cmd: python oficial_herdnet/tools/train.py 
+    cmd: python oficial_herdnet/tools/train.py
       train.training_settings.work_dir=data/models/herdnet_v1/
     deps:
     - path: data/patches-512-ol-160-m01/train/
@@ -130,7 +130,7 @@ stages:
       md5: b9a83adcb4338121b4a29bb538223069
       size: 362510
     outs:
-    - path: 
+    - path:
         data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
       hash: md5
       md5: 4df85b8755658f264f15ab15aa3b7ef3
@@ -157,7 +157,7 @@ stages:
       md5: f9f826c539574dbd80c8a8e70ff9e2cf
       size: 120371
     outs:
-    - path: 
+    - path:
         data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
       hash: md5
       md5: 30731a9a455b58e36394dd89e24849dc
@@ -487,11 +487,11 @@ stages:
       nfiles: 4
 
   test-full-to-points:
-    cmd: python oficial_herdnet/tools/csv_to_points.py -i 
-      data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv -o 
+    cmd: python oficial_herdnet/tools/csv_to_points.py -i
+      data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv -o
       data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
     deps:
-    - path: 
+    - path:
         data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
       hash: md5
       md5: 30731a9a455b58e36394dd89e24849dc
@@ -607,3 +607,28 @@ stages:
       md5: dda99b75b856061283bb13624f37de82.dir
       size: 992863813
       nfiles: 4
+  patches-512-ol-160-mv01-fpwa-0.1-train:
+    cmd: python animaloc_improved/tools/patcher_v2.py data/train 512 512 160
+      data/patches-512-ol-160-m01-fpwa-0.1/train -csv
+      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv -fpwa
+      0.1
+    deps:
+    - path: animaloc_improved/tools/patcher_v2.py
+      hash: md5
+      md5: 4db9b8df5ad73ddfcd353f9b06374133
+      size: 7823
+    - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 4df85b8755658f264f15ab15aa3b7ef3
+      size: 362524
+    - path: data/train/
+      hash: md5
+      md5: cdd58c7737f0c1e8b7a4db5f99619b86.dir
+      size: 8163547559
+      nfiles: 928
+    outs:
+    - path: data/patches-512-ol-160-m01-fpwa-0.1/train
+      hash: md5
+      md5: 01a59e05aa7b2ad379d88efc4e732b85.dir
+      size: 839797633
+      nfiles: 24498
