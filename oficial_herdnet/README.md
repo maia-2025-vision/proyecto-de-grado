@@ -38,10 +38,10 @@ uv run dvc push
 ```yaml
 wandb_project: 'Herdnet'
 wandb_entity: 'maiavision2025-universidad-de-los-andes'
-wandb_run: 'Train 1'  # ¡Cambiar en cada ejecución!
+wandb_run: 'Train 1'
 
 training_settings:
-  work_dir: 'data/models/herdnet_v1'  # Cambiar para nuevas versiones
+  work_dir: 'data/models/herdnet_v1'
 ```
 
 #### Ejecutar entrenamiento
