@@ -105,7 +105,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def main():
+def main() -> None:
     # Create destination folder
     # curr_date = current_date()
     dest_path = Path(args.dest)
@@ -217,12 +217,12 @@ def main():
 
 
 def export_plots(detections: pd.DataFrame, dest_plots: Path, dest_thumb: Path | None) -> None:
-    img_names = numpy.unique(detections["images"].values).tolist()
+    img_names = numpy.unique(detections["images"].values).tolist()  # type: ignore [arg-type]
     for img_name in img_names:
         img = Image.open(os.path.join(args.root, img_name))
         if args.rot != 0:
             rot = args.rot * 90
-            img = img.rotate(rot, expand=True)
+            img = img.rotate(rot, expand=True)  # type: ignore[assignment]
         img_cpy = img.copy()
         pts = list(detections[detections["images"] == img_name][["y", "x"]].to_records(index=False))
         pts = list(pts)  # CHANGE by aalea prev [(y, x) for y, x in pts]
