@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "python-multipart>=0.0.20",
-    "types-tqdm>=4.67.0.20250809",
+    "loguru",
 ]
 
 [dependency-groups]
@@ -19,10 +19,10 @@ dev = [
     "poethepoet",
     "marimo",
     "mypy",
-    "loguru",
     "pandas-stubs",
     "types-requests",
     "boto3-stubs[s3]>=1.40.55",
+    "types-tqdm>=4.67.0.20250809",
     "types-pyyaml>=6.0.12.20250915",
     "ruff>=0.14.1",
 ]

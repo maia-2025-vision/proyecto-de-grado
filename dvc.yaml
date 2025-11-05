@@ -59,6 +59,20 @@ stages:
     outs:
       - data/patches-512-ol-160-m01-fpwa-0.1/train
 
+  produce-hard-negatives-train:
+    cmd: python animaloc_improved/tools/infer_v2.py
+      data/patches-512-ol-160-m01-fpwa-0.1/train/
+      data/models/herdnet_v1/best_model.pth
+      -pattern "patches_wo_annots/**"
+      -dest data/patches-512-ol-160-m01-fpwa-0.1/train-hard-negatives
+      -override_labels 0
+    deps:
+      - animaloc_improved/tools/infer_v2.py
+      - data/patches-512-ol-160-m01-fpwa-0.1/train/patches_wo_annots
+      - data/models/herdnet_v1/best_model.pth
+    outs:
+      - data/patches-512-ol-160-m01-fpwa-0.1/train-hard-negatives
+
   train-herdnet-v1:
     cmd: python oficial_herdnet/tools/train.py 
       train.training_settings.work_dir=data/models/herdnet_v1/

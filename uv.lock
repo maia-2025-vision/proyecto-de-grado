@@ -3007,8 +3007,8 @@ name = "proyecto-de-grado"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "loguru" },
     { name = "python-multipart" },
-    { name = "types-tqdm" },
 ]
 
 [package.dev-dependencies]
@@ -3029,7 +3029,6 @@ dev = [
     { name = "boto3-stubs", extra = ["s3"] },
     { name = "dvc", extra = ["s3"] },
     { name = "ipykernel" },
-    { name = "loguru" },
     { name = "marimo" },
     { name = "matplotlib" },
     { name = "mypy" },
@@ -3040,6 +3039,7 @@ dev = [
     { name = "ruff" },
     { name = "types-pyyaml" },
     { name = "types-requests" },
+    { name = "types-tqdm" },
 ]
 herdnet = [
     { name = "albumentations" },
@@ -3061,8 +3061,8 @@ herdnet = [
 
 [package.metadata]
 requires-dist = [
+    { name = "loguru" },
     { name = "python-multipart", specifier = ">=0.0.20" },
-    { name = "types-tqdm", specifier = ">=4.67.0.20250809" },
 ]
 
 [package.metadata.requires-dev]
@@ -3083,7 +3083,6 @@ dev = [
     { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.40.55" },
     { name = "dvc", extras = ["s3"], specifier = ">=3.63.0" },
     { name = "ipykernel", specifier = ">=6.30.1" },
-    { name = "loguru" },
     { name = "marimo" },
     { name = "matplotlib", specifier = ">=3.10.6" },
     { name = "mypy" },
@@ -3094,6 +3093,7 @@ dev = [
     { name = "ruff", specifier = ">=0.14.1" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
     { name = "types-requests" },
+    { name = "types-tqdm", specifier = ">=4.67.0.20250809" },
 ]
 herdnet = [
     { name = "albumentations", specifier = ">=2.0.8" },
