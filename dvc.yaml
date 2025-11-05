@@ -44,6 +44,18 @@ stages:
       - data/patches-512-ol-160-m01/test_points_gt.csv
       - data/patches-512-ol-160-m01/test/
 
+  patches-512-ol-160-mv01-fpwa-0.1-train:
+    cmd: python animaloc_improved/tools/patcher_v2.py data/train 512 512 160
+      data/patches-512-ol-160-m01-fpwa-0.1/train
+      -csv data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      -fpwa 0.1
+    deps:
+      - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/train/
+      - animaloc_improved/tools/patcher_v2.py
+    outs:
+      - data/patches-512-ol-160-m01-fpwa-0.1/train
+
   train-herdnet-v1:
     cmd: python oficial_herdnet/tools/train.py 
       train.training_settings.work_dir=data/models/herdnet_v1/
