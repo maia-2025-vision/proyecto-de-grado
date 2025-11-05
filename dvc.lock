@@ -19,8 +19,8 @@ stages:
       nfiles: 111
     - path: oficial_herdnet/tools/patcher.py
       hash: md5
-      md5: d2a425277992cba02663f97de6ff6fdb
-      size: 3940
+      md5: c07f8d75238ff27ea1404b230d36bb88
+      size: 4295
     outs:
     - path: data/patches-512-ol-160-m01/val/
       hash: md5
@@ -81,8 +81,8 @@ stages:
       nfiles: 928
     - path: oficial_herdnet/tools/patcher.py
       hash: md5
-      md5: d2a425277992cba02663f97de6ff6fdb
-      size: 3940
+      md5: c07f8d75238ff27ea1404b230d36bb88
+      size: 4295
     outs:
     - path: data/patches-512-ol-160-m01/train/
       hash: md5
@@ -118,8 +118,8 @@ stages:
     outs:
     - path: data/models/herdnet_v1/
       hash: md5
-      md5: 4cec24c59fd4329af6c3957a2489455b.dir
-      size: 440615282
+      md5: 195d49aeec348661a05c4ff189f411dc.dir
+      size: 442486504
       nfiles: 4
   fix-headers-train-csv:
     cmd: "sed '1s/Image,x1,y1,x2,y2,Label/images,x_min,y_min,x_max,y_max,labels/'
