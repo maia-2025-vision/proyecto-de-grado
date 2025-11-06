@@ -398,3 +398,33 @@ stages:
       - data/test/
     outs:
       - data/test_results/frcnn-resnet50-full-imgs
+
+  convert-to-coco:
+    cmd: >
+      python tools/csv2coco.py
+      data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      data/train/
+      -o data/gt-preprocessed/coco/train_big_size_A_B_E_K_WH_WB-fixed-header.json
+      &&
+      python tools/csv2coco.py
+      data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      data/val/
+      -o data/gt-preprocessed/coco/val_big_size_A_B_E_K_WH_WB-fixed-header.json
+      &&
+      python tools/csv2coco.py
+      data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      data/test/
+      -o data/gt-preprocessed/coco/test_big_size_A_B_E_K_WH_WB-fixed-header.json
+
+    deps:
+      - tools/csv2coco.py
+      - data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    outs:
+      - data/gt-preprocessed/coco/train_big_size_A_B_E_K_WH_WB-fixed-header.json
+      - data/gt-preprocessed/coco/val_big_size_A_B_E_K_WH_WB-fixed-header.json
+      - data/gt-preprocessed/coco/test_big_size_A_B_E_K_WH_WB-fixed-header.json
+
+
+
