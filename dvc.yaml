@@ -90,8 +90,9 @@ stages:
     # test.sticher=null because we are running over patches of size 512x512
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
-      test.wandb_run='Test 1 herdnet_v1'
+      test.wandb_run='Test-2-herdnet_v1-100-epochs'
       test.wandb_mode=online
+      test.model.pth_file=data/models/herdnet_v1/best_model.pth
       test.dataset.csv_file=data/patches-512-ol-160-m01/test_points_gt.csv
       test.dataset.root_dir=data/patches-512-ol-160-m01/test/
       test.stitcher=null
