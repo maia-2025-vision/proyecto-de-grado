@@ -5,11 +5,14 @@ endpoints de la API, encapsulando la lógica de `requests` y el manejo
 básico de errores.
 """
 
+import os
 from typing import Any, cast
 
 import requests
+import streamlit as st
 
-API_BASE_URL = "http://localhost:8000"  # Asumimos que la API corre localmente
+# Lee la URL de la API desde una variable de entorno, con un valor por defecto.
+API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
 
 
 def get_regions() -> list[str]:
@@ -21,7 +24,7 @@ def get_regions() -> list[str]:
         # Le decimos a mypy que confiamos en que esto es una lista de strings
         return cast(list[str], response.json().get("regions", []))
     except requests.exceptions.RequestException as e:
-        print(f"Error al obtener regiones: {e}")
+        st.error(f"Error al obtener regiones: {e}")
         return []
 
 
@@ -34,7 +37,7 @@ def get_flyovers(region: str) -> list[str]:
         # Le decimos a mypy que confiamos en que esto es una lista de strings
         return cast(list[str], response.json().get("flyovers", []))
     except requests.exceptions.RequestException as e:
-        print(f"Error al obtener sobrevuelos para {region}: {e}")
+        st.error(f"Error al obtener sobrevuelos para {region}: {e}")
         return []
 
 
@@ -46,7 +49,7 @@ def get_detection_results(region: str, flyover: str) -> dict[str, Any]:
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
     except requests.exceptions.RequestException as e:
-        print(f"Error al obtener resultados para {region}/{flyover}: {e}")
+        st.error(f"Error al obtener resultados para {region}/{flyover}: {e}")
         return {"error": str(e)}
 
 
@@ -68,7 +71,7 @@ def process_images(image_urls: list[str]) -> dict[str, Any]:
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
     except requests.exceptions.RequestException as e:
-        print(f"Error al llamar a la API de procesamiento: {e}")
+        st.error(f"Error al llamar a la API de procesamiento: {e}")
         return {"error": str(e)}
 
 
@@ -80,7 +83,7 @@ def get_counts_for_flyover(region: str, flyover: str) -> dict[str, Any]:
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
     except requests.exceptions.RequestException as e:
-        print(f"Error al obtener conteos para {region}/{flyover}: {e}")
+        st.error(f"Error al obtener conteos para {region}/{flyover}: {e}")
         return {"error": str(e)}
 
 
@@ -92,5 +95,5 @@ def get_counts_for_region(region: str) -> dict[str, Any]:
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
     except requests.exceptions.RequestException as e:
-        print(f"Error al obtener conteos para {region}: {e}")
+        st.error(f"Error al obtener conteos para {region}: {e}")
         return {"error": str(e)}

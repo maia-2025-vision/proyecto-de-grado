@@ -111,7 +111,7 @@ training_settings:
     # verbose: True //no soportado en la version de torch
   warmup_iters: 100
   vizual_fn: null
-  epochs: 25
+  epochs: 100
   evaluator: 
     name: 'HerdNetEvaluator'
     threshold: 5
