@@ -114,7 +114,7 @@ if "count_results" in st.session_state and st.session_state.count_results:
 
         col1, col2 = st.columns(2)
         with col1:
-            st.dataframe(df_counts)
+            st.dataframe(df_counts, hide_index=True)
         with col2:
             st.bar_chart(df_counts.set_index("Especie"))
 
