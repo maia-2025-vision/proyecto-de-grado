@@ -29,6 +29,21 @@ stages:
       - data/patches-512-ol-160-m01/val_points_gt.csv
       - data/patches-512-ol-160-m01/val/
 
+  patches-1024-ol-160-mv01-val:
+    cmd: python oficial_herdnet/tools/patcher.py data/val 1024 1024 160
+      data/patches-1024-ol-160-m01/val
+      -csv data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      && python oficial_herdnet/tools/csv_to_points.py
+      -i data/patches-1024-ol-160-m01/val/gt.csv
+      -o data/patches-1024-ol-160-m01/val_points_gt.csv
+    deps:
+      - data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/val/
+      - oficial_herdnet/tools/patcher.py
+    outs:
+      - data/patches-1024-ol-160-m01/val_points_gt.csv
+      - data/patches-1024-ol-160-m01/val/
+
   patches-512-ol-160-mv01-test:
     cmd: python oficial_herdnet/tools/patcher.py data/test 512 512 160 
       data/patches-512-ol-160-m01/test 
@@ -399,32 +414,14 @@ stages:
     outs:
       - data/test_results/frcnn-resnet50-full-imgs
 
-  convert-to-coco:
+  convert-to-coco-patches-1024:
     cmd: >
       python tools/csv2coco.py
-      data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      data/train/
-      -o data/gt-preprocessed/coco/train_big_size_A_B_E_K_WH_WB-fixed-header.json
-      &&
-      python tools/csv2coco.py
-      data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      data/val/
-      -o data/gt-preprocessed/coco/val_big_size_A_B_E_K_WH_WB-fixed-header.json
-      &&
-      python tools/csv2coco.py
-      data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      data/test/
-      -o data/gt-preprocessed/coco/test_big_size_A_B_E_K_WH_WB-fixed-header.json
-
+      data/patches-1024-ol-160-m01/val/gt.csv
+      data/patches-1024-ol-160-m01/val
+      -o data/patches-1024-ol-160-m01/val-gt.json
     deps:
       - tools/csv2coco.py
-      - data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      - data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/patches-1024-ol-160-m01/val/
     outs:
-      - data/gt-preprocessed/coco/train_big_size_A_B_E_K_WH_WB-fixed-header.json
-      - data/gt-preprocessed/coco/val_big_size_A_B_E_K_WH_WB-fixed-header.json
-      - data/gt-preprocessed/coco/test_big_size_A_B_E_K_WH_WB-fixed-header.json
-
-
-
+      - data/patches-1024-ol-160-m01/val-gt.json

@@ -9,6 +9,8 @@ from typer import Option, Typer
 
 cli = Typer(no_args_is_help=True)
 
+EXPECTED_COLUMNS = {"images", "x_min", "y_min", "x_max", "y_max", "labels"}
+
 
 @cli.command("convert")
 def main(
@@ -27,8 +29,8 @@ def main(
 
     # Assume your CSV columns are: ['image_path', 'xmin', 'ymin', 'xmax', 'ymax', 'class_name']
     # Adjust column names as needed for your specific CSV
-    assert tuple(df.columns) == ("images", "x_min", "y_min", "x_max", "y_max", "labels"), (
-        f"{tuple(df.columns)} does not match expected columns in"
+    assert set(df.columns).issuperset(EXPECTED_COLUMNS), (
+        f"{tuple(df.columns)} does not contain all expected columns"
     )
 
     coco_output: dict[str, list[dict[str, object]]] = {

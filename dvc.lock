@@ -632,45 +632,52 @@ stages:
       md5: 01a59e05aa7b2ad379d88efc4e732b85.dir
       size: 839797633
       nfiles: 24498
-  convert-to-coco:
-    cmd: "python tools/csv2coco.py data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      data/train/ -o data/gt-preprocessed/coco/train_big_size_A_B_E_K_WH_WB-fixed-header.json
-      && python tools/csv2coco.py data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      data/val/ -o data/gt-preprocessed/coco/val_big_size_A_B_E_K_WH_WB-fixed-header.json
-      && python tools/csv2coco.py data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      data/test/ -o data/gt-preprocessed/coco/test_big_size_A_B_E_K_WH_WB-fixed-header.json\n"
+  patches-1024-ol-160-mv01-val:
+    cmd: python oficial_herdnet/tools/patcher.py data/val 1024 1024 160 
+      data/patches-1024-ol-160-m01/val -csv 
+      data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv && python
+      oficial_herdnet/tools/csv_to_points.py -i 
+      data/patches-1024-ol-160-m01/val/gt.csv -o 
+      data/patches-1024-ol-160-m01/val_points_gt.csv
     deps:
-    - path: 
-        data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      hash: md5
-      md5: 30731a9a455b58e36394dd89e24849dc
-      size: 120385
-    - path: 
-        data/gt-preprocessed/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      hash: md5
-      md5: 4df85b8755658f264f15ab15aa3b7ef3
-      size: 362524
-    - path: data/gt-preprocessed/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+    - path: data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
       hash: md5
       md5: 15acbab82e8022090098948c43ebff89
       size: 50622
+    - path: data/val/
+      hash: md5
+      md5: 7c59a6075823e53aceb6ed1985746da5.dir
+      size: 1041037675
+      nfiles: 111
+    - path: oficial_herdnet/tools/patcher.py
+      hash: md5
+      md5: 4a3159116e040841bee2bb0bcc740f39
+      size: 4172
+    outs:
+    - path: data/patches-1024-ol-160-m01/val/
+      hash: md5
+      md5: bc01545ccaabae78693d4894663eacf2.dir
+      size: 70464041
+      nfiles: 527
+    - path: data/patches-1024-ol-160-m01/val_points_gt.csv
+      hash: md5
+      md5: 832a7c98d6851e050baeaf11522254a7
+      size: 59343
+  convert-to-coco-patches-1024:
+    cmd: "python tools/csv2coco.py data/patches-1024-ol-160-m01/val/gt.csv data/patches-1024-ol-160-m01/val
+      -o data/patches-1024-ol-160-m01/val-gt.json\n"
+    deps:
+    - path: data/patches-1024-ol-160-m01/val/
+      hash: md5
+      md5: bc01545ccaabae78693d4894663eacf2.dir
+      size: 70464041
+      nfiles: 527
     - path: tools/csv2coco.py
       hash: md5
-      md5: a3fc7df67d36e019ce0ca7cfd96f69d1
-      size: 3798
+      md5: 1ec87019c3719dce34ac488a0dd36760
+      size: 3927
     outs:
-    - path: 
-        data/gt-preprocessed/coco/test_big_size_A_B_E_K_WH_WB-fixed-header.json
+    - path: data/patches-1024-ol-160-m01/val-gt.json
       hash: md5
-      md5: ac021fb34d5b8146da278bf9339ec110
-      size: 670186
-    - path: 
-        data/gt-preprocessed/coco/train_big_size_A_B_E_K_WH_WB-fixed-header.json
-      hash: md5
-      md5: 99dcb01568b8d87fe68fa6ff0355ae76
-      size: 2053666
-    - path: 
-        data/gt-preprocessed/coco/val_big_size_A_B_E_K_WH_WB-fixed-header.json
-      hash: md5
-      md5: e64d2ad16cb9e2dbfd555f0ecae37bea
-      size: 284262
+      md5: 3ee15f781e9ab41229003284b46e3041
+      size: 465418
