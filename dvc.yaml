@@ -63,7 +63,7 @@ stages:
     cmd: python animaloc_improved/tools/infer_v2.py
       data/patches-512-ol-160-m01-fpwa-0.1/train/
       data/models/herdnet_v1/best_model.pth
-      -pattern "patches_wo_annots/**"
+      -pattern "patches_wo_annots/**"r
       -dest data/patches-512-ol-160-m01-fpwa-0.1/train-hard-negatives
       -override_labels 0
     deps:
@@ -72,6 +72,20 @@ stages:
       - data/models/herdnet_v1/best_model.pth
     outs:
       - data/patches-512-ol-160-m01-fpwa-0.1/train-hard-negatives
+
+  combine-patches-gt-with-hard-negs:
+    desc: >
+      1. First convert bbox formatted gt for patches with annotations to points -> gt_points.csv
+      2. Then concat gt_points.csv with detections
+
+    cmd: python oficial_herdnet/tools/csv_to_points.py 
+      -i data/patches-512-ol-160-m01-fpwa-0.1/train/gt.csv
+      -o data/patches-512-ol-160-m01-fpwa-0.1/train/gt_points.csv
+      &&
+      python animaloc_improved/tools/csv_tool.py concat
+      data/patches-512-ol-160-m01-fpwa-0.1/train/gt_points.csv
+      data/patches-512-ol-160-m01-fpwa-0.1/train-hard-negatives/detections.csv
+      -o data/patches-512-ol-160-m01-fpwa-0.1/train/gt_points_and_hard_negs.csv
 
   train-herdnet-v1:
     cmd: python oficial_herdnet/tools/train.py 
@@ -324,7 +338,7 @@ stages:
     desc: >
       Add metadata and transforms to a model that comes from an intermediate epoch.
     cmd: >
-      python tools/add_info_to_model.py --config-path $PWD/configs/
+      python animaloc_improved/tools/add_info_to_model.py --config-path $PWD/configs/
       train=faster_rcnn_herdnet_trainer
       add_info.best_model_pth_path=data/models/tmp/faster-rcnn/best_model-by-epoch-70.pth
 
@@ -357,7 +371,7 @@ stages:
       # trainable_backbone_layers=5 for this report (to report all layers)
       # but we trained with just 4 backbone layers
     cmd: >
-      python tools/describe_model.py --config-path=$PWD/configs
+      python animaloc_improved/tools/describe_model.py --config-path=$PWD/configs
       test=faster_rcnn
       test.device_name="cpu"
       test.model.kwargs.architecture=resnet50
@@ -367,7 +381,7 @@ stages:
       +test.results_file=data/model_descs/parameters-frcnn-resnet-50.csv
 
     deps:
-      - tools/describe_model.py
+      - animaloc_improved/tools/describe_model.py
       - ./configs/test/faster_rcnn.yaml
       - data/models/faster-rcnn/resnet50-100-epochs-tbl4
     outs:
@@ -379,7 +393,7 @@ stages:
       # trainable_backbone_layers=5 for this report (to report all layers)
       # but we trained with just 4 backbone layers
     cmd: >
-      python tools/describe_model.py --config-path=$PWD/configs
+      python animaloc_improved/tools/describe_model.py --config-path=$PWD/configs
       test=faster_rcnn
       test.device_name="cpu"
       test.model.kwargs.architecture=resnet101
@@ -389,7 +403,7 @@ stages:
       +test.results_file=data/model_descs/parameters-frcnn-resnet-101.csv
 
     deps:
-      - tools/describe_model.py
+      - animaloc_improved/tools/describe_model.py
       - ./configs/test/faster_rcnn.yaml
       - data/models/faster-rcnn/resnet101-100-epochs-tbl4
     outs:
