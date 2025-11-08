@@ -55,6 +55,19 @@ stages:
       - animaloc_improved/tools/patcher_v2.py
     outs:
       - data/patches-512-ol-160-m01-fpwa-0.1/train
+  
+  train-herdnet-v0:
+    cmd: python oficial_herdnet/tools/train.py 
+      train.wandb_run="'Herdnet Train 0'"
+      train.training_settings.work_dir=data/models/herdnet_v0/
+      train.training_settings.epochs=25
+    deps:
+      - data/patches-512-ol-160-m01/train_points_gt.csv
+      - data/patches-512-ol-160-m01/train/
+      - data/patches-512-ol-160-m01/val_points_gt.csv
+      - data/patches-512-ol-160-m01/val/
+    outs:
+      - data/models/herdnet_v0/
 
   train-herdnet-v1:
     cmd: python oficial_herdnet/tools/train.py 
@@ -85,6 +98,24 @@ stages:
       - data/models/herdnet_v1/best_model.pth
     outs:
       - data/model_descs/parameters-herdnet-v1.csv
+
+  test-herdnet-v0:
+    # test.sticher=null because we are running over patches of size 512x512
+    cmd: >
+      python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
+      test.wandb_run="'Test herdnet v0'"
+      test.wandb_mode=online
+      test.model.pth_file=data/models/herdnet_v0/best_model.pth
+      test.dataset.csv_file=data/patches-512-ol-160-m01/test_points_gt.csv
+      test.dataset.root_dir=data/patches-512-ol-160-m01/test/
+      test.stitcher=null
+      test.results_dir=data/test_results/herdnet_v0/
+    deps:
+      - oficial_herdnet/configs/test/herdnet.yaml
+      - data/patches-512-ol-160-m01/test_points_gt.csv
+      - data/patches-512-ol-160-m01/test/
+    outs:
+      - data/test_results/herdnet_v0/
 
   test-herdnet-v1:
     # test.sticher=null because we are running over patches of size 512x512
