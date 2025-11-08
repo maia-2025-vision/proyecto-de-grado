@@ -19,7 +19,7 @@ def concat(
     csv1: Path,
     csv2: Path,
     out: Path = typer.Option(..., "-o", "--out", help="Output file"),
-):
+) -> None:
     df1 = pd.read_csv(csv1)
     log_info("csv1", df1)
     df2 = pd.read_csv(csv2)
