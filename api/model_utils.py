@@ -99,6 +99,13 @@ class MockDetector(nn.Module, Detector):
 
 def make_detector(weights_path: Path, cfg_path: Path) -> tuple[Detector, ModelMetadata]:
     """Restore and return a prediction model from a weights file."""
+    # check for mps (apple silicon) availability, otherwise use cpu
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+    logger.info(f"Using device: {device}")
+
     num_classes = len(DEFAULT_CLASS_LABEL_2_NAME)
 
     # model_arch = determine_model_arch(weights_path)

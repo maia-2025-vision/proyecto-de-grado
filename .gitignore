@@ -6,3 +6,4 @@ __pycache__/
 .idea
 wandb/
 .ipynb_checkpoints
+.editorconfig
