@@ -338,7 +338,7 @@ stages:
       # trainable_backbone_layers=5 for this report (to report all layers)
       # but we trained with just 4 backbone layers
     cmd: >
-      python tools/describe_model.py --config-path=$PWD/configs
+      python animaloc_improved/tools/describe_model.py --config-path=$PWD/configs
       test=faster_rcnn
       test.device_name="cpu"
       test.model.kwargs.architecture=resnet50
@@ -398,3 +398,27 @@ stages:
       - data/test/
     outs:
       - data/test_results/frcnn-resnet50-full-imgs
+
+  faster-rcnn-resnet50-full-to-excel:
+    desc: >
+      Transform confusion matrix and matrix to xlsx format
+    cmd: >
+      python animaloc_improved/tools/results_to_excel.py
+      data/test_results/frcnn-resnet50-full-imgs
+      -o data/test_results/frcnn-resnet50-full-imgs-xlsx
+    deps:
+      - data/test_results/frcnn-resnet50-full-imgs
+    outs:
+      - data/test_results/frcnn-resnet50-full-imgs-xlsx
+
+  faster-rcnn-resnet101-full-to-excel:
+    desc: >
+      Transform confusion matrix and matrix to xlsx format
+    cmd: >
+      python animaloc_improved/tools/results_to_excel.py
+      data/test_results/frcnn-resnet101-full-imgs
+      -o data/test_results/frcnn-resnet101-full-imgs-xlsx
+    deps:
+      - data/test_results/frcnn-resnet101-full-imgs
+    outs:
+      - data/test_results/frcnn-resnet101-full-imgs-xlsx

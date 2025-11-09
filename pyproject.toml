@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "notebook>=7.4.7",
+    "openpyxl>=3.1.5",
     "python-multipart>=0.0.20",
     "types-tqdm>=4.67.0.20250809",
 ]
@@ -203,7 +204,6 @@ cmd="python test/e2e/endpoints.py"
 help="Package the API in as a docker image"
 # shell="docker build --progress=plain -t cowd-api -f api/Dockerfile  ."
 shell="""docker build -f ./api/Dockerfile -t herd-api ."""
-
 
 [tool.poe.tasks.dockerize-dashboard]
 help="Package the dashboard in as a docker image"
