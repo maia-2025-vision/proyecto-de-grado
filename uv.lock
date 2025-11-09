@@ -3008,6 +3008,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "loguru" },
+    { name = "pandas-stubs" },
     { name = "python-multipart" },
 ]
 
@@ -3062,6 +3063,7 @@ herdnet = [
 [package.metadata]
 requires-dist = [
     { name = "loguru" },
+    { name = "pandas-stubs", specifier = ">=2.3.2.250926" },
     { name = "python-multipart", specifier = ">=0.0.20" },
 ]
 

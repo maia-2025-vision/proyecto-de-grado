@@ -97,7 +97,7 @@ parser.add_argument(
     "-override_labels",
     type=int,
     default=-1,
-    help="whether to override labels predicted before"
+    help="whether to override predicted labels before writing the output."
     "Default -1 means no override, any value >= 0 will cause override."
     "This option is meant to be used for hard negative mining.",
 )

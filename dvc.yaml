@@ -47,46 +47,6 @@ stages:
     - data/patches-512-ol-160-m01/test_points_gt.csv
     - data/patches-512-ol-160-m01/test/
 
-  patches-512-ol-160-mv01-fpwa-0.1-train:
-    cmd: python animaloc_improved/tools/patcher_v2.py data/train 512 512 160
-      data/patches-512-ol-160-m01-fpwa-0.1/train
-      -csv data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      -fpwa 0.1
-    deps:
-      - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      - data/train/
-      - animaloc_improved/tools/patcher_v2.py
-    outs:
-      - data/patches-512-ol-160-m01-fpwa-0.1/train
-
-  produce-hard-negatives-train:
-    cmd: python animaloc_improved/tools/infer_v2.py
-      data/patches-512-ol-160-m01-fpwa-0.1/train/
-      data/models/herdnet_v1/best_model.pth
-      -pattern "patches_wo_annots/**"r
-      -dest data/patches-512-ol-160-m01-fpwa-0.1/train-hard-negatives
-      -override_labels 0
-    deps:
-      - animaloc_improved/tools/infer_v2.py
-      - data/patches-512-ol-160-m01-fpwa-0.1/train/patches_wo_annots
-      - data/models/herdnet_v1/best_model.pth
-    outs:
-      - data/patches-512-ol-160-m01-fpwa-0.1/train-hard-negatives
-
-  combine-patches-gt-with-hard-negs:
-    desc: >
-      1. First convert bbox formatted gt for patches with annotations to points -> gt_points.csv
-      2. Then concat gt_points.csv with detections
-
-    cmd: python oficial_herdnet/tools/csv_to_points.py 
-      -i data/patches-512-ol-160-m01-fpwa-0.1/train/gt.csv
-      -o data/patches-512-ol-160-m01-fpwa-0.1/train/gt_points.csv
-      &&
-      python animaloc_improved/tools/csv_tool.py concat
-      data/patches-512-ol-160-m01-fpwa-0.1/train/gt_points.csv
-      data/patches-512-ol-160-m01-fpwa-0.1/train-hard-negatives/detections.csv
-      -o data/patches-512-ol-160-m01-fpwa-0.1/train/gt_points_and_hard_negs.csv
-
   train-herdnet-v1:
     cmd: python oficial_herdnet/tools/train.py 
       train.training_settings.work_dir=data/models/herdnet_v1/
@@ -133,6 +93,87 @@ stages:
     - data/patches-512-ol-160-m01/test/
     outs:
     - data/test_results/herdnet_v1/
+
+  infer-train-herdnet-v1:
+    desc: >
+      First step for HNM, infer over full size images.
+    cmd: python animaloc_improved/tools/infer_v2.py
+      data/train/
+      data/models/herdnet_v1/best_model.pth
+      -dest data/inference/herdnet_v1/train
+    deps:
+      - animaloc_improved/tools/infer_v2.py
+      - data/models/herdnet_v1/best_model.pth
+      - data/train
+    outs:
+      - data/inference/herdnet_v1/train
+
+  infer-valid-herdnet-v1:
+    desc: >
+      First step for HNM, infer over full size images.
+    cmd: python animaloc_improved/tools/infer_v2.py
+      data/val/
+      data/models/herdnet_v1/best_model.pth
+      -dest data/inference/herdnet_v1/val
+    deps:
+      - animaloc_improved/tools/infer_v2.py
+      - data/models/herdnet_v1/best_model.pth
+      - data/val
+    outs:
+      - data/inference/herdnet_v1/val
+
+  mine-hard-negs-herdnet-v1:
+    desc: Mine hard negs for train and val
+    cmd: >
+      python animaloc_improved/tools/mine_hard_negs.py from-pt-dets
+      --gt_boxes data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      --pt_dets  data/inference/herdnet_v1/train/detections.csv
+      --out      data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+      &&
+      python animaloc_improved/tools/mine_hard_negs.py from-pt-dets
+      --gt_boxes data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      --pt_dets  data/inference/herdnet_v1/val/detections.csv
+      --out      data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
+    deps:
+      - animaloc_improved/tools/mine_hard_negs.py
+      - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/inference/herdnet_v1/train/detections.csv
+      - data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/inference/herdnet_v1/val/detections.csv
+    outs:
+      - data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+      - data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
+
+  patches-512-ol-160-mv01-with-hard-negs-train:
+    cmd: python oficial_herdnet/tools/patcher.py data/train 512 512 160
+      data/patches-512-ol-160-m01-w-hard-negs/train
+      -csv data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+      &&
+      cp data/patches-512-ol-160-m01-w-hard-negs/train/gt.csv
+      data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+    deps:
+      - oficial_herdnet/tools/patcher.py
+      - data/train/
+      - data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+    outs:
+      - data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      - data/patches-512-ol-160-m01-w-hard-negs/train/
+
+  patches-512-ol-160-mv01-with-hard-negs-val:
+    cmd: python oficial_herdnet/tools/patcher.py data/val 512 512 160
+      data/patches-512-ol-160-m01-w-hard-negs/val
+      -csv data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
+      &&
+      cp data/patches-512-ol-160-m01-w-hard-negs/val/gt.csv
+      data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+    deps:
+      - oficial_herdnet/tools/patcher.py
+      - data/val/
+      - data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
+    outs:
+      - data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+      - data/patches-512-ol-160-m01-w-hard-negs/val/
+
 
   test-full-to-points:
     cmd: python oficial_herdnet/tools/csv_to_points.py

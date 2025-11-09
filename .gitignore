@@ -5,3 +5,4 @@ __pycache__/
 /outputs
 .idea
 wandb/
+.ipynb_checkpoints

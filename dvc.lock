@@ -666,3 +666,147 @@ stages:
       data/patches-512-ol-160-m01-fpwa-0.1/train/gt_points.csv 
       data/patches-512-ol-160-m01-fpwa-0.1/train-hard-negatives/detections.csv 
       -o data/patches-512-ol-160-m01-fpwa-0.1/train/gt_points_and_hard_negs.csv
+  infer-train-herdnet-v1:
+    cmd: python animaloc_improved/tools/infer_v2.py data/train/ 
+      data/models/herdnet_v1/best_model.pth -dest 
+      data/inference/herdnet_v1/train
+    deps:
+    - path: animaloc_improved/tools/infer_v2.py
+      hash: md5
+      md5: cd02ca134bc2fe07ba08b2e8219b7af0
+      size: 9007
+    - path: data/models/herdnet_v1/best_model.pth
+      hash: md5
+      md5: f771162557730fc76f9a8ec438276af6
+      size: 219993031
+    - path: data/train
+      hash: md5
+      md5: cdd58c7737f0c1e8b7a4db5f99619b86.dir
+      size: 8163547559
+      nfiles: 928
+    outs:
+    - path: data/inference/herdnet_v1/train
+      hash: md5
+      md5: d1e3e3d5dc53bda9b8b81377f9f9991e.dir
+      size: 1803849
+      nfiles: 2
+  mine-hard-negs-herdnet-v1:
+    cmd: "python animaloc_improved/tools/mine_hard_negs.py from-pt-dets --gt_boxes
+      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv --pt_dets\
+      \  data/inference/herdnet_v1/train/detections.csv --out      data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+      && python animaloc_improved/tools/mine_hard_negs.py from-pt-dets --gt_boxes
+      data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv --pt_dets \
+      \ data/inference/herdnet_v1/val/detections.csv --out      data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv\n"
+    deps:
+    - path: animaloc_improved/tools/mine_hard_negs.py
+      hash: md5
+      md5: babfd7e31e70b33047c32a505890c932
+      size: 6776
+    - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 4df85b8755658f264f15ab15aa3b7ef3
+      size: 362524
+    - path: data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 15acbab82e8022090098948c43ebff89
+      size: 50622
+    - path: data/inference/herdnet_v1/train/detections.csv
+      hash: md5
+      md5: bd575cd6f3a9742bb7b7e43d50bb1ddf
+      size: 1794567
+    - path: data/inference/herdnet_v1/val/detections.csv
+      hash: md5
+      md5: f8479f3aa6d866112ce6eda7b26af089
+      size: 233323
+    outs:
+    - path: data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+      hash: md5
+      md5: 100c5fc07376d0de02c101a74c8e4147
+      size: 1183149
+    - path: data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
+      hash: md5
+      md5: ceeb72b14deaa572f4bc14f74286e8f3
+      size: 177253
+  infer-valid-herdnet-v1:
+    cmd: python animaloc_improved/tools/infer_v2.py data/val/ 
+      data/models/herdnet_v1/best_model.pth -dest data/inference/herdnet_v1/val
+    deps:
+    - path: animaloc_improved/tools/infer_v2.py
+      hash: md5
+      md5: cd02ca134bc2fe07ba08b2e8219b7af0
+      size: 9007
+    - path: data/models/herdnet_v1/best_model.pth
+      hash: md5
+      md5: f771162557730fc76f9a8ec438276af6
+      size: 219993031
+    - path: data/val
+      hash: md5
+      md5: 7c59a6075823e53aceb6ed1985746da5.dir
+      size: 1041037675
+      nfiles: 111
+    outs:
+    - path: data/inference/herdnet_v1/val
+      hash: md5
+      md5: dcc495425c2e5caa33da5af377aa425d.dir
+      size: 234569
+      nfiles: 2
+  patches-512-ol-160-mv01-with-hard-negs-train:
+    cmd: python oficial_herdnet/tools/patcher.py data/train 512 512 160 
+      data/patches-512-ol-160-m01-w-hard-negs/train -csv 
+      data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv && cp 
+      data/patches-512-ol-160-m01-w-hard-negs/train/gt.csv 
+      data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+    deps:
+    - path: data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+      hash: md5
+      md5: 100c5fc07376d0de02c101a74c8e4147
+      size: 1183149
+    - path: data/train/
+      hash: md5
+      md5: cdd58c7737f0c1e8b7a4db5f99619b86.dir
+      size: 8163547559
+      nfiles: 928
+    - path: oficial_herdnet/tools/patcher.py
+      hash: md5
+      md5: 4a3159116e040841bee2bb0bcc740f39
+      size: 4172
+    outs:
+    - path: data/patches-512-ol-160-m01-w-hard-negs/train/
+      hash: md5
+      md5: c5e127966ccfefe602cfc9b1d5b823f7.dir
+      size: 654463695
+      nfiles: 18835
+    - path: data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      hash: md5
+      md5: 38cc988d61c555e9bb239709b5e3db99
+      size: 3399728
+  patches-512-ol-160-mv01-with-hard-negs-val:
+    cmd: python oficial_herdnet/tools/patcher.py data/val 512 512 160 
+      data/patches-512-ol-160-m01-w-hard-negs/val -csv 
+      data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv && cp 
+      data/patches-512-ol-160-m01-w-hard-negs/val/gt.csv 
+      data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+    deps:
+    - path: data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
+      hash: md5
+      md5: ceeb72b14deaa572f4bc14f74286e8f3
+      size: 177253
+    - path: data/val/
+      hash: md5
+      md5: 7c59a6075823e53aceb6ed1985746da5.dir
+      size: 1041037675
+      nfiles: 111
+    - path: oficial_herdnet/tools/patcher.py
+      hash: md5
+      md5: 4a3159116e040841bee2bb0bcc740f39
+      size: 4172
+    outs:
+    - path: data/patches-512-ol-160-m01-w-hard-negs/val/
+      hash: md5
+      md5: a791ea6b332ab7f8bde5df6185728e46.dir
+      size: 91888823
+      nfiles: 2553
+    - path: data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+      hash: md5
+      md5: 530f2eb445d4f14b0a0d8f17741cf970
+      size: 509225
