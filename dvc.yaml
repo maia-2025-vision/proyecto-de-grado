@@ -241,6 +241,7 @@ stages:
       train.wandb_run="'Herdnet v2-part2 Hard Negs'"
       train.wandb_mode=offline
       train.model.load_from=data/models/herdnet_v2/best_model.pth
+      train.training_settings.epochs=50
       train.datasets.train.csv_file=data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
       train.datasets.train.root_dir=data/patches-512-ol-160-m01-w-hard-negs/train
       train.datasets.validate.csv_file=data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
