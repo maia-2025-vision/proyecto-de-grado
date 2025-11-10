@@ -637,6 +637,36 @@ stages:
       md5: 01a59e05aa7b2ad379d88efc4e732b85.dir
       size: 839797633
       nfiles: 24498
+  faster-rcnn-resnet50-full-to-excel:
+    cmd: "python animaloc_improved/tools/results_to_excel.py data/test_results/frcnn-resnet50-full-imgs
+      -o data/test_results/frcnn-resnet50-full-imgs-xlsx\n"
+    deps:
+    - path: data/test_results/frcnn-resnet50-full-imgs
+      hash: md5
+      md5: 67ba715b47bc3e01aad498392943b781.dir
+      size: 1245499
+      nfiles: 4
+    outs:
+    - path: data/test_results/frcnn-resnet50-full-imgs-xlsx
+      hash: md5
+      md5: 028e7c80e5050dfe17a6b6c11a85965d.dir
+      size: 5387
+      nfiles: 1
+  faster-rcnn-resnet101-full-to-excel:
+    cmd: "python animaloc_improved/tools/results_to_excel.py data/test_results/frcnn-resnet101-full-imgs
+      -o data/test_results/frcnn-resnet101-full-imgs-xlsx\n"
+    deps:
+    - path: data/test_results/frcnn-resnet101-full-imgs
+      hash: md5
+      md5: ea48f6a005445c58f46ff4b0ab5e1bcb.dir
+      size: 1120993
+      nfiles: 4
+    outs:
+    - path: data/test_results/frcnn-resnet101-full-imgs-xlsx
+      hash: md5
+      md5: 90b037710a90320a429d78c32f99ef55.dir
+      size: 5391
+      nfiles: 1
   train-herdnet-v0:
     cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet Train 
       0'" train.training_settings.work_dir=data/models/herdnet_v0/ 

@@ -5,6 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "notebook>=7.4.7",
+    "openpyxl>=3.1.5",
     "python-multipart>=0.0.20",
     "types-tqdm>=4.67.0.20250809",
 ]
@@ -129,7 +131,7 @@ ignore = [
 exclude = [
     "pages/1_Upload_Images.py",
     "pages/2_View_Detections.py",
-    "notebooks/**/*.py"
+    "marimo-nbs/**/*.py"
 ]
 
 [tool.ruff.format]
@@ -159,7 +161,7 @@ extend-immutable-calls = [
 python_version = "3.13"
 # TODO: fix typing errors in dashboard
 # TODO: fix typing errors in api...
-exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|data_exploration|notebooks|oficial_herdnet/tools)/'
+exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|data_exploration|marimo-nbs|oficial_herdnet/tools)/'
 strict=true
 disallow_untyped_defs = true
 disallow_any_unimported = true
@@ -209,7 +211,6 @@ cmd="python test/e2e/endpoints.py"
 help="Package the API in as a docker image"
 # shell="docker build --progress=plain -t cowd-api -f api/Dockerfile  ."
 shell="""docker build -f ./api/Dockerfile -t herd-api ."""
-
 
 [tool.poe.tasks.dockerize-dashboard]
 help="Package the dashboard in as a docker image"

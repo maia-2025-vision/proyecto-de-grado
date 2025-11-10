@@ -8,7 +8,6 @@ app = marimo.App(width="medium")
 def _():
     import argparse
     import os
-    import pandas as pd
     from pathlib import Path
 
     import cv2
@@ -18,9 +17,8 @@ def _():
     import torchvision
     from albumentations import PadIfNeeded
     from animaloc.data import ImageToPatches, PatchesBuffer, save_batch_images
-    from tqdm import tqdm
-
     from loguru import logger
+    from tqdm import tqdm
 
     parser = argparse.ArgumentParser(prog="patcher", description="Cut images into patches")
 
