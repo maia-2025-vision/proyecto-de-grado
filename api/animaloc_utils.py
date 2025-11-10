@@ -51,7 +51,7 @@ def build_model_from_cfg(cfg: DictConfig) -> torch.nn.Module:
     for k in ["num_classes"]:
         kwargs.pop(k, None)
 
-    model = model(**kwargs, num_classes=cfg.datasets.num_classes)
+    model = model(**kwargs, num_classes=cfg.dataset.num_classes)
     model = LossWrapper(model, [])
     model = load_model(model, cfg.model.pth_file)
     assert isinstance(model, torch.nn.Module), f"{type(model).__name__}="
@@ -138,7 +138,7 @@ def faster_rcnn_detector_from_cfg_file(
     cfg = OmegaConf.load(cfg_file)
     cfg.model.pth_file = model_pth_path
 
-    logger.info(f"Excerpts from cfg:\n{pformat(dict(cfg.model))}\n{cfg.datasets.num_classes=}")
+    logger.info(f"Excerpts from cfg:\n{pformat(dict(cfg.model))}\n{cfg.dataset.num_classes=}")
 
     # Build model, set to eval mode and load onto device
     assert isinstance(cfg, DictConfig), f"{type(cfg).__name__=}, should be a DictConfig..."
@@ -156,9 +156,10 @@ def faster_rcnn_detector_from_cfg_file(
         model=model,
         norm=Normalize(),  # BUILDING transform with default mean/std params for now...
         patch_size=patch_size,
-        batch_size=cfg.inference_settings.batch_size,
+        # Se fija batch_size en 1, el pipeline actual no soporta lotes > 1.
+        batch_size=1,  # cfg.inference_settings.batch_size,
         bbox_format="xyxy",
-        idx2species=dict(cfg.datasets.class_def),
+        idx2species=dict(cfg.dataset.class_def),
         device_name=device_name,
     )
 

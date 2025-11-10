@@ -2,7 +2,8 @@
 
 wandb_project: 'Herdnet'
 wandb_entity: 'maiavision2025-universidad-de-los-andes'
-wandb_run: 'Train 1'
+wandb_run: 'Herdnet Train 1'
+wandb_mode: 'online'
 seed: 1
 device_name: 'cuda'
 
