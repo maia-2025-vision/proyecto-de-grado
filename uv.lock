@@ -3426,10 +3426,11 @@ name = "proyecto-de-grado"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "boto3-stubs", extra = ["s3"] },
     { name = "loguru" },
-    { name = "pandas-stubs" },
     { name = "notebook" },
     { name = "openpyxl" },
+    { name = "pandas-stubs" },
     { name = "python-multipart" },
 ]
 
@@ -3454,7 +3455,6 @@ dashboard-deps = [
     { name = "streamlit" },
 ]
 dev = [
-    { name = "boto3-stubs", extra = ["s3"] },
     { name = "dvc", extra = ["s3"] },
     { name = "ipykernel" },
     { name = "marimo" },
@@ -3489,10 +3489,11 @@ herdnet = [
 
 [package.metadata]
 requires-dist = [
+    { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.40.55" },
     { name = "loguru" },
-    { name = "pandas-stubs", specifier = ">=2.3.2.250926" },
     { name = "notebook", specifier = ">=7.4.7" },
     { name = "openpyxl", specifier = ">=3.1.5" },
+    { name = "pandas-stubs", specifier = ">=2.3.2.250926" },
     { name = "python-multipart", specifier = ">=0.0.20" },
 ]
 
@@ -3517,7 +3518,6 @@ dashboard-deps = [
     { name = "streamlit", specifier = ">=1.49.1" },
 ]
 dev = [
-    { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.40.55" },
     { name = "dvc", extras = ["s3"], specifier = ">=3.63.0" },
     { name = "ipykernel", specifier = ">=6.30.1" },
     { name = "marimo" },
