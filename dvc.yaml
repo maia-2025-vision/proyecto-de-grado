@@ -44,18 +44,6 @@ stages:
       - data/patches-512-ol-160-m01/test_points_gt.csv
       - data/patches-512-ol-160-m01/test/
 
-  patches-512-ol-160-mv01-fpwa-0.1-train:
-    cmd: python animaloc_improved/tools/patcher_v2.py data/train 512 512 160
-      data/patches-512-ol-160-m01-fpwa-0.1/train
-      -csv data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      -fpwa 0.1
-    deps:
-      - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      - data/train/
-      - animaloc_improved/tools/patcher_v2.py
-    outs:
-      - data/patches-512-ol-160-m01-fpwa-0.1/train
-  
   train-herdnet-v0:
     cmd: python oficial_herdnet/tools/train.py 
       train.wandb_run="'Herdnet Train 0'"
@@ -79,7 +67,7 @@ stages:
       - data/patches-512-ol-160-m01/val/
     outs:
       - data/models/herdnet_v1/
-  
+
   train-herdnet-v2:
     desc: Set weights for unbalanced classes
     cmd: python oficial_herdnet/tools/train.py 
@@ -148,7 +136,7 @@ stages:
       - data/patches-512-ol-160-m01/test/
     outs:
       - data/test_results/herdnet_v1/
-  
+
   test-herdnet-v2:
     # test.sticher=null because we are running over patches of size 512x512
     cmd: >
@@ -166,6 +154,108 @@ stages:
       - data/patches-512-ol-160-m01/test/
     outs:
       - data/test_results/herdnet_v2/
+
+  infer-train-herdnet-v2:
+    desc: >
+      First step for HNM, infer over full size images.
+    cmd: python animaloc_improved/tools/infer_v2.py
+      data/train/
+      data/models/herdnet_v2/best_model.pth
+      -dest data/inference/herdnet_v2/train
+    deps:
+      - animaloc_improved/tools/infer_v2.py
+      - data/models/herdnet_v2/best_model.pth
+      - data/train
+    outs:
+      - data/inference/herdnet_v2/train
+
+  infer-valid-herdnet-v2:
+    desc: >
+      First step for HNM, infer over full size images.
+    cmd: python animaloc_improved/tools/infer_v2.py
+      data/val/
+      data/models/herdnet_v2/best_model.pth
+      -dest data/inference/herdnet_v2/val
+    deps:
+      - animaloc_improved/tools/infer_v2.py
+      - data/models/herdnet_v2/best_model.pth
+      - data/val
+    outs:
+      - data/inference/herdnet_v2/val
+
+  mine-hard-negs-herdnet-v2:
+    desc: Mine hard negs for train and val
+    cmd: >
+      python animaloc_improved/tools/mine_hard_negs.py from-pt-dets
+      --gt_boxes data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      --pt_dets  data/inference/herdnet_v2/train/detections.csv
+      --out      data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+      &&
+      python animaloc_improved/tools/mine_hard_negs.py from-pt-dets
+      --gt_boxes data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      --pt_dets  data/inference/herdnet_v2/val/detections.csv
+      --out      data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
+    deps:
+      - animaloc_improved/tools/mine_hard_negs.py
+      - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/inference/herdnet_v2/train/detections.csv
+      - data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/inference/herdnet_v2/val/detections.csv
+    outs:
+      - data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+      - data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
+
+  patches-512-ol-160-mv01-with-hard-negs-train:
+    cmd: python oficial_herdnet/tools/patcher.py data/train 512 512 160
+      data/patches-512-ol-160-m01-w-hard-negs/train
+      -csv data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+      &&
+      cp data/patches-512-ol-160-m01-w-hard-negs/train/gt.csv
+      data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+    deps:
+      - oficial_herdnet/tools/patcher.py
+      - data/train/
+      - data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
+    outs:
+      - data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      - data/patches-512-ol-160-m01-w-hard-negs/train/
+
+  patches-512-ol-160-mv01-with-hard-negs-val:
+    cmd: python oficial_herdnet/tools/patcher.py data/val 512 512 160
+      data/patches-512-ol-160-m01-w-hard-negs/val
+      -csv data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
+      &&
+      cp data/patches-512-ol-160-m01-w-hard-negs/val/gt.csv
+      data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+    deps:
+      - oficial_herdnet/tools/patcher.py
+      - data/val/
+      - data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
+    outs:
+      - data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+      - data/patches-512-ol-160-m01-w-hard-negs/val/
+
+  train-herdnet-v2-hn:
+    desc: Keep training herdnet v2 but now with hard negatives
+    cmd: python oficial_herdnet/tools/train.py
+      train.wandb_run="'Herdnet v2-part2 Hard Negs'"
+      train.wandb_mode=offline
+      train.model.load_from=data/models/herdnet_v2/best_model.pth
+      train.training_settings.epochs=50
+      train.datasets.train.csv_file=data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      train.datasets.train.root_dir=data/patches-512-ol-160-m01-w-hard-negs/train
+      train.datasets.validate.csv_file=data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+      train.datasets.validate.root_dir=data/patches-512-ol-160-m01-w-hard-negs/val
+      train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
+      train.training_settings.work_dir=data/models/herdnet_v2_hn/
+    deps:
+      - data/patches-512-ol-160-m01/train_points_gt.csv
+      - data/patches-512-ol-160-m01/train/
+      - data/patches-512-ol-160-m01/val_points_gt.csv
+      - data/patches-512-ol-160-m01/val/
+    outs:
+      - data/models/herdnet_v2_hn/
+
 
   test-full-to-points:
     cmd: python oficial_herdnet/tools/csv_to_points.py
@@ -369,7 +459,7 @@ stages:
     desc: >
       Add metadata and transforms to a model that comes from an intermediate epoch.
     cmd: >
-      python tools/add_info_to_model.py --config-path $PWD/configs/
+      python animaloc_improved/tools/add_info_to_model.py --config-path $PWD/configs/
       train=faster_rcnn_herdnet_trainer
       add_info.best_model_pth_path=data/models/tmp/faster-rcnn/best_model-by-epoch-70.pth
 
@@ -412,7 +502,7 @@ stages:
       +test.results_file=data/model_descs/parameters-frcnn-resnet-50.csv
 
     deps:
-      - tools/describe_model.py
+      - animaloc_improved/tools/describe_model.py
       - ./configs/test/faster_rcnn.yaml
       - data/models/faster-rcnn/resnet50-100-epochs-tbl4
     outs:
@@ -424,7 +514,7 @@ stages:
       # trainable_backbone_layers=5 for this report (to report all layers)
       # but we trained with just 4 backbone layers
     cmd: >
-      python tools/describe_model.py --config-path=$PWD/configs
+      python animaloc_improved/tools/describe_model.py --config-path=$PWD/configs
       test=faster_rcnn
       test.device_name="cpu"
       test.model.kwargs.architecture=resnet101
@@ -434,7 +524,7 @@ stages:
       +test.results_file=data/model_descs/parameters-frcnn-resnet-101.csv
 
     deps:
-      - tools/describe_model.py
+      - animaloc_improved/tools/describe_model.py
       - ./configs/test/faster_rcnn.yaml
       - data/models/faster-rcnn/resnet101-100-epochs-tbl4
     outs:

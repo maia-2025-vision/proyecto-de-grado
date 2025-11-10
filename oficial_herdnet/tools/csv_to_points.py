@@ -2,6 +2,7 @@ import argparse
 import os
 
 import pandas as pd
+from loguru import logger
 
 
 def convert_csv_to_points(input_file, output_file):
@@ -12,7 +13,10 @@ def convert_csv_to_points(input_file, output_file):
         output_file (str): Path to save the converted CSV file.
     """
     # Read the input CSV
+    logger.info(f"input file: {input_file}")
     df = pd.read_csv(input_file)
+    in_columns = list(df.columns)
+    logger.info(f"{len(df)} lines, columns= {', '.join(in_columns)}")
 
     # Calculate the midpoint of the bounding boxes
     df["x"] = (df["x_min"] + df["x_max"]) // 2
@@ -26,7 +30,13 @@ def convert_csv_to_points(input_file, output_file):
 
     # Save the new CSV
     points_df.to_csv(output_file, index=False)
-    print(f"Converted {input_file} to {output_file}")
+    logger.info(
+        f"{len(points_df)} lines (point annotations),"
+        f" on {points_df['images'].nunique()} unique images"
+    )
+    columns = list(points_df.columns)
+    logger.info(f"{len(columns)} output columns: {', '.join(columns)}")
+    logger.info(f"output file: {output_file}")
 
 
 if __name__ == "__main__":

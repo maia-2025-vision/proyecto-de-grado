@@ -3,6 +3,7 @@ repos:
     rev: v4.5.0
     hooks:
       - id: check-added-large-files
+        exclude: notebooks/
       - id: check-toml
       - id: detect-aws-credentials
         args: [ --allow-missing-credentials ]
