@@ -13,12 +13,12 @@ from dashboard.utils.api_client import process_images
 from dashboard.utils.s3_utils import upload_files_to_s3
 
 st.set_page_config(
-    page_title="Carga y Procesamiento de Imágenes",
+    page_title="📤 Carga y Procesamiento de Imágenes",
     page_icon="📤",
     layout="wide",
 )
 
-st.title("Carga y Procesamiento de Imágenes")
+st.title("📤 Carga y Procesamiento de Imágenes")
 
 # --- UI Components ---
 uploaded_files = st.file_uploader(
@@ -32,7 +32,7 @@ with st.sidebar:
     st.header("Parámetros de Detección")
 
     farm_name = st.text_input(
-        "Etiqueta",
+        "Región",
         value="Prueba",
         help="Una etiqueta para organizar este grupo de imágenes (ej: 'Parque_Kruger_Norte').",
     )
