@@ -1,75 +1,73 @@
 # -------------------------
-# Etapa 1: builder
+# Etapa 1: builder - Instala dependencias y prepara el entorno
 # -------------------------
 FROM python:3.13-slim AS builder
 
-ENV PYTHONBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    UV_CACHE_DIR=/tmp/uv-cache
+# Variables de entorno para Python
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
-ARG AWS_ACCESS_KEY_ID
-ARG AWS_SECRET_ACCESS_KEY
+# Instalar git (necesario para dependencias de GitHub como animaloc)
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-RUN adduser --disabled-password --gecos '' api-user
-
+# Instalar uv, nuestro gestor de paquetes
 RUN pip install uv
 
-
+# Establecer directorio de trabajo
 WORKDIR /app
 
-COPY .python-version ./
-COPY pyproject.toml ./
-COPY README.md ./
-COPY uv.lock ./
-COPY dvc.yaml ./
-COPY dvc.lock ./
-COPY .dvc/ .dvc/
-COPY .dvcignore ./
-COPY data/.gitignore data/.gitignore
-COPY api/ api/
+# Copiar archivos de dependencias para aprovechar el caché de Docker
+COPY pyproject.toml uv.lock README.md ./
 
-RUN uv cache dir
+# Instalar dependencias de la API y del modelo usando los grupos de pyproject.toml
+RUN uv pip install --system --group api --group herdnet
 
-RUN --mount=type=cache,id=s/4ea0a428-f8cf-4f69-a0dd-68c65a55469b-/tmp/uv-cache,target=/tmp/uv-cache \
-    uv sync --frozen --link-mode=copy --no-dev --no-install-project --only-group api-deps
+# Instalar poethepoet para usar el task runner
+RUN uv pip install --system poethepoet
 
-ENV MODEL_PATH=data/PENDING-VALUE-HERE.pth
+# Copiar el resto del código fuente del proyecto
+COPY . .
 
-RUN git init && \
-    uv run --no-sync dvc remote modify aws-remote --unset profile && \
-    uv run --no-sync dvc pull $MODEL_PATH && \
-    rm -rf .dvc .git
-
-RUN uv pip install torch torchvision --native-tls --index-url https://download.pytorch.org/whl/cpu
-
-
-RUN chown -R api-user:api-user /app
+# Instalar nuestro proyecto en modo editable
+RUN uv pip install --system -e .
 
 
 # -------------------------
-# Etapa 2: final
+# Etapa 2: final - Crea la imagen de producción ligera
 # -------------------------
 FROM python:3.13-slim
 
-ENV MODEL_PATH=data/PENDING-VALUE-HERE.pth \
-    UVICORN_PORT=8000 \
-    UVICORN_RELOAD=false \
-    PYTHONBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app
+# Variables de entorno para Python y la aplicación
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH=/app
 
-RUN adduser --disabled-password --gecos '' api-user
+# Instalar solo las librerías de sistema necesarias para ejecutar (ej. para OpenCV)
+RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 && rm -rf /var/lib/apt/lists/*
 
+# Crear un usuario no-root para correr la aplicación por seguridad
+RUN adduser --system --group --no-create-home api-user
+
+# Establecer directorio de trabajo
 WORKDIR /app
 
-COPY --from=builder /app /app
+# Copiar las dependencias instaladas desde la etapa 'builder'
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-RUN chown -R api-user:api-user /app
+# Copiar solo el código de la aplicación necesario desde la etapa 'builder'
+# y asignarle el usuario 'api-user' como propietario
+COPY --from=builder --chown=api-user:api-user /app/api ./api
+COPY --from=builder --chown=api-user:api-user /app/configs ./configs
+COPY --from=builder --chown=api-user:api-user /app/oficial_herdnet ./oficial_herdnet
+COPY --from=builder --chown=api-user:api-user /app/pyproject.toml ./
+COPY --from=builder --chown=api-user:api-user /app/README.md ./
 
+# Cambiar al usuario no-root
 USER api-user
 
+# Exponer el puerto de la API
 EXPOSE 8000
 
-CMD ["/app/.venv/bin/python", "api/run_api.py"]
+# Comando para iniciar la aplicación usando poe
+CMD ["poe", "serve-frc"]

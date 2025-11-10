@@ -180,6 +180,9 @@ ignore_missing_imports = true
 [tool.poe.env]
 AWS_PROFILE="dvc-user"
 
+[tool.poe.executor]
+type = "simple"
+
 [tool.poe.tasks.pre-commit]
 help="runs formatting checks (e.g. ruff) on commited files"
 cmd="pre-commit run --all-files"
