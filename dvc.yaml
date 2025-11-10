@@ -155,52 +155,52 @@ stages:
     outs:
       - data/test_results/herdnet_v2/
 
-  infer-train-herdnet-v1:
+  infer-train-herdnet-v2:
     desc: >
       First step for HNM, infer over full size images.
     cmd: python animaloc_improved/tools/infer_v2.py
       data/train/
-      data/models/herdnet_v1/best_model.pth
-      -dest data/inference/herdnet_v1/train
+      data/models/herdnet_v2/best_model.pth
+      -dest data/inference/herdnet_v2/train
     deps:
       - animaloc_improved/tools/infer_v2.py
-      - data/models/herdnet_v1/best_model.pth
+      - data/models/herdnet_v2/best_model.pth
       - data/train
     outs:
-      - data/inference/herdnet_v1/train
+      - data/inference/herdnet_v2/train
 
-  infer-valid-herdnet-v1:
+  infer-valid-herdnet-v2:
     desc: >
       First step for HNM, infer over full size images.
     cmd: python animaloc_improved/tools/infer_v2.py
       data/val/
-      data/models/herdnet_v1/best_model.pth
-      -dest data/inference/herdnet_v1/val
+      data/models/herdnet_v2/best_model.pth
+      -dest data/inference/herdnet_v2/val
     deps:
       - animaloc_improved/tools/infer_v2.py
-      - data/models/herdnet_v1/best_model.pth
+      - data/models/herdnet_v2/best_model.pth
       - data/val
     outs:
-      - data/inference/herdnet_v1/val
+      - data/inference/herdnet_v2/val
 
-  mine-hard-negs-herdnet-v1:
+  mine-hard-negs-herdnet-v2:
     desc: Mine hard negs for train and val
     cmd: >
       python animaloc_improved/tools/mine_hard_negs.py from-pt-dets
       --gt_boxes data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      --pt_dets  data/inference/herdnet_v1/train/detections.csv
+      --pt_dets  data/inference/herdnet_v2/train/detections.csv
       --out      data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
       &&
       python animaloc_improved/tools/mine_hard_negs.py from-pt-dets
       --gt_boxes data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      --pt_dets  data/inference/herdnet_v1/val/detections.csv
+      --pt_dets  data/inference/herdnet_v2/val/detections.csv
       --out      data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
     deps:
       - animaloc_improved/tools/mine_hard_negs.py
       - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      - data/inference/herdnet_v1/train/detections.csv
+      - data/inference/herdnet_v2/train/detections.csv
       - data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      - data/inference/herdnet_v1/val/detections.csv
+      - data/inference/herdnet_v2/val/detections.csv
     outs:
       - data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
       - data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
@@ -234,6 +234,26 @@ stages:
     outs:
       - data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
       - data/patches-512-ol-160-m01-w-hard-negs/val/
+
+  train-herdnet-v2-hn:
+    desc: Keep training herdnet v2 but now with hard negatives
+    cmd: python oficial_herdnet/tools/train.py
+      train.wandb_run="'Herdnet v2-part2 Hard Negs'"
+      train.wandb_mode=offline
+      train.model.load_from=data/models/herdnet_v2/best_model.pth
+      train.datasets.train.csv_file=data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      train.datasets.train.root_dir=data/patches-512-ol-160-m01-w-hard-negs/train
+      train.datasets.validate.csv_file=data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+      train.datasets.validate.root_dir=data/patches-512-ol-160-m01-w-hard-negs/val
+      train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
+      train.training_settings.work_dir=data/models/herdnet_v2_hn/
+    deps:
+      - data/patches-512-ol-160-m01/train_points_gt.csv
+      - data/patches-512-ol-160-m01/train/
+      - data/patches-512-ol-160-m01/val_points_gt.csv
+      - data/patches-512-ol-160-m01/val/
+    outs:
+      - data/models/herdnet_v2_hn/
 
 
   test-full-to-points:
