@@ -638,90 +638,6 @@ stages:
       size: 839797633
       nfiles: 24498
 
-  infer-train-herdnet-v1:
-    cmd: python animaloc_improved/tools/infer_v2.py data/train/ 
-      data/models/herdnet_v1/best_model.pth -dest 
-      data/inference/herdnet_v1/train
-    deps:
-    - path: animaloc_improved/tools/infer_v2.py
-      hash: md5
-      md5: cd02ca134bc2fe07ba08b2e8219b7af0
-      size: 9007
-    - path: data/models/herdnet_v1/best_model.pth
-      hash: md5
-      md5: f771162557730fc76f9a8ec438276af6
-      size: 219993031
-    - path: data/train
-      hash: md5
-      md5: cdd58c7737f0c1e8b7a4db5f99619b86.dir
-      size: 8163547559
-      nfiles: 928
-    outs:
-    - path: data/inference/herdnet_v1/train
-      hash: md5
-      md5: d1e3e3d5dc53bda9b8b81377f9f9991e.dir
-      size: 1803849
-      nfiles: 2
-  mine-hard-negs-herdnet-v1:
-    cmd: "python animaloc_improved/tools/mine_hard_negs.py from-pt-dets --gt_boxes
-      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv --pt_dets\
-      \  data/inference/herdnet_v1/train/detections.csv --out      data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
-      && python animaloc_improved/tools/mine_hard_negs.py from-pt-dets --gt_boxes
-      data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv --pt_dets \
-      \ data/inference/herdnet_v1/val/detections.csv --out      data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv\n"
-    deps:
-    - path: animaloc_improved/tools/mine_hard_negs.py
-      hash: md5
-      md5: babfd7e31e70b33047c32a505890c932
-      size: 6776
-    - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      hash: md5
-      md5: 4df85b8755658f264f15ab15aa3b7ef3
-      size: 362524
-    - path: data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
-      hash: md5
-      md5: 15acbab82e8022090098948c43ebff89
-      size: 50622
-    - path: data/inference/herdnet_v1/train/detections.csv
-      hash: md5
-      md5: bd575cd6f3a9742bb7b7e43d50bb1ddf
-      size: 1794567
-    - path: data/inference/herdnet_v1/val/detections.csv
-      hash: md5
-      md5: f8479f3aa6d866112ce6eda7b26af089
-      size: 233323
-    outs:
-    - path: data/gt-preprocessed/csv/train_gt_boxes_and_hard_negs.csv
-      hash: md5
-      md5: 100c5fc07376d0de02c101a74c8e4147
-      size: 1183149
-    - path: data/gt-preprocessed/csv/val_gt_boxes_and_hard_negs.csv
-      hash: md5
-      md5: ceeb72b14deaa572f4bc14f74286e8f3
-      size: 177253
-  infer-valid-herdnet-v1:
-    cmd: python animaloc_improved/tools/infer_v2.py data/val/ 
-      data/models/herdnet_v1/best_model.pth -dest data/inference/herdnet_v1/val
-    deps:
-    - path: animaloc_improved/tools/infer_v2.py
-      hash: md5
-      md5: cd02ca134bc2fe07ba08b2e8219b7af0
-      size: 9007
-    - path: data/models/herdnet_v1/best_model.pth
-      hash: md5
-      md5: f771162557730fc76f9a8ec438276af6
-      size: 219993031
-    - path: data/val
-      hash: md5
-      md5: 7c59a6075823e53aceb6ed1985746da5.dir
-      size: 1041037675
-      nfiles: 111
-    outs:
-    - path: data/inference/herdnet_v1/val
-      hash: md5
-      md5: dcc495425c2e5caa33da5af377aa425d.dir
-      size: 234569
-      nfiles: 2
   patches-512-ol-160-mv01-with-hard-negs-train:
     cmd: python oficial_herdnet/tools/patcher.py data/train 512 512 160 
       data/patches-512-ol-160-m01-w-hard-negs/train -csv 
@@ -782,6 +698,36 @@ stages:
       hash: md5
       md5: 221faa5f44993ad5257a14506121411f
       size: 466701
+  faster-rcnn-resnet50-full-to-excel:
+    cmd: "python animaloc_improved/tools/results_to_excel.py data/test_results/frcnn-resnet50-full-imgs
+      -o data/test_results/frcnn-resnet50-full-imgs-xlsx\n"
+    deps:
+    - path: data/test_results/frcnn-resnet50-full-imgs
+      hash: md5
+      md5: 67ba715b47bc3e01aad498392943b781.dir
+      size: 1245499
+      nfiles: 4
+    outs:
+    - path: data/test_results/frcnn-resnet50-full-imgs-xlsx
+      hash: md5
+      md5: 028e7c80e5050dfe17a6b6c11a85965d.dir
+      size: 5387
+      nfiles: 1
+  faster-rcnn-resnet101-full-to-excel:
+    cmd: "python animaloc_improved/tools/results_to_excel.py data/test_results/frcnn-resnet101-full-imgs
+      -o data/test_results/frcnn-resnet101-full-imgs-xlsx\n"
+    deps:
+    - path: data/test_results/frcnn-resnet101-full-imgs
+      hash: md5
+      md5: ea48f6a005445c58f46ff4b0ab5e1bcb.dir
+      size: 1120993
+      nfiles: 4
+    outs:
+    - path: data/test_results/frcnn-resnet101-full-imgs-xlsx
+      hash: md5
+      md5: 90b037710a90320a429d78c32f99ef55.dir
+      size: 5391
+      nfiles: 1
   train-herdnet-v0:
     cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet Train 
       0'" train.training_settings.work_dir=data/models/herdnet_v0/ 
@@ -891,7 +837,8 @@ stages:
       md5: 0bf1e281c011436a5d962bc7c780ca88.dir
       size: 724039
       nfiles: 4
-  infer-train-herdnet-v2:
+  infer-train-
+  :
     cmd: python animaloc_improved/tools/infer_v2.py data/train/ 
       data/models/herdnet_v2/best_model.pth -dest 
       data/inference/herdnet_v2/train

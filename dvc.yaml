@@ -552,3 +552,27 @@ stages:
       - data/test/
     outs:
       - data/test_results/frcnn-resnet50-full-imgs
+
+  faster-rcnn-resnet50-full-to-excel:
+    desc: >
+      Transform confusion matrix and matrix to xlsx format
+    cmd: >
+      python animaloc_improved/tools/results_to_excel.py
+      data/test_results/frcnn-resnet50-full-imgs
+      -o data/test_results/frcnn-resnet50-full-imgs-xlsx
+    deps:
+      - data/test_results/frcnn-resnet50-full-imgs
+    outs:
+      - data/test_results/frcnn-resnet50-full-imgs-xlsx
+
+  faster-rcnn-resnet101-full-to-excel:
+    desc: >
+      Transform confusion matrix and matrix to xlsx format
+    cmd: >
+      python animaloc_improved/tools/results_to_excel.py
+      data/test_results/frcnn-resnet101-full-imgs
+      -o data/test_results/frcnn-resnet101-full-imgs-xlsx
+    deps:
+      - data/test_results/frcnn-resnet101-full-imgs
+    outs:
+      - data/test_results/frcnn-resnet101-full-imgs-xlsx

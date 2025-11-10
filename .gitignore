@@ -7,3 +7,4 @@ __pycache__/
 wandb/
 .ipynb_checkpoints
 .editorconfig
+.ipynb_checkpoints/
