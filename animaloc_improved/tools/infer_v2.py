@@ -93,14 +93,7 @@ parser.add_argument(
     default=False,
     help="whether to export thumbnails (one small image centered around detection)",
 )
-parser.add_argument(
-    "-override_labels",
-    type=int,
-    default=-1,
-    help="whether to override predicted labels before writing the output."
-    "Default -1 means no override, any value >= 0 will cause override."
-    "This option is meant to be used for hard negative mining.",
-)
+
 
 args = parser.parse_args()
 
@@ -191,11 +184,6 @@ def main() -> None:
     detections = evaluator.detections
     detections.dropna(inplace=True)
     detections["species"] = detections["labels"].map(classes)
-    if args.override_labels > -1:
-        logger.info(f"Overriding labels to {args.override_labels}")
-        detections["labels"] = args.override_labels
-        detections["species"] = "(detected label overriden)"
-
     detections.to_csv(dest_path / "detections.csv", index=False)
 
     # Draw detections on images and create thumbnails
