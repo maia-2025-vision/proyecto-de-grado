@@ -11,9 +11,9 @@ from loguru import logger
 
 import api.routes
 from api.config import SETTINGS
-from api.model_utils import make_detector
-from api.req_resp_types import PredictionError
 from api.routes import router  # noqa: F401
+from api.schemas.req_resp_types import PredictionError
+from api.utils.model_utils import make_detector
 
 DETECTOR = api.routes.DETECTOR
 

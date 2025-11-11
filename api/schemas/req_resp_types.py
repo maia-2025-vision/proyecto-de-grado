@@ -4,7 +4,7 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
 
-from api.internal_types import ModelMetadata
+from api.schemas.internal_types import ModelMetadata
 
 
 class PredictionError(Exception):

@@ -5,19 +5,15 @@ from http import HTTPStatus
 
 import pydantic
 import requests
+import torch
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from loguru import logger
 from PIL import Image
 
 from api.config import SETTINGS
 from api.detector import DetectionsDict
-from api.internal_types import DetectorHandle
-from api.model_utils import (
-    MockDetector,
-    compute_counts_by_species,
-    verify_and_post_process_pred,
-)
-from api.req_resp_types import (
+from api.schemas.internal_types import DetectorHandle
+from api.schemas.req_resp_types import (
     AppInfoResponse,
     CollectedCountsFlyover,
     CollectedCountsRegion,
@@ -32,7 +28,12 @@ from api.req_resp_types import (
     PredictManyResult,
     PredictOneRequest,
 )
-from api.s3_utils import (
+from api.utils.model_utils import (
+    MockDetector,
+    compute_counts_by_species,
+    verify_and_post_process_pred,
+)
+from api.utils.s3_utils import (
     download_file_from_s3,
     get_predictions_from_s3_folder,
     list_flyover_folders,
