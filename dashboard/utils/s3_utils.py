@@ -1,6 +1,6 @@
 """Utilidades para la interacción con S3."""
 
-from datetime import date, datetime
+from datetime import date
 
 import boto3
 import streamlit as st
