@@ -24,10 +24,10 @@ def build_model_from_cfg(cfg: DictConfig) -> torch.nn.Module:
     Same code as Herdnet/tools/test.py:_build_model
 
     Only keys used from cfg are:
-      - cfg.model.name,  e.g
+      - cfg.model.name, e.g. "FasterRCNNResNetFPN"
       - cfg.model.from_torchvision, e.g False
       - cfg.model.kwargs
-      - cfg.dataset.num_classes
+      - cfg.dataset.num_classes (legacy) OR cfg.datasets.num_classes (new format)
 
     """
     name = cfg.model.name
@@ -51,7 +51,9 @@ def build_model_from_cfg(cfg: DictConfig) -> torch.nn.Module:
     for k in ["num_classes"]:
         kwargs.pop(k, None)
 
-    model = model(**kwargs, num_classes=cfg.dataset.num_classes)
+    dataset_cfg = resolve_dataset_cfg(cfg)
+
+    model = model(**kwargs, num_classes=dataset_cfg.num_classes)
     model = LossWrapper(model, [])
     model = load_model(model, cfg.model.pth_file)
     assert isinstance(model, torch.nn.Module), f"{type(model).__name__}="
@@ -131,6 +133,25 @@ class FasterRCNNDetector(torch.nn.Module, Detector):
         return self.bbox_format_
 
 
+def resolve_dataset_cfg(cfg: DictConfig) -> DictConfig:
+    """Return a dataset configuration compatible with legacy/new formats."""
+    dataset_cfg = cfg.get("dataset")
+    if dataset_cfg is None:
+        dataset_cfg = cfg.get("datasets")
+
+    if dataset_cfg is None:
+        raise KeyError(
+            "Dataset configuration missing. Expected "
+            "`dataset` or `datasets` section in the cfg file."
+        )
+
+    assert isinstance(dataset_cfg, DictConfig), (
+        f"Unexpected type for dataset configuration: {type(dataset_cfg).__name__}"
+    )
+
+    return dataset_cfg
+
+
 def faster_rcnn_detector_from_cfg_file(
     model_pth_path: Path,
     cfg_file: Path,
@@ -138,7 +159,8 @@ def faster_rcnn_detector_from_cfg_file(
     cfg = OmegaConf.load(cfg_file)
     cfg.model.pth_file = model_pth_path
 
-    logger.info(f"Excerpts from cfg:\n{pformat(dict(cfg.model))}\n{cfg.dataset.num_classes=}")
+    dataset_cfg = resolve_dataset_cfg(cfg)
+    logger.info(f"Excerpts from cfg:\n{pformat(dict(cfg.model))}\n{dataset_cfg.num_classes=}")
 
     # Build model, set to eval mode and load onto device
     assert isinstance(cfg, DictConfig), f"{type(cfg).__name__=}, should be a DictConfig..."
@@ -159,7 +181,7 @@ def faster_rcnn_detector_from_cfg_file(
         # Se fija batch_size en 1, el pipeline actual no soporta lotes > 1.
         batch_size=1,  # cfg.inference_settings.batch_size,
         bbox_format="xyxy",
-        idx2species=dict(cfg.dataset.class_def),
+        idx2species=dict(dataset_cfg.class_def),
         device_name=device_name,
     )
 
@@ -169,7 +191,7 @@ def faster_rcnn_detector_from_cfg_file(
         "backbone_arch": cfg.model.kwargs.architecture,
         "patch_size": patch_size,
         "trainable_backbone_layers": cfg.model.kwargs.trainable_backbone_layers,
-        "num_classes": cfg.model.kwargs.num_classes,
+        "num_classes": dataset_cfg.num_classes,
         "weights_path": model_pth_path,
         "cfg_path": cfg_file,
     }

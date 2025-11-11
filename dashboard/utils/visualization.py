@@ -95,43 +95,53 @@ def draw_detections_on_image(
     img_with_boxes = image.copy()
     draw = ImageDraw.Draw(img_with_boxes)
 
+    scores_raw = detections.get("scores") or []
+    labels_raw = detections.get("labels") or []
+    boxes_raw = detections.get("boxes") or []
+
+    scores = list(scores_raw)
+    labels = list(labels_raw)
+    boxes = list(boxes_raw)
+
+    geometry = boxes if boxes else []
+    max_len = min(len(scores), len(labels), len(geometry)) if geometry else 0
+
     try:
         font: FreeTypeFont | ImageFont.ImageFont = ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
     except OSError:
         font = ImageFont.load_default()
 
-    scores = detections.get("scores", [])
-    labels = detections.get("labels", [])
-    boxes = detections.get("boxes", [])
-
-    for i, score in enumerate(scores):
+    for i in range(max_len):
+        score = scores[i]
         label = labels[i]
-        if score >= confidence_threshold and label in selected_labels:
+        box = boxes[i]
+
+        if score is None or box is None:
+            continue
+
+        if score >= confidence_threshold and (not selected_labels or label in selected_labels):
             box_color = SPECIES_COLORS.get(label, "#FFFFFF")
+            xmin, ymin, xmax, ymax = box
 
-            # Dibujar Bounding Box
-            box = boxes[i]
-            draw.rectangle(box, outline=box_color, width=line_width)
+            draw.rectangle([(xmin, ymin), (xmax, ymax)], outline=box_color, width=line_width)
 
-            # Preparar y dibujar etiqueta con fondo
-            species_name = SPECIES_MAP.get(label, "Unknown")
-            label_text = f"{species_name} ({score:.2f})"
-
-            text_bbox = draw.textbbox((0, 0), label_text, font=font)
+            species_name = SPECIES_MAP.get(label, f"ID_{label}")
+            text = f"{species_name} ({score:.2f})"
+            text_bbox = draw.textbbox((0, 0), text, font=font)
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
 
-            # Asegurarse de que el texto no se salga de la imagen
-            text_x = box[0]
-            text_y = box[1] - text_height - 5
+            text_x = xmin
+            text_y = ymin - text_height - 5
+
             if text_y < 0:
-                text_y = box[3] + 5
+                text_y = ymin + 5
 
             draw.rectangle(
-                [(text_x, text_y), (text_x + text_width + 4, text_y + text_height + 4)],
+                [(text_x, text_y), (text_x + text_width + 5, text_y + text_height + 5)],
                 fill=box_color,
             )
-            draw.text((text_x + 2, text_y + 2), label_text, fill=text_color, font=font)
+            draw.text((text_x + 2, text_y + 2), text, fill=text_color, font=font)
 
     return img_with_boxes
 
@@ -159,25 +169,43 @@ def draw_centroids_on_image(
     img_with_points = image.copy()
     draw = ImageDraw.Draw(img_with_points)
 
-    scores = detections.get("scores", [])
-    labels = detections.get("labels", [])
-    boxes = detections.get("boxes", [])
+    scores_raw = detections.get("scores") or []
+    labels_raw = detections.get("labels") or []
+    boxes_raw = detections.get("boxes") or []
+    points_raw = detections.get("points") or []
 
-    for i, score in enumerate(scores):
+    scores = list(scores_raw)
+    labels = list(labels_raw)
+    boxes = list(boxes_raw)
+    points = list(points_raw)
+
+    use_points = bool(points)
+    geometry_len = len(points) if use_points else len(boxes)
+
+    max_len = min(len(scores), len(labels), geometry_len)
+
+    for i in range(max_len):
+        score = scores[i]
         label = labels[i]
-        if score >= confidence_threshold and label in selected_labels:
-            box = boxes[i]
-            xmin, ymin, xmax, ymax = box
+        if use_points:
+            coords = points[i]
+        else:
+            coords = boxes[i]
 
-            # Calcular el centroide
-            center_x = (xmin + xmax) / 2
-            center_y = (ymin + ymax) / 2
+        if score is None or coords is None:
+            continue
 
-            # Definir el color y el radio del punto
+        if score >= confidence_threshold and (not selected_labels or label in selected_labels):
+            if use_points:
+                center_x, center_y = coords
+            else:
+                xmin, ymin, xmax, ymax = coords
+                center_x = (xmin + xmax) / 2
+                center_y = (ymin + ymax) / 2
+
             point_color = SPECIES_COLORS.get(label, "#FFFFFF")
             radius = point_size
 
-            # Dibujar el círculo (elipse con el mismo radio para x e y)
             draw.ellipse(
                 (center_x - radius, center_y - radius, center_x + radius, center_y + radius),
                 fill=point_color,
