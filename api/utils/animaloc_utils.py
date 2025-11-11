@@ -133,7 +133,6 @@ class FasterRCNNDetector(torch.nn.Module, Detector):
         img_np = np.array(image.convert("RGB"))
         img_normalized = self.norm(image=img_np)
         img_pt = self.to_tensor(img_normalized["image"])
-        logger.info(f"img_pt: {img_pt.shape}")
         # No need to move to device_name, stitcher does it internally
         preds = self.stitcher(img_pt)
 
