@@ -101,7 +101,5 @@ if current_metrics and current_metrics["payload"].get("total_counts") is not Non
             if not df_per_image.empty:
                 st.dataframe(df_per_image, use_container_width=True, hide_index=True)
 else:
-    st.info(
-        "👈 Selecciona una región y sobrevuelo, luego presiona "
-        "'Cargar Métricas' para ver los conteos."
-    )
+    st.info("👈 Selecciona una región y un sobrevuelo.")
+    st.info("Luego presiona 'Cargar Métricas' para ver los conteos.")

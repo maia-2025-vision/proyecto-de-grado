@@ -142,7 +142,7 @@ if current_state and current_state["payload"].get("results"):
                 has_boxes = bool(detections.get("boxes"))
                 has_points = bool(detections.get("points")) or has_boxes
 
-                available_modes = []
+                available_modes: list[str] = []
                 if has_boxes:
                     available_modes.append("Cajas")
                 if has_points:
@@ -151,7 +151,6 @@ if current_state and current_state["payload"].get("results"):
                 if not available_modes:
                     st.warning("Este resultado no contiene geometrías para visualizar.")
                 else:
-                    # Recalculate radio with filtered options to avoid stale state
                     display_mode = mode_placeholder.radio(
                         "Modo",
                         options=available_modes,
@@ -171,7 +170,7 @@ if current_state and current_state["payload"].get("results"):
                             line_width=line_width,
                         )
                         caption = "Detecciones con Cajas Delimitadoras"
-                    else:  # Centroides
+                    else:
                         st.subheader("Modelo: Centroides")
                         rendered_image = draw_centroids_on_image(
                             image.copy(),
@@ -186,7 +185,5 @@ if current_state and current_state["payload"].get("results"):
         else:
             st.error("No se encontró el resultado seleccionado.")
 else:
-    st.info(
-        "👈 Selecciona una región y un sobrevuelo, luego presiona "
-        "'Cargar Detecciones' para comenzar."
-    )
+    st.info("👈 Selecciona una región y un sobrevuelo.")
+    st.info("Luego presiona 'Cargar Detecciones' para comenzar.")
