@@ -1,6 +1,6 @@
 """Utilidades para la interacción con S3."""
 
-from datetime import datetime
+from datetime import date
 
 import boto3
 import streamlit as st
@@ -24,7 +24,7 @@ def get_s3_client() -> S3Client | None:
 def upload_files_to_s3(
     files: list[st.runtime.uploaded_file_manager.UploadedFile],
     region: str,
-    flyover_datetime: datetime,
+    flyover_date: date,
 ) -> list[str] | None:
     """Sube una lista de archivos a una carpeta estructurada en S3 y devuelve sus URLs.
 
@@ -34,7 +34,7 @@ def upload_files_to_s3(
     if not s3_client:
         return None
 
-    flyover_ts = flyover_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+    flyover_ts = flyover_date.isoformat()
     s3_urls = []
 
     progress_bar = st.progress(0.0, text="Iniciando subida a S3...")

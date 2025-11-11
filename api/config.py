@@ -1,18 +1,27 @@
 import os
+import warnings
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from pprint import pformat
 
 from loguru import logger
+from pydantic._internal._generate_schema import (  # type: ignore[attr-defined]
+    UnsupportedFieldAttributeWarning,
+)
+
+warnings.filterwarnings(
+    "ignore",
+    message=(
+        "The '(repr|frozen)' attribute with value False was provided to the `Field\\(\\)` function"
+    ),
+    category=UnsupportedFieldAttributeWarning,
+)
 
 
 @dataclass
 class Settings:
     """Configuración principal del API."""
 
-    host: str = "0.0.0.0"  # Acepta conexiones externas
-    port: int = 8000  # Puerto por defecto
-    reload: bool = True  # Recarga automática (solo para desarrollo)
     s3_bucket: str = "cow-detect-maia"
     model_weights_path: Path = Path("./undefined")
     model_cfg_path: Path = Path("./undefined")
@@ -20,15 +29,6 @@ class Settings:
 
 
 SETTINGS = Settings()
-
-if "UVICORN_HOST" in os.environ:
-    SETTINGS.host = os.environ["UVICORN_HOST"]
-
-if "UVICORN_PORT" in os.environ:
-    SETTINGS.port = int(os.environ["UVICORN_PORT"])
-
-if "UVICORN_RELOAD" in os.environ:
-    SETTINGS.reload = bool(os.environ["UVICORN_RELOAD"])
 
 if "S3_BUCKET" in os.environ:
     SETTINGS.s3_bucket = os.environ["S3_BUCKET"]
