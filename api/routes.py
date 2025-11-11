@@ -1,4 +1,5 @@
 import io
+import time
 import traceback
 from collections import Counter
 from http import HTTPStatus
@@ -11,13 +12,8 @@ from PIL import Image
 
 from api.config import SETTINGS
 from api.detector import DetectionsDict
-from api.internal_types import DetectorHandle
-from api.model_utils import (
-    MockDetector,
-    compute_counts_by_species,
-    verify_and_post_process_pred,
-)
-from api.req_resp_types import (
+from api.schemas.internal_types import DetectorHandle
+from api.schemas.req_resp_types import (
     AppInfoResponse,
     CollectedCountsFlyover,
     CollectedCountsRegion,
@@ -32,7 +28,12 @@ from api.req_resp_types import (
     PredictManyResult,
     PredictOneRequest,
 )
-from api.s3_utils import (
+from api.utils.model_utils import (
+    MockDetector,
+    compute_counts_by_species,
+    verify_and_post_process_pred,
+)
+from api.utils.s3_utils import (
     download_file_from_s3,
     get_predictions_from_s3_folder,
     list_flyover_folders,
@@ -137,9 +138,14 @@ def predict_one(
 ) -> PredictionResult:
     detector = DETECTOR.detector
     try:
+        logger.info(f"Predicting on image of size: {image.size} with {type(detector).__name__}")
+        t0 = time.perf_counter()
         pred = detector.detect_one_image(image)
         pred_obj: DetectionsDict = {k: v.tolist() for k, v in pred.items()}  # type: ignore
+        del pred
         pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=detector.bbox_format())
+        elapsed = time.perf_counter() - t0
+        logger.info(f"elapsed time: {elapsed:.2f} seconds, {len(pred_obj2['points'])} predictions")
 
         counts_at_thresh = compute_counts_by_species(
             labels=pred_obj2["labels"],

@@ -13,7 +13,7 @@ from dashboard.utils.api_client import process_images
 from dashboard.utils.s3_utils import upload_files_to_s3
 
 st.set_page_config(
-    page_title="📤 Carga y Procesamiento de Imágenes",
+    page_title="Carga y Procesamiento de Imágenes",
     page_icon="📤",
     layout="wide",
 )
@@ -33,15 +33,15 @@ with st.sidebar:
 
     farm_name = st.text_input(
         "Región",
-        value="Prueba",
-        help="Una etiqueta para organizar este grupo de imágenes (ej: 'Parque_Kruger_Norte').",
+        value="Chad-HN",
+        help="Nombre de la región dónde se están contando animales (ej: 'Botswana').",
     )
 
     col1, col2 = st.columns(2)
     with col1:
         capture_date = st.date_input("Fecha de captura", value=datetime.date.today())
-    with col2:
-        capture_time = st.time_input("Hora de captura", value=datetime.datetime.now().time())
+    # with col2:
+    #    capture_time = st.time_input("Hora de captura", value=datetime.datetime.now().time())
 
 process_button = st.button("Procesar Imágenes", disabled=not uploaded_files, type="primary")
 
@@ -53,11 +53,10 @@ if process_button:
     if not farm_name:
         st.warning("Por favor, ingrese una 'Etiqueta' en la barra lateral.")
     else:
-        flyover_datetime = datetime.datetime.combine(capture_date, capture_time)
         s3_urls = upload_files_to_s3(
             files=uploaded_files,
             region=farm_name,
-            flyover_datetime=flyover_datetime,
+            flyover_date=capture_date,
         )
 
         if s3_urls:
