@@ -5,7 +5,9 @@ from pathlib import Path
 from pprint import pformat
 
 from loguru import logger
-from pydantic._internal._generate_schema import UnsupportedFieldAttributeWarning
+from pydantic._internal._generate_schema import (  # type: ignore[attr-defined]
+    UnsupportedFieldAttributeWarning,
+)
 
 warnings.filterwarnings(
     "ignore",

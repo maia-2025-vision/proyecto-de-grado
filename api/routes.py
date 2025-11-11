@@ -1,11 +1,11 @@
 import io
+import time
 import traceback
 from collections import Counter
 from http import HTTPStatus
 
 import pydantic
 import requests
-import torch
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from loguru import logger
 from PIL import Image
@@ -138,9 +138,14 @@ def predict_one(
 ) -> PredictionResult:
     detector = DETECTOR.detector
     try:
+        logger.info(f"Predicting on image of size: {image.size} with {type(detector).__name__}")
+        t0 = time.perf_counter()
         pred = detector.detect_one_image(image)
         pred_obj: DetectionsDict = {k: v.tolist() for k, v in pred.items()}  # type: ignore
+        del pred
         pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=detector.bbox_format())
+        elapsed = time.perf_counter() - t0
+        logger.info(f"elapsed time: {elapsed:.2f} seconds, {len(pred_obj2['points'])} predictions")
 
         counts_at_thresh = compute_counts_by_species(
             labels=pred_obj2["labels"],

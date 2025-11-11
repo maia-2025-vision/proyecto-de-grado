@@ -25,12 +25,12 @@ def pick_inference_device() -> str:
     if torch.cuda.is_available():
         return "cuda"
     elif torch.backends.mps.is_available():
-        return "mps"
+        return "cpu"  # mps doesn't work for FasterRCNN for some reason...
     else:
         return "cpu"
 
 
-def load_checkpoint(model: torch.nn.Module, pth_path: str) -> torch.nn.Module:
+def load_checkpoint(model: torch.nn.Module, pth_path: str) -> Any:
     """Load model parameters from a PTH file
 
     Args:
@@ -213,25 +213,21 @@ class HerdnetDetector(torch.nn.Module, Detector):
         img_np = np.array(image.convert("RGB"))
         img_normalized = self.normalizer(image=img_np)
         img_pt = self.to_tensor(img_normalized["image"])
-        logger.info(f"img_pt: {img_pt.shape}")
         # No need to move to device_name, stitcher does it internally
         density_maps = self.stitcher(img_pt)
-        logger.info(f"preds: {density_maps.shape}")
-
         heatmap = density_maps[:, :1, :, :]
         clsmap = density_maps[:, 1:, :, :]
-        logger.info(f"heatmap: {heatmap.shape}, clsmap: {clsmap.shape}")
+
         counts, points, labels, scores, dscores = self.lmds((heatmap, clsmap))
 
-        preds = dict(
-            points=torch.tensor(points[0]),
-            labels=torch.tensor(labels[0]),
-            scores=torch.tensor(scores[0]),
-            dscores=torch.tensor(dscores[0]),
-        )
-        # logger.info(f"preds: {preds}")
+        preds = {
+            "points": torch.tensor(points[0]),
+            "labels": torch.tensor(labels[0]),
+            "scores": torch.tensor(scores[0]),
+            # dscores=torch.tensor(dscores[0]),
+        }
 
-        return preds  # type: ignore[no-any-return]
+        return preds  # type: ignore[return-value]
 
     def detect_one_img_patch_size(self, image: Image.Image) -> RawDetections:
         """Get all detections on one image, assuming its size is exactly equal to patch size.
@@ -240,7 +236,7 @@ class HerdnetDetector(torch.nn.Module, Detector):
         """
         img = image.convert("RGB")
         img_np = np.array(img)
-        img_normalized = self.norm(image=img_np)
+        img_normalized = self.normalizer(image=img_np)
         img_tensor = self.to_tensor(img_normalized["image"])
 
         img_tensor = img_tensor.unsqueeze(0).to(self.device_name)
