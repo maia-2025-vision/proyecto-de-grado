@@ -237,6 +237,9 @@ stages:
 
   train-herdnet-v2-hn:
     desc: Keep training herdnet v2 but now with hard negatives
+    # Validación incluyendo HNs genera error...
+    # train.datasets.validate.csv_file=data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+    # train.datasets.validate.root_dir=data/patches-512-ol-160-m01-w-hard-negs/val
     cmd: python oficial_herdnet/tools/train.py
       train.wandb_run="'Herdnet v2-part2 Hard Negs'"
       train.wandb_mode=offline
@@ -244,13 +247,13 @@ stages:
       train.training_settings.epochs=50
       train.datasets.train.csv_file=data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
       train.datasets.train.root_dir=data/patches-512-ol-160-m01-w-hard-negs/train
-      train.datasets.validate.csv_file=data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
-      train.datasets.validate.root_dir=data/patches-512-ol-160-m01-w-hard-negs/val
+      train.datasets.validate.csv_file=data/patches-512-ol-160-m01/val_points_gt.csv
+      train.datasets.validate.root_dir=data/patches-512-ol-160-m01/val      
       train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
       train.training_settings.work_dir=data/models/herdnet_v2_hn/
     deps:
-      - data/patches-512-ol-160-m01/train_points_gt.csv
-      - data/patches-512-ol-160-m01/train/
+      - data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      - data/patches-512-ol-160-m01-w-hard-negs/train
       - data/patches-512-ol-160-m01/val_points_gt.csv
       - data/patches-512-ol-160-m01/val/
     outs:
