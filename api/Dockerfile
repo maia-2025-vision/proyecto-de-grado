@@ -1,73 +1,76 @@
 # -------------------------
-# Etapa 1: builder - Instala dependencias y prepara el entorno
+# Etapa 1: builder
 # -------------------------
-FROM python:3.13-slim AS builder
+FROM python:3.12-slim AS builder
 
-# Variables de entorno para Python
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_CACHE_DIR=/tmp/uv-cache
 
-# Instalar git (necesario para dependencias de GitHub como animaloc)
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git dvc \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
-# Instalar uv, nuestro gestor de paquetes
 RUN pip install uv
 
-# Establecer directorio de trabajo
+RUN adduser --disabled-password --gecos '' api-user
+
 WORKDIR /app
 
-# Copiar archivos de dependencias para aprovechar el caché de Docker
-COPY pyproject.toml uv.lock README.md ./
+COPY .python-version pyproject.toml uv.lock README.md ./
+COPY dvc.lock dvc.yaml ./
+COPY .dvc .dvc
 
-# Instalar dependencias de la API y del modelo usando los grupos de pyproject.toml
-RUN uv pip install --system --group api --group herdnet
+RUN --mount=type=cache,target=/tmp/uv-cache \
+    uv sync --frozen --link-mode=copy --no-dev --no-install-project --only-group api --only-group herdnet-inference
 
-# Instalar poethepoet para usar el task runner
-RUN uv pip install --system poethepoet
+ENV PATH="/app/.venv/bin:$PATH"
+RUN uv pip install poethepoet
 
-# Copiar el resto del código fuente del proyecto
-COPY . .
+RUN --mount=type=secret,id=aws,target=/root/.aws/credentials \
+    git init && \
+    dvc pull data/models -r s3-remote && \
+    rm -rf .git .dvc
 
-# Instalar nuestro proyecto en modo editable
-RUN uv pip install --system -e .
+COPY api/ api/
+COPY configs/ configs/
+COPY oficial_herdnet/ oficial_herdnet/
+
+RUN uv pip install -e .
+
+RUN chown -R api-user:api-user /app
 
 
 # -------------------------
-# Etapa 2: final - Crea la imagen de producción ligera
+# Etapa 2: final
 # -------------------------
-FROM python:3.13-slim
+FROM python:3.12-slim
 
-# Variables de entorno para Python y la aplicación
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
 
-# Instalar solo las librerías de sistema necesarias para ejecutar (ej. para OpenCV)
-RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
-# Crear un usuario no-root para correr la aplicación por seguridad
-RUN adduser --system --group --no-create-home api-user
+RUN adduser --disabled-password --gecos '' api-user
 
-# Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar las dependencias instaladas desde la etapa 'builder'
-COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-
-# Copiar solo el código de la aplicación necesario desde la etapa 'builder'
-# y asignarle el usuario 'api-user' como propietario
+COPY --from=builder --chown=api-user:api-user /app/.venv ./.venv
 COPY --from=builder --chown=api-user:api-user /app/api ./api
 COPY --from=builder --chown=api-user:api-user /app/configs ./configs
 COPY --from=builder --chown=api-user:api-user /app/oficial_herdnet ./oficial_herdnet
 COPY --from=builder --chown=api-user:api-user /app/pyproject.toml ./
-COPY --from=builder --chown=api-user:api-user /app/README.md ./
+COPY --from=builder --chown=api-user:api-user /app/data/models ./data/models
 
-# Cambiar al usuario no-root
+ENV PATH="/app/.venv/bin:$PATH"
+
 USER api-user
 
-# Exponer el puerto de la API
 EXPOSE 8000
 
-# Comando para iniciar la aplicación usando poe
 CMD ["poe", "serve-frc"]
