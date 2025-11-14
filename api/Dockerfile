@@ -1,96 +1,85 @@
 # -------------------------
-# Etapa 1: builder
+# Etapa 1: builder 
 # -------------------------
-FROM python:3.12-slim AS builder
+FROM python:3.13-slim AS builder
 
+# Configuración básica de Python y del entorno virtual administrado por uv
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    UV_CACHE_DIR=/tmp/uv-cache
+    UV_PROJECT_ENVIRONMENT=/app/.venv \
+    PATH="/app/.venv/bin:$PATH"
 
+# Instalar dependencias de sistema necesarias para construir el proyecto
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git \
+ && apt-get install --no-install-recommends -y git \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-RUN pip install uv
+# Instalar uv, el gestor de paquetes
+RUN pip install --no-cache-dir uv
 
-RUN uv pip install --system "dvc[s3]"
-
-RUN adduser --disabled-password --gecos '' api-user
-
+# Directorio de trabajo de la imagen
 WORKDIR /app
 
-COPY .python-version pyproject.toml uv.lock README.md ./
-COPY dvc.lock dvc.yaml ./
-COPY .dvc .dvc
+# Copiar los archivos de dependencias para aprovechar la cache de Docker.
+# El contexto del build excluye data/ y otros artefactos pesados mediante .dockerignore
+COPY pyproject.toml uv.lock README.md ./
 
-RUN --mount=type=cache,target=/tmp/uv-cache \
-    uv sync --frozen --link-mode=copy --no-dev --no-install-project --only-group api
+# Instalar las dependencias requeridas para la API y el modelo dentro del entorno virtual
+RUN uv sync --frozen --group api --group herdnet
 
-ENV PATH="/app/.venv/bin:$PATH"
-RUN uv pip install poethepoet
+# Copiar el código de la aplicación necesario para empaquetar la API
+COPY api ./api
+COPY configs ./configs
+COPY oficial_herdnet ./oficial_herdnet
+COPY animaloc_improved ./animaloc_improved
 
-RUN uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-
-RUN uv pip install \
-    albumentations>=2.0.8 \
-    antlr4-python3-runtime==4.9.3 \
-    hydra-core \
-    opencv-python>=4.12.0.88 \
-    pillow \
-    scikit-learn>=1.7.2 \
-    torchmetrics
-
-RUN uv pip install "animaloc @ git+https://github.com/Alexandre-Delplanque/HerdNet@v0.2.1"
-
-RUN --mount=type=secret,id=aws,target=/root/.aws/credentials \
-    git init && \
-    dvc pull -r aws-remote --allow-missing \
-        data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth \
-        data/models/herdnet_v2/best_model.pth \
-    && rm -rf .git .dvc
-
-COPY api/ api/
-COPY configs/ configs/
-COPY oficial_herdnet/ oficial_herdnet/
-
-RUN uv pip install -e .
-
-RUN chown -R api-user:api-user /app
+# Instalar el proyecto en modo editable y agregar poethepoet al entorno virtual
+RUN uv pip install --no-deps --editable . \
+ && uv pip install --no-deps poethepoet \
+ && uv cache prune
 
 
 # -------------------------
-# Etapa 2: final
+# Etapa 2: final 
 # -------------------------
-FROM python:3.12-slim
+FROM python:3.13-slim
 
+# Variables de entorno para Python y la aplicación
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH"
 
+# Instalar solo las dependencias de sistema necesarias para ejecutar la API
 RUN apt-get update \
- && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 \
+ && apt-get install --no-install-recommends -y libgl1 libglib2.0-0 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-RUN adduser --disabled-password --gecos '' api-user
+# Crear un usuario no-root para ejecutar la aplicación de forma segura
+RUN adduser --system --group --home /nonexistent api-user
 
+# Directorio de trabajo
 WORKDIR /app
 
-RUN mkdir -p data/models/faster-rcnn/resnet50-100-epochs-tbl4 \
- && mkdir -p data/models/herdnet_v2
-COPY --from=builder --chown=api-user:api-user /app/.venv ./.venv
+# Copiar el entorno virtual creado en la etapa builder
+COPY --from=builder /app/.venv /app/.venv
+
+# Copiar únicamente los artefactos necesarios de la aplicación
 COPY --from=builder --chown=api-user:api-user /app/api ./api
 COPY --from=builder --chown=api-user:api-user /app/configs ./configs
 COPY --from=builder --chown=api-user:api-user /app/oficial_herdnet ./oficial_herdnet
+COPY --from=builder --chown=api-user:api-user /app/animaloc_improved ./animaloc_improved
 COPY --from=builder --chown=api-user:api-user /app/pyproject.toml ./
-COPY --from=builder --chown=api-user:api-user /app/data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth ./data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
-COPY --from=builder --chown=api-user:api-user /app/data/models/herdnet_v2/best_model.pth ./data/models/herdnet_v2/best_model.pth
+COPY --from=builder --chown=api-user:api-user /app/README.md ./
 
-ENV PATH="/app/.venv/bin:$PATH"
-
+# Cambiar al usuario no-root
 USER api-user
 
+# Exponer el puerto de la API
 EXPOSE 8000
 
+# Comando para iniciar la aplicación usando poethepoet
 CMD ["poe", "serve-frc"]
