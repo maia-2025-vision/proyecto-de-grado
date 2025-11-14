@@ -79,6 +79,10 @@ COPY --from=builder --chown=api-user:api-user /app/animaloc_improved ./animaloc_
 COPY --from=builder --chown=api-user:api-user /app/pyproject.toml ./
 COPY --from=builder --chown=api-user:api-user /app/README.md ./
 
+# Copiar el modelo por defecto dentro de la imagen (opción 1)
+RUN mkdir -p /app/data/models/herdnet_v2
+COPY --chown=api-user:api-user data/models/herdnet_v2/best_model.pth /app/data/models/herdnet_v2/best_model.pth
+
 # Cambiar al usuario no-root
 USER api-user
 

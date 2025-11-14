@@ -17,7 +17,12 @@ __pycache__
 dist/
 build/
 *.egg-info
-data/
+data/*
+!data/models/
+data/models/*
+!data/models/herdnet_v2/
+data/models/herdnet_v2/*
+!data/models/herdnet_v2/best_model.pth
 data_exploration/
 #dashboard/
 docs/
