@@ -1,5 +1,7 @@
 """Página de Streamlit para visualizar los resultados de las detecciones."""
 
+from typing import Any, cast
+
 import streamlit as st
 
 from dashboard.utils.api_client import (
@@ -22,16 +24,18 @@ st.title("🖼️ Visualizador de Detecciones")
 # Helpers
 # -----------------------------------------------------------------------------
 
+DetectionState = dict[str, Any]
+
 if "detection_state" not in st.session_state:
-    st.session_state.detection_state = None
+    st.session_state["detection_state"] = None
 
 
-def store_detections(state: dict | None) -> None:
+def store_detections(state: DetectionState | None) -> None:
     """Persist detection payload + metadata for later renders."""
-    st.session_state.detection_state = state
+    st.session_state["detection_state"] = state
 
 
-current_state: dict | None = st.session_state.detection_state
+current_state = cast(DetectionState | None, st.session_state.get("detection_state"))
 
 # -----------------------------------------------------------------------------
 # Sidebar controls

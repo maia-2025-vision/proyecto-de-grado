@@ -1,5 +1,7 @@
 """Página de Streamlit para visualizar las métricas de las detecciones."""
 
+from typing import Any, cast
+
 import pandas as pd
 import streamlit as st
 
@@ -16,15 +18,17 @@ st.title("📊 Métricas de Detección")
 # -----------------------------------------------------------------------------
 # Estado
 # -----------------------------------------------------------------------------
+MetricsState = dict[str, Any]
+
 if "metrics_state" not in st.session_state:
-    st.session_state.metrics_state = None
+    st.session_state["metrics_state"] = None
 
 
-def store_metrics(state: dict | None) -> None:
-    st.session_state.metrics_state = state
+def store_metrics(state: MetricsState | None) -> None:
+    st.session_state["metrics_state"] = state
 
 
-current_metrics = st.session_state.metrics_state
+current_metrics = cast(MetricsState | None, st.session_state.get("metrics_state"))
 
 # -----------------------------------------------------------------------------
 # Controles laterales
