@@ -24,6 +24,10 @@ WORKDIR /app
 # Copiar los archivos de dependencias para aprovechar la cache de Docker.
 # El contexto del build excluye data/ y otros artefactos pesados mediante .dockerignore
 COPY pyproject.toml uv.lock README.md ./
+# Para reducir el peso de la imagen en CPU usamos versiones alternativas de pyproject/uv.lock
+# específicas para Docker que apuntan a las ruedas CPU.
+COPY api/pyproject.cpu.toml ./pyproject.toml
+COPY api/uv.cpu.lock ./uv.lock
 
 # Instalar las dependencias requeridas para la API y el modelo dentro del entorno virtual
 RUN uv sync --frozen --group api --group herdnet

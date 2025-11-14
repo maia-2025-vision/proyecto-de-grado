@@ -19,7 +19,7 @@ build/
 *.egg-info
 data/
 data_exploration/
-dashboard/
+#dashboard/
 docs/
 marimo-nbs/
 notebooks/
