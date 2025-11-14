@@ -92,7 +92,7 @@ EXPOSE 8000
 # Pequeño cambio para más versatilidad:
 ENV MODEL_WEIGHTS_PATH="data/models/herdnet_v2/best_model.pth"
 ENV MODEL_CFG_PATH="configs/test/herdnet.yaml"
-CMD "uvicorn api.main:app --host 0.0.0.0 --port 8000"
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # Este imagen luego se puede ejecutar con un comando externo como por ejemplo:
 # docker run -p 8000:8000 -e AWS_PROFILE="dvc-user"  -v $HOME/.aws:/app/.aws \
