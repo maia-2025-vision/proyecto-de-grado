@@ -228,18 +228,13 @@ shell="""docker build -f ./api/Dockerfile -t herd-api ."""
 
 [tool.poe.tasks.docker-run-api-hnet-prof]
 help="""Run API with Herdnet predictor on docker,\
-    sharing the user's own AWS profile (~/.aws/config) and mounting credentials in container's /app/.aws"""
+    sharing the user's own AWS profile (~/.aws/config) and mounting credentials in container's /app/.aws
+    This assumes model.pth file (see paths below) has been copied into image at build time!
+    """
 # cmd="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/root/.aws herd-api"
 cmd="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/home/.aws herd-api"
 [tool.poe.tasks.docker-run-api-hnet-prof.env]
-MODEL_WEIGHTS_PATH="data/models/herdnet_v2/best_model.pth"
-MODEL_CFG_PATH="configs/test/herdnet.yaml"
-
-[tool.poe.tasks.docker-run-api-hnet-creds]
-help="""Run API with Herdnet on docker, \
-   assuming AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are provided by the user's own .aws config"""
-cmd="docker run -v $HOME/.aws:/root/.aws herd-api"
-[tool.poe.tasks.docker-run-api-hnet-creds.env]
+AWS_PROFILE="dvc-user"
 MODEL_WEIGHTS_PATH="data/models/herdnet_v2/best_model.pth"
 MODEL_CFG_PATH="configs/test/herdnet.yaml"
 
