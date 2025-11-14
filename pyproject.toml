@@ -81,9 +81,6 @@ explicit = true
 torch = [
   { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
-torchvision = [
-  { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
 animaloc = { git = "https://github.com/Alexandre-Delplanque/HerdNet", tag = "v0.2.1" }
 
 [tool.setuptools.packages.find]
