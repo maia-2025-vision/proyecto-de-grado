@@ -228,8 +228,9 @@ shell="""docker build -f ./api/Dockerfile -t herd-api ."""
 
 [tool.poe.tasks.docker-run-api-hnet-prof]
 help="""Run API with Herdnet predictor on docker,\
-    sharing local AWS profile and mounting credentials in containers /root/.aws"""
-cmd="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/root/.aws herd-api"
+    sharing the user's own AWS profile (~/.aws/config) and mounting credentials in container's /app/.aws"""
+# cmd="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/root/.aws herd-api"
+cmd="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/home/.aws herd-api"
 [tool.poe.tasks.docker-run-api-hnet-prof.env]
 MODEL_WEIGHTS_PATH="data/models/herdnet_v2/best_model.pth"
 MODEL_CFG_PATH="configs/test/herdnet.yaml"

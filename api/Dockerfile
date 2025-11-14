@@ -63,7 +63,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 # Crear un usuario no-root para ejecutar la aplicación de forma segura
-RUN adduser --system --group --home /nonexistent api-user
+RUN adduser --system --group --home /app api-user
 
 # Directorio de trabajo
 WORKDIR /app
@@ -85,5 +85,23 @@ USER api-user
 # Exponer el puerto de la API
 EXPOSE 8000
 
-# Comando para iniciar la aplicación usando poethepoet
-CMD ["poe", "serve-frc"]
+# Pequeño cambio para más versatilidad:
+ENV MODEL_WEIGHTS_PATH="data/models/herdnet_v2/best_model.pth"
+ENV MODEL_CFG_PATH="configs/test/herdnet.yaml"
+CMD "uvicorn api.main:app --host 0.0.0.0 --port 8000"
+
+# Este imagen luego se puede ejecutar con un comando externo como por ejemplo:
+# docker run -p 8000:8000 -e AWS_PROFILE="dvc-user"  -v $HOME/.aws:/app/.aws \
+#  -v ./data/models/:data/models/ \
+#  herd-api
+
+# O, si se quiere usar otro modelo se puede hacer override de las variables de entorno correspondientes
+# en la línea de comando:
+# docker run -p 8000:8000 -e AWS_PROFILE="dvc-user"  -v $HOME/.aws:/app/.aws \
+#  -v ./data/models/:data/models/ \
+#  -e MODEL_WEIGHTS_PATH="data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth" \
+#  -e MODEL_CFG_PATH="configs/test/faster_rcnn.yaml" \
+#  herd-api
+
+# IMPORTANTE Los anteriores comandos asumen que el comando que los ejecuta tiene ya una
+# sección [profile dvc-user] definida en su propio archiv $HOME/.aws/config
