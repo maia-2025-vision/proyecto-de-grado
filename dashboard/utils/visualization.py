@@ -13,6 +13,7 @@ import streamlit as st
 from botocore.exceptions import ClientError
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
+from PIL.ImageDraw import ImageDraw as PILImageDraw
 from PIL.ImageFont import FreeTypeFont
 
 from api.schemas.req_resp_types import Detections
@@ -92,7 +93,7 @@ def get_font() -> Font:
 
 
 def draw_text_labels(
-    draw: ImageDraw.Draw,
+    draw: PILImageDraw,
     *,
     label: int,
     score: float,
@@ -100,7 +101,7 @@ def draw_text_labels(
     ymin: int,
     font: Font,
     text_color: str,
-):
+) -> None:
     species_name = SPECIES_MAP.get(label, f"ID_{label}")
     text = f"{species_name} ({score:.2f})"
     text_bbox = draw.textbbox((0, 0), text, font=font)
@@ -126,7 +127,7 @@ class AnnotParams:
     """Parametros para pintar cajar o puntos."""
 
     confidence_threshold: float
-    selected_labels: list[str]
+    selected_labels: list[int]
     add_text_boxes: bool = False
     line_width: int = 1
     point_size: int = 1
@@ -186,8 +187,8 @@ def draw_boxes_on_image(
                     draw,
                     label=label,
                     score=score,
-                    xmin=xmin,
-                    ymin=ymin,
+                    xmin=int(xmin),
+                    ymin=int(ymin),
                     font=font,
                     text_color=annot_params.text_color,
                 )
@@ -279,7 +280,7 @@ def draw_points_on_image(
     return img_with_points
 
 
-def render_summary_tables(img_results: ImageResults, annot_params: AnnotParams):
+def render_summary_tables(img_results: ImageResults, annot_params: AnnotParams) -> None:
     dets_df = pd.DataFrame(
         {"labels": img_results.detections.labels, "score": img_results.detections.scores}
     )

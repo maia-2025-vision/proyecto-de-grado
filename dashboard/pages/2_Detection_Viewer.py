@@ -169,7 +169,7 @@ def draw_img_and_annots(
 # -----------------------------------------------------------------------------
 
 
-def render_page():
+def render_page() -> None:
     st.set_page_config(page_title="Visualizador de Detecciones", page_icon="🖼️", layout="wide")
     st.title("🖼️ Visualizador de Detecciones")
 
