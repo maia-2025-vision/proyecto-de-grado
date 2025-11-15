@@ -239,10 +239,6 @@ MODEL_CFG_PATH="configs/test/herdnet.yaml"
 help="Run API with docker sharing local AWS profile and mounting credentials in containers /root/.aws "
 shell="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/root/.aws herd-api"
 
-[tool.poe.tasks.docker-run-api-aws-creds]
-help="Run API with docker assuming AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are provided in the environment"
-shell="docker run -v $HOME/.aws:/root/.aws herd-api"
-
 [tool.poe.tasks.start-dashboard]
 help="Start streamlit base UI"
 cmd="streamlit run dashboard/app.py"
