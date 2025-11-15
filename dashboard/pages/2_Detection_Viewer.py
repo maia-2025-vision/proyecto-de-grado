@@ -1,7 +1,7 @@
 """Página de Streamlit para visualizar los resultados de las detecciones."""
 
-import numpy as np
-import pandas as pd
+from typing import TypeVar
+
 import streamlit as st
 from loguru import logger
 from streamlit.delta_generator import DeltaGenerator
@@ -40,6 +40,16 @@ from dashboard.utils.visualization import (
 # Sidebar controls
 # -----------------------------------------------------------------------------
 
+T_ = TypeVar("T_")
+
+
+def safe_find(a_list: list[T_], value: T_, default: int = 0) -> int:
+    index = a_list.index(value)
+    if index < 0:
+        return default
+    else:
+        return index
+
 
 def side_bar() -> tuple[FlyoverResults, AnnotParams]:
     with st.sidebar:
@@ -50,7 +60,13 @@ def side_bar() -> tuple[FlyoverResults, AnnotParams]:
             st.warning("No se pudieron cargar las regiones.")
             selected_region = None
         else:
-            selected_region = st.selectbox("Región", options=regions)
+            region_param = st.query_params.get("region")
+            reg_index = 0
+            if region_param is not None:
+                reg_index = safe_find(regions, region_param)
+                logger.info(f"Flyover from url: {region_param}, fo_index: {reg_index}")
+
+            selected_region = st.selectbox("Región", options=regions, index=reg_index)
 
         if selected_region is not None:
             flyovers = get_flyovers(selected_region)
@@ -58,12 +74,17 @@ def side_bar() -> tuple[FlyoverResults, AnnotParams]:
                 st.warning("No hay sobrevuelos para esta región.")
                 selected_flyover = None
             else:
-                selected_flyover = st.selectbox("Sobrevuelo", options=flyovers)
+                flyover_param = st.query_params.get("flyover")
+                fo_index = 0
+                if flyover_param is not None:
+                    fo_index = safe_find(flyovers, flyover_param)
+                    logger.info(f"Flyover from url: {flyover_param}, fo_index: {fo_index}")
+
+                selected_flyover = st.selectbox("Sobrevuelo", options=flyovers, index=fo_index)
         else:
             selected_flyover = None
 
-        # load_button_disabled = not (selected_region and selected_flyover)
-        # if st.button("Cargar Detecciones", disabled=load_button_disabled, type="primary"):
+        # Carga automática sin botón simplifica el flujo de datos:
         if selected_region is not None and selected_flyover is not None:
             with st.spinner("Cargando resultados de detección..."):
                 det_results = get_detection_results(selected_region, selected_flyover)
@@ -188,7 +209,16 @@ def render_page() -> None:
 
             col_img, col_mode = st.columns([3, 1])
             with col_img:
-                selected_image_fname = st.selectbox("Imagen a visualizar", image_fnames)
+                image_param = st.query_params.get("image")
+                logger.info(f"Image from url: {image_param}")
+                if isinstance(image_param, str):
+                    img_idx = safe_find(image_fnames, image_param)
+                else:
+                    img_idx = 0
+
+                selected_image_fname = st.selectbox(
+                    "Imagen a visualizar", image_fnames, index=img_idx
+                )
             # logger.info(f"{selected_image_url=}")
             mode_placeholder = col_mode.empty()
 

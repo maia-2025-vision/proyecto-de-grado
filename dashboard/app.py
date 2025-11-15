@@ -8,12 +8,17 @@ img_upload_page = st.Page(
 detection_viewer_page = st.Page(
     "pages/2_Detection_Viewer.py", title="Visualización de Detecciones", icon="🖼️"
 )
-metrics_viewer_page = st.Page("pages/3_Metrics_Viewer.py", title="Métricas de Detección", icon="📊")
+overfly_counts_page = st.Page("pages/3_Overfly_Counts.py", title="Conteos de Sobrevuelo", icon="📊")
 
 # Create navigation
 pg = st.navigation(
     {
-        "Páginas": [home_page, img_upload_page, detection_viewer_page, metrics_viewer_page],
+        "Páginas": [
+            home_page,
+            img_upload_page,
+            overfly_counts_page,
+            detection_viewer_page,
+        ],
     }
 )
 
