@@ -128,18 +128,12 @@ ignore = [
     "N812", # Allow imports like `import albumentations as A`
 ]
 
-# TODO: remove this excludes of pages/ and fix issues, there are only a few of them
 exclude = [
-    "pages/1_Upload_Images.py",
-    "pages/2_View_Detections.py",
     "marimo-nbs/**/*.py"
 ]
 
 [tool.ruff.format]
-exclude = [
-    "pages/1_Upload_Images.py",
-    "pages/2_View_Detections.py"
-]
+exclude = []
 
 [tool.ruff.lint.isort]
 known-third-party = ["wandb"]
