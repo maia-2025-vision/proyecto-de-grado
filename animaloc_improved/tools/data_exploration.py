@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def summarize_points_gt(fp: Path):
+def summarize_points_gt(fp: Path) -> None:
     print(f"archivo: {fp!s}")
     df = pd.read_csv(fp)
     cols = list(df.columns)
