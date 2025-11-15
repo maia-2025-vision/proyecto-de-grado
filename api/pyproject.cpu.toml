@@ -73,16 +73,16 @@ dashboard-deps = [
 ]
 
 [[tool.uv.index]]
-name = "pytorch-cu128"
-url = "https://download.pytorch.org/whl/cu128"
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [tool.uv.sources]
 torch = [
-  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
 torchvision = [
-  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
 animaloc = { git = "https://github.com/Alexandre-Delplanque/HerdNet", tag = "v0.2.1" }
 
@@ -180,9 +180,6 @@ ignore_missing_imports = true
 [tool.poe.env]
 AWS_PROFILE="dvc-user"
 
-[tool.poe.executor]
-type = "simple"
-
 [tool.poe.tasks.pre-commit]
 help="runs formatting checks (e.g. ruff) on commited files"
 cmd="pre-commit run --all-files"
@@ -203,7 +200,7 @@ cmd="python api/run_api.py"
 [tool.poe.tasks.serve-frc]
 help="Start the prediction API service with the Faster-RCNN model"
 # cmd="python api/run_api.py"
-cmd="uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload"
+cmd="uvicorn api.main:app --host 0.0.0.0 --port 8000"
 [tool.poe.tasks.serve-frc.env]
 MODEL_WEIGHTS_PATH="data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth"
 # MODEL_CFG_PATH="configs/train/faster_rcnn_herdnet_trainer.yaml"
@@ -212,7 +209,7 @@ MODEL_CFG_PATH="configs/test/faster_rcnn.yaml"
 [tool.poe.tasks.serve-hn]
 help="Start the prediction API service with the Faster-RCNN model"
 # cmd="python api/run_api.py"
-cmd="uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload"
+cmd="uvicorn api.main:app --host 0.0.0.0 --port 8000"
 [tool.poe.tasks.serve-hn.env]
 MODEL_WEIGHTS_PATH="data/models/herdnet_v2/best_model.pth"
 MODEL_CFG_PATH="configs/test/herdnet.yaml"
@@ -228,16 +225,27 @@ shell="""docker build -f ./api/Dockerfile -t herd-api ."""
 
 [tool.poe.tasks.docker-run-api-hnet-prof]
 help="""Run API with Herdnet predictor on docker,\
-    sharing the user's own AWS profile (~/.aws/config) and mounting credentials in container's /app/.aws
-    This assumes model.pth file (see paths below) has been copied into image at build time!
-    """
-# cmd="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/root/.aws herd-api"
-cmd="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/home/.aws herd-api"
+    sharing local AWS profile and mounting credentials in containers /root/.aws"""
+cmd="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/root/.aws herd-api"
 [tool.poe.tasks.docker-run-api-hnet-prof.env]
-AWS_PROFILE="dvc-user"
 MODEL_WEIGHTS_PATH="data/models/herdnet_v2/best_model.pth"
 MODEL_CFG_PATH="configs/test/herdnet.yaml"
 
+[tool.poe.tasks.docker-run-api-hnet-creds]
+help="""Run API with Herdnet on docker, \
+   assuming AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are provided by the user's own .aws config"""
+cmd="docker run -v $HOME/.aws:/root/.aws herd-api"
+[tool.poe.tasks.docker-run-api-hnet-creds.env]
+MODEL_WEIGHTS_PATH="data/models/herdnet_v2/best_model.pth"
+MODEL_CFG_PATH="configs/test/herdnet.yaml"
+
+[tool.poe.tasks.docker-run-api-aws-prof]
+help="Run API with docker sharing local AWS profile and mounting credentials in containers /root/.aws "
+shell="docker run -p 8000:8000 -e AWS_PROFILE=$AWS_PROFILE -v $HOME/.aws:/root/.aws herd-api"
+
+[tool.poe.tasks.docker-run-api-aws-creds]
+help="Run API with docker assuming AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are provided in the environment"
+shell="docker run -v $HOME/.aws:/root/.aws herd-api"
 
 [tool.poe.tasks.start-dashboard]
 help="Start streamlit base UI"
