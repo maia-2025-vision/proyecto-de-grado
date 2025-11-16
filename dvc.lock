@@ -365,6 +365,7 @@ stages:
       hash: md5
       md5: 67ba715b47bc3e01aad498392943b781.dir
       size: 1245499
+      nfiles: 4
 
   train-faster-rcnn-resnet-101:
     cmd: "python oficial_herdnet/tools/train.py  --config-path $PWD/configs/ train=faster_rcnn_herdnet_trainer
@@ -491,6 +492,7 @@ stages:
       md5: 79df0937818f2d2b84b71b9bef521db7.dir
       size: 709421
       nfiles: 4
+
   test-full-to-points:
     cmd: python oficial_herdnet/tools/csv_to_points.py -i 
       data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv -o 
@@ -925,6 +927,7 @@ stages:
       hash: md5
       md5: b313cf7f7b219a533edc0b07a121501f
       size: 161926
+
   train-herdnet-v2-hn:
     cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet v2-Hard
       Negs'" train.wandb_mode=offline 
@@ -961,6 +964,7 @@ stages:
       md5: c35da8c5cd51f2181fc1789dd2543a98.dir
       size: 440355254
       nfiles: 4
+
   test-herdnet-v2-hn:
     cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
       config\" test.wandb_run=\"'Test herdnet v2-hn'\" test.wandb_mode=online test.model.pth_file=data/models/herdnet_v2_hn/best_model.pth
@@ -990,6 +994,7 @@ stages:
       md5: e8d40be97ae7fd09e6f73337c1567c70.dir
       size: 517853
       nfiles: 4
+
   test-herdnet-v2-full-imgs:
     cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
       config\" test.wandb_run=\"'Test herdnet v2 full images'\" test.wandb_mode=online
@@ -1005,16 +1010,167 @@ stages:
       md5: 543905ee38c7af30e4a5ccc4b1670752.dir
       size: 2117638463
       nfiles: 258
-    - path: oficial_herdnet/configs/test/herdnet.yaml
-      hash: md5
-      md5: 82b371d39b1b3997cd54449b51452ab8
-      size: 1186
     outs:
     - path: data/test_results/herdnet_v2_full_imgs/
       hash: md5
       md5: 22333f03282308053c895ac5f5f81f32.dir
       size: 684609
       nfiles: 4
+
+  patches-1024-ol-320-mv01-train:
+    cmd: python oficial_herdnet/tools/patcher.py data/train 1024 1024 320 
+      data/patches-1024-ol-320-m01/train -csv 
+      data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv && 
+      python oficial_herdnet/tools/csv_to_points.py -i 
+      data/patches-1024-ol-320-m01/train/gt.csv -o 
+      data/patches-1024-ol-320-m01/train_points_gt.csv
+    deps:
+    - path: data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 4df85b8755658f264f15ab15aa3b7ef3
+      size: 362524
+    - path: data/train/
+      hash: md5
+      md5: cdd58c7737f0c1e8b7a4db5f99619b86.dir
+      size: 8163547559
+      nfiles: 928
+    - path: oficial_herdnet/tools/patcher.py
+      hash: md5
+      md5: c07f8d75238ff27ea1404b230d36bb88
+      size: 4295
+    outs:
+    - path: data/patches-1024-ol-320-m01/train/
+      hash: md5
+      md5: 2cf136d2c2feb1bfbe627520ad232fc4.dir
+      size: 715263986
+      nfiles: 5449
+    - path: data/patches-1024-ol-320-m01/train_points_gt.csv
+      hash: md5
+      md5: c29dfdea2f47b7e29974037aed26cccf
+      size: 634859
+
+  patches-1024-ol-320-mv01-val:
+    cmd: python oficial_herdnet/tools/patcher.py data/val 1024 1024 320 
+      data/patches-1024-ol-320-m01/val -csv 
+      data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv && python
+      oficial_herdnet/tools/csv_to_points.py -i 
+      data/patches-1024-ol-320-m01/val/gt.csv -o 
+      data/patches-1024-ol-320-m01/val_points_gt.csv
+    deps:
+    - path: data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 15acbab82e8022090098948c43ebff89
+      size: 50622
+    - path: data/val/
+      hash: md5
+      md5: 7c59a6075823e53aceb6ed1985746da5.dir
+      size: 1041037675
+      nfiles: 111
+    - path: oficial_herdnet/tools/patcher.py
+      hash: md5
+      md5: c07f8d75238ff27ea1404b230d36bb88
+      size: 4295
+    outs:
+    - path: data/patches-1024-ol-320-m01/val/
+      hash: md5
+      md5: 78b4a4f4e611a04b64a097ad48617aa2.dir
+      size: 101909891
+      nfiles: 755
+    - path: data/patches-1024-ol-320-m01/val_points_gt.csv
+      hash: md5
+      md5: 7b74f6a20aed472ad0a3cd1b46441850
+      size: 85985
+
+  patches-1024-ol-320-mv01-test:
+    cmd: python oficial_herdnet/tools/patcher.py data/test 1024 1024 320 
+      data/patches-1024-ol-320-m01/test -csv 
+      data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv && 
+      python oficial_herdnet/tools/csv_to_points.py -i 
+      data/patches-1024-ol-320-m01/test/gt.csv -o 
+      data/patches-1024-ol-320-m01/test_points_gt.csv
+    deps:
+    - path: data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 30731a9a455b58e36394dd89e24849dc
+      size: 120385
+    - path: oficial_herdnet/tools/patcher.py
+      hash: md5
+      md5: c07f8d75238ff27ea1404b230d36bb88
+      size: 4295
+    outs:
+    - path: data/patches-1024-ol-320-m01/test/
+      hash: md5
+      md5: 311bc8438cd9cff53601d5f97d18192f.dir
+      size: 185189075
+      nfiles: 1671
+    - path: data/patches-1024-ol-320-m01/test_points_gt.csv
+      hash: md5
+      md5: 4cfabe5e790e7c94779ebf6b915ecdff
+      size: 211969
+
+  train-herdnet-v3:
+    cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet Train 3
+      1024x1024'" train.wandb_mode='online' train.datasets.img_size=[1024,1024] 
+      train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
+      train.datasets.train.csv_file=data/patches-1024-ol-320-m01/train_points_gt.csv
+      train.datasets.train.root_dir=data/patches-1024-ol-320-m01/train/ 
+      train.datasets.validate.csv_file=data/patches-1024-ol-320-m01/val_points_gt.csv
+      train.datasets.validate.root_dir=data/patches-1024-ol-320-m01/val/ 
+      train.training_settings.work_dir=data/models/herdnet_v3/ 
+      train.training_settings.batch_size=2 train.training_settings.stitcher=null
+    deps:
+    - path: data/patches-1024-ol-320-m01/train/
+      hash: md5
+      md5: 2cf136d2c2feb1bfbe627520ad232fc4.dir
+      size: 715263986
+      nfiles: 5449
+    - path: data/patches-1024-ol-320-m01/train_points_gt.csv
+      hash: md5
+      md5: c29dfdea2f47b7e29974037aed26cccf
+      size: 634859
+    - path: data/patches-1024-ol-320-m01/val/
+      hash: md5
+      md5: 78b4a4f4e611a04b64a097ad48617aa2.dir
+      size: 101909891
+      nfiles: 755
+    - path: data/patches-1024-ol-320-m01/val_points_gt.csv
+      hash: md5
+      md5: 7b74f6a20aed472ad0a3cd1b46441850
+      size: 85985
+    outs:
+    - path: data/models/herdnet_v3/
+      hash: md5
+      md5: 4034d8f7f3ee31701ebd403ba3419b72.dir
+      size: 441239988
+      nfiles: 4
+
+  test-herdnet-v3:
+    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
+      config\" test.wandb_run=\"'Test herdnet v3 patches 1024'\" test.wandb_mode=online
+      test.model.pth_file=data/models/herdnet_v3/best_model.pth test.dataset.img_size=[1024,1024]
+      test.dataset.csv_file=data/patches-1024-ol-320-m01/test_points_gt.csv test.dataset.root_dir=data/patches-1024-ol-320-m01/test/
+      test.stitcher=null test.results_dir=data/test_results/herdnet_v3/\n"
+    deps:
+    - path: data/patches-1024-ol-320-m01/test/
+      hash: md5
+      md5: 311bc8438cd9cff53601d5f97d18192f.dir
+      size: 185189075
+      nfiles: 1671
+    - path: data/patches-1024-ol-320-m01/test_points_gt.csv
+      hash: md5
+      md5: 4cfabe5e790e7c94779ebf6b915ecdff
+      size: 211969
+    - path: oficial_herdnet/configs/test/herdnet.yaml
+      hash: md5
+      md5: 82b371d39b1b3997cd54449b51452ab8
+      size: 1186
+    outs:
+    - path: data/test_results/herdnet_v3/
+      hash: md5
+      md5: af14a8c87a8371a467a64aa3ac3e8ca4.dir
+      size: 667353
+      nfiles: 4
+
   train-herdnet-v2-hn2:
     cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet v2-Hard
       Negs-part2'" train.wandb_mode=offline 
