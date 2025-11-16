@@ -70,6 +70,7 @@ dashboard-deps = [
     "loguru>=0.7.3",
     "requests>=2.32.5",
     "streamlit>=1.49.1",
+    "pydantic>=2.11.7",
 ]
 
 [[tool.uv.index]]
