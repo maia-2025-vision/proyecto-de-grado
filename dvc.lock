@@ -818,6 +818,10 @@ stages:
       test.model.pth_file=data/models/herdnet_v2/best_model.pth test.dataset.csv_file=data/patches-512-ol-160-m01/test_points_gt.csv
       test.dataset.root_dir=data/patches-512-ol-160-m01/test/ test.stitcher=null test.results_dir=data/test_results/herdnet_v2/\n"
     deps:
+    - path: data/models/herdnet_v2/best_model.pth
+      hash: md5
+      md5: 15e9b74d76d6be4087015455bde1f255
+      size: 219993031
     - path: data/patches-512-ol-160-m01/test/
       hash: md5
       md5: 71eb378f9db92d36b358703d400013cd.dir
@@ -829,13 +833,13 @@ stages:
       size: 230725
     - path: oficial_herdnet/configs/test/herdnet.yaml
       hash: md5
-      md5: d821ab5e2e0e26a6f9a6bb801b48ad61
-      size: 1241
+      md5: 82b371d39b1b3997cd54449b51452ab8
+      size: 1186
     outs:
     - path: data/test_results/herdnet_v2/
       hash: md5
-      md5: 0bf1e281c011436a5d962bc7c780ca88.dir
-      size: 724039
+      md5: bf70e2ca75959d663e9590c716a2c045.dir
+      size: 727170
       nfiles: 4
   infer-train-herdnet-v2:
     cmd: python animaloc_improved/tools/infer_v2.py data/train/ 
@@ -922,8 +926,8 @@ stages:
       md5: b313cf7f7b219a533edc0b07a121501f
       size: 161926
   train-herdnet-v2-hn:
-    cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet 
-      v2-part2 Hard Negs'" train.wandb_mode=offline 
+    cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet v2-Hard
+      Negs'" train.wandb_mode=offline 
       train.model.load_from=data/models/herdnet_v2/best_model.pth 
       train.training_settings.epochs=50 
       train.datasets.train.csv_file=data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
@@ -933,15 +937,15 @@ stages:
       train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
       train.training_settings.work_dir=data/models/herdnet_v2_hn/
     deps:
-    - path: data/patches-512-ol-160-m01/train/
+    - path: data/patches-512-ol-160-m01-w-hard-negs/train
       hash: md5
-      md5: 8a7be22b432edc7050cc3cd719c278d3.dir
-      size: 300527679
-      nfiles: 8582
-    - path: data/patches-512-ol-160-m01/train_points_gt.csv
+      md5: aefbe2de2c2f77b4f5c62fd5f528a968.dir
+      size: 599160482
+      nfiles: 17153
+    - path: data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
       hash: md5
-      md5: 4f162229d5e0c3bb1b92e44132e5e4a0
-      size: 707567
+      md5: ae801f4e45df4492aea72313839b899d
+      size: 3077570
     - path: data/patches-512-ol-160-m01/val/
       hash: md5
       md5: 66d0c949e34d595a2da73c7a1cd5b190.dir
@@ -954,8 +958,8 @@ stages:
     outs:
     - path: data/models/herdnet_v2_hn/
       hash: md5
-      md5: 654c50bc8516aabd8aede8ed80c09171.dir
-      size: 440980252
+      md5: c35da8c5cd51f2181fc1789dd2543a98.dir
+      size: 440355254
       nfiles: 4
   test-herdnet-v2-hn:
     cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
@@ -1010,4 +1014,44 @@ stages:
       hash: md5
       md5: 22333f03282308053c895ac5f5f81f32.dir
       size: 684609
+      nfiles: 4
+  train-herdnet-v2-hn2:
+    cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet v2-Hard
+      Negs-part2'" train.wandb_mode=offline 
+      train.model.load_from=data/models/herdnet_v2_hn/best_model.pth 
+      train.training_settings.epochs=100 
+      train.datasets.train.csv_file=data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      train.datasets.train.root_dir=data/patches-512-ol-160-m01-w-hard-negs/train
+      train.datasets.validate.csv_file=data/patches-512-ol-160-m01/val_points_gt.csv
+      train.datasets.validate.root_dir=data/patches-512-ol-160-m01/val 
+      train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
+      train.training_settings.work_dir=data/models/herdnet_v2_hn2/
+    deps:
+    - path: data/models/herdnet_v2_hn/best_model.pth
+      hash: md5
+      md5: 501f8737a2fe4d5be54176765545b819
+      size: 219993031
+    - path: data/patches-512-ol-160-m01-w-hard-negs/train
+      hash: md5
+      md5: aefbe2de2c2f77b4f5c62fd5f528a968.dir
+      size: 599160482
+      nfiles: 17153
+    - path: data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      hash: md5
+      md5: ae801f4e45df4492aea72313839b899d
+      size: 3077570
+    - path: data/patches-512-ol-160-m01/val/
+      hash: md5
+      md5: 66d0c949e34d595a2da73c7a1cd5b190.dir
+      size: 42355412
+      nfiles: 1167
+    - path: data/patches-512-ol-160-m01/val_points_gt.csv
+      hash: md5
+      md5: 5c329172fbad52ddd362b5e67bccf651
+      size: 95080
+    outs:
+    - path: data/models/herdnet_v2_hn2/
+      hash: md5
+      md5: 67731009792a1e5620ae66de61791a5e.dir
+      size: 440589576
       nfiles: 4
