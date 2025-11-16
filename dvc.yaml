@@ -44,6 +44,51 @@ stages:
       - data/patches-512-ol-160-m01/test_points_gt.csv
       - data/patches-512-ol-160-m01/test/
 
+  patches-1024-ol-320-mv01-train:
+    cmd: python oficial_herdnet/tools/patcher.py data/train 1024 1024 320 
+      data/patches-1024-ol-320-m01/train 
+      -csv data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv 
+      && python oficial_herdnet/tools/csv_to_points.py 
+      -i data/patches-1024-ol-320-m01/train/gt.csv 
+      -o data/patches-1024-ol-320-m01/train_points_gt.csv
+    deps:
+      - data/groundtruth/csv/train_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/train/
+      - oficial_herdnet/tools/patcher.py
+    outs:
+      - data/patches-1024-ol-320-m01/train_points_gt.csv
+      - data/patches-1024-ol-320-m01/train/
+
+  patches-1024-ol-320-mv01-val:
+    cmd: python oficial_herdnet/tools/patcher.py data/val 1024 1024 320 
+      data/patches-1024-ol-320-m01/val 
+      -csv data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv 
+      && python oficial_herdnet/tools/csv_to_points.py 
+      -i data/patches-1024-ol-320-m01/val/gt.csv 
+      -o data/patches-1024-ol-320-m01/val_points_gt.csv
+    deps:
+      - data/groundtruth/csv/val_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/val/
+      - oficial_herdnet/tools/patcher.py
+    outs:
+      - data/patches-1024-ol-320-m01/val_points_gt.csv
+      - data/patches-1024-ol-320-m01/val/
+
+  patches-1024-ol-320-mv01-test:
+    cmd: python oficial_herdnet/tools/patcher.py data/test 1024 1024 320 
+      data/patches-1024-ol-320-m01/test 
+      -csv data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv 
+      && python oficial_herdnet/tools/csv_to_points.py 
+      -i data/patches-1024-ol-320-m01/test/gt.csv 
+      -o data/patches-1024-ol-320-m01/test_points_gt.csv
+    deps:
+      - data/groundtruth/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/test/
+      - oficial_herdnet/tools/patcher.py
+    outs:
+      - data/patches-1024-ol-320-m01/test_points_gt.csv
+      - data/patches-1024-ol-320-m01/test/
+
   train-herdnet-v0:
     cmd: python oficial_herdnet/tools/train.py 
       train.wandb_run="'Herdnet Train 0'"
@@ -81,6 +126,28 @@ stages:
       - data/patches-512-ol-160-m01/val/
     outs:
       - data/models/herdnet_v2/
+  
+  train-herdnet-v3:
+    desc: Train with 1024x1024 images
+    cmd: python oficial_herdnet/tools/train.py 
+      train.wandb_run="'Herdnet Train 3 1024x1024'"
+      train.wandb_mode='online'
+      train.datasets.img_size=[1024,1024]
+      train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
+      train.datasets.train.csv_file=data/patches-1024-ol-320-m01/train_points_gt.csv
+      train.datasets.train.root_dir=data/patches-1024-ol-320-m01/train/
+      train.datasets.validate.csv_file=data/patches-1024-ol-320-m01/val_points_gt.csv
+      train.datasets.validate.root_dir=data/patches-1024-ol-320-m01/val/
+      train.training_settings.work_dir=data/models/herdnet_v3/
+      train.training_settings.batch_size=2
+      train.training_settings.stitcher=null
+    deps:
+      - data/patches-1024-ol-320-m01/train_points_gt.csv
+      - data/patches-1024-ol-320-m01/train/
+      - data/patches-1024-ol-320-m01/val_points_gt.csv
+      - data/patches-1024-ol-320-m01/val/
+    outs:
+      - data/models/herdnet_v3/
 
   desc-herdnet-v1:
     desc: >
@@ -154,6 +221,25 @@ stages:
       - data/patches-512-ol-160-m01/test/
     outs:
       - data/test_results/herdnet_v2/
+  
+  test-herdnet-v3:
+    # test.sticher=null because we are running over patches of size 1024x1024
+    cmd: >
+      python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
+      test.wandb_run="'Test herdnet v3 patches 1024'"
+      test.wandb_mode=online
+      test.model.pth_file=data/models/herdnet_v3/best_model.pth
+      test.dataset.img_size=[1024,1024]
+      test.dataset.csv_file=data/patches-1024-ol-320-m01/test_points_gt.csv
+      test.dataset.root_dir=data/patches-1024-ol-320-m01/test/
+      test.stitcher=null
+      test.results_dir=data/test_results/herdnet_v3/
+    deps:
+      - oficial_herdnet/configs/test/herdnet.yaml
+      - data/patches-1024-ol-320-m01/test_points_gt.csv
+      - data/patches-1024-ol-320-m01/test/
+    outs:
+      - data/test_results/herdnet_v3/
 
   infer-train-herdnet-v2:
     desc: >
