@@ -219,9 +219,12 @@ class HerdnetDetector(torch.nn.Module, Detector):
         clsmap = density_maps[:, 1:, :, :]
 
         counts, points, labels, scores, dscores = self.lmds((heatmap, clsmap))
+        points_yx = points[0]
+        # Transpose x <-> y
+        points_xy = [[x, y] for y, x in points_yx]
 
         preds = {
-            "points": torch.tensor(points[0]),
+            "points": torch.tensor(points_xy),
             "labels": torch.tensor(labels[0]),
             "scores": torch.tensor(scores[0]),
             # dscores=torch.tensor(dscores[0]),
@@ -232,7 +235,7 @@ class HerdnetDetector(torch.nn.Module, Detector):
     def detect_one_img_patch_size(self, image: Image.Image) -> RawDetections:
         """Get all detections on one image, assuming its size is exactly equal to patch size.
 
-        That is avoid using stitcher
+        That is, avoid using stitcher
         """
         img = image.convert("RGB")
         img_np = np.array(img)

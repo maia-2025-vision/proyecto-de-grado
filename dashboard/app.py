@@ -5,14 +5,20 @@ home_page = st.Page("pages/0_Home.py", title="Página de Inicio", icon="🏠")
 img_upload_page = st.Page(
     "pages/1_Upload_Images.py", title="Carga y Procesamiento de Imágenes", icon="📤"
 )
-view_dets_page = st.Page(
-    "pages/2_View_Detections.py", title="Visualización de Detecciones", icon="🖼️"
+detection_viewer_page = st.Page(
+    "pages/2_Detection_Viewer.py", title="Visualización de Detecciones", icon="🖼️"
 )
+overfly_counts_page = st.Page("pages/3_Overfly_Counts.py", title="Conteos de Sobrevuelo", icon="📊")
 
 # Create navigation
 pg = st.navigation(
     {
-        "Páginas": [home_page, img_upload_page, view_dets_page],
+        "Páginas": [
+            home_page,
+            img_upload_page,
+            overfly_counts_page,
+            detection_viewer_page,
+        ],
     }
 )
 
