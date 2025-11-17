@@ -16,9 +16,9 @@ from dashboard.utils.visualization import (
     draw_detections_on_image,
 )
 
-st.set_page_config(page_title="Resultados de Detección", layout="wide")
+st.set_page_config(page_title="Resultados de Detección", page_icon="🖼️", layout="wide")
 
-st.title("Visualizador y Métricas de Detección")
+st.title("🖼️ Visualizador y Métricas de Detección")
 
 # --- Sidebar Controls ---
 with st.sidebar:
@@ -200,6 +200,6 @@ if "detection_results" in st.session_state and st.session_state.detection_result
 
 else:
     st.info(
-        "👈 Ve a 'Upload Images' para procesar archivos o selecciona una región y "
+        "👈 Vaya a 'Carga de imágenes' para procesar archivos o selecciona una región y "
         "sobrevuelo para comenzar."
     )

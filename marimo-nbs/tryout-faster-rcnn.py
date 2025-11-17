@@ -7,19 +7,18 @@ app = marimo.App(width="full")
 @app.cell
 def _():
     from pathlib import Path
-    from pprint import pformat, pprint
+    from pprint import pformat
 
     import animaloc
     import torch
     from animaloc.eval.stitchers import Stitcher
-    from animaloc.models.utils import LossWrapper, load_model
     from loguru import logger
     from omegaconf import DictConfig, OmegaConf
     from PIL import Image
     from torchvision.transforms import ToTensor
 
-    from api.animaloc_utils import build_model_from_cfg
-    from api.torch_utils import pick_torch_device
+    from api.utils.animaloc_utils import build_model_from_cfg
+    from api.utils.torch_utils import pick_torch_device
 
     return (
         DictConfig,
@@ -151,7 +150,7 @@ def _(model):
 def _():
     from inspect import getsource
 
-    from api.model_utils import make_faster_rcnn_model
+    from api.utils.model_utils import make_faster_rcnn_model
 
     print(getsource(make_faster_rcnn_model))
     return

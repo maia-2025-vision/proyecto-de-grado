@@ -50,8 +50,8 @@ datasets:
 
   train:
     name: 'CSVDataset'
-    csv_file: 'data/patches-512-ol-160-m0.3/train/gt.csv'
-    root_dir: 'data/patches-512-ol-160-m0.3/train/'
+    csv_file: 'data/patches-512-ol-160-m01/train/gt.csv'
+    root_dir: 'data/patches-512-ol-160-m01/train/'
 
     sampler: null
 
@@ -67,8 +67,8 @@ datasets:
 
   validate:
     name: 'CSVDataset'
-    csv_file: 'data/patches-512-ol-160-m0.3/val/gt.csv'
-    root_dir: 'data/patches-512-ol-160-m0.3/val/'
+    csv_file: 'data/patches-512-ol-160-m01/val/gt.csv'
+    root_dir: 'data/patches-512-ol-160-m01/val/'
 
     albu_transforms:
       Normalize:

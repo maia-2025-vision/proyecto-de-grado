@@ -5,7 +5,7 @@ import torch
 from loguru import logger
 from omegaconf import DictConfig
 
-from api.torch_utils import pick_torch_device
+from api.utils.torch_utils import pick_torch_device
 
 
 def _load_albu_transforms(tr_cfg: dict[str, object]) -> list[albumentations.transforms.Transform]:  # type: ignore[no-any-unimported]

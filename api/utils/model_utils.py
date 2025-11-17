@@ -11,10 +11,13 @@ from omegaconf import OmegaConf
 from PIL import Image
 from torch import nn
 
-from api.animaloc_utils import faster_rcnn_detector_from_cfg_file
 from api.detector import DetectionsDict, Detector, RawDetections
-from api.internal_types import BBoxFormat, ModelMetadata
-from api.req_resp_types import ThresholdCounts
+from api.schemas.internal_types import BBoxFormat, ModelMetadata
+from api.schemas.req_resp_types import ThresholdCounts
+from api.utils.animaloc_utils import (
+    faster_rcnn_detector_from_cfg_file,
+    herdnet_detector_from_cfg_file,
+)
 
 DEFAULT_CLASS_LABEL_2_NAME = {
     0: "background",
@@ -99,20 +102,14 @@ class MockDetector(nn.Module, Detector):
 
 def make_detector(weights_path: Path, cfg_path: Path) -> tuple[Detector, ModelMetadata]:
     """Restore and return a prediction model from a weights file."""
-    # check for mps (apple silicon) availability, otherwise use cpu
-    if torch.backends.mps.is_available():
-        device = torch.device("mps")
-    else:
-        device = torch.device("cpu")
-    logger.info(f"Using device: {device}")
-
     num_classes = len(DEFAULT_CLASS_LABEL_2_NAME)
-
-    # model_arch = determine_model_arch(weights_path)
     cfg = OmegaConf.load(cfg_path)
 
-    if cfg.model.name == "Herdnet":
-        raise NotImplementedError("Loading of Herdnet model not implemented yet...")
+    if cfg.model.name == "HerdNet":
+        return herdnet_detector_from_cfg_file(
+            model_pth_path=weights_path,
+            cfg_file=cfg_path,
+        )
     elif cfg.model.name == "FasterRCNNResNetFPN":
         return faster_rcnn_detector_from_cfg_file(
             model_pth_path=weights_path,
@@ -141,7 +138,7 @@ def verify_and_post_process_pred(pred: DetectionsDict, bbox_format: BBoxFormat) 
 
     # logger.info(f"pred has keys: {pred.keys()}")
     if "boxes" not in pred:
-        assert "points" in pred, f"Invalid pred: no bboxes and no point ins {pred.keys()=}"
+        assert "points" in pred, f"Invalid pred: no bboxes and no points in {pred.keys()=}"
     else:
         assert len(pred["boxes"]) == len(pred["labels"]), pformat(pred)
 

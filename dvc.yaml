@@ -218,6 +218,7 @@ stages:
       - oficial_herdnet/configs/test/herdnet.yaml
       - data/patches-512-ol-160-m01/test_points_gt.csv
       - data/patches-512-ol-160-m01/test/
+      - data/models/herdnet_v1/best_model.pth
     outs:
       - data/test_results/herdnet_v1/
 
@@ -236,6 +237,7 @@ stages:
       - oficial_herdnet/configs/test/herdnet.yaml
       - data/patches-512-ol-160-m01/test_points_gt.csv
       - data/patches-512-ol-160-m01/test/
+      - data/models/herdnet_v2/best_model.pth
     outs:
       - data/test_results/herdnet_v2/
   
@@ -275,6 +277,43 @@ stages:
       - data/patches-512-ol-160-m01/test/
     outs:
       - data/test_results/herdnet_v4/
+
+  test-herdnet-v2-full-imgs:
+    # test.sticher=null because we are running over patches of size 512x512
+    cmd: >
+      python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
+      test.wandb_run="'Test herdnet v2 full images'"
+      test.wandb_mode=online
+      test.model.pth_file=data/models/herdnet_v2/best_model.pth
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/      
+      test.results_dir=data/test_results/herdnet_v2_full_imgs/
+    deps:
+      - oficial_herdnet/configs/test/herdnet.yaml
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      - data/test/
+
+    outs:
+      - data/test_results/herdnet_v2_full_imgs/
+
+  test-herdnet-v2-hn:
+    # Nota: a diferencia de test-herdnet-v2 y test-herdnet-v1, este test usa imágenes full-size
+    # usamos el stitcher del config
+    cmd: >
+      python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
+      test.wandb_run="'Test herdnet v2-hn'"
+      test.wandb_mode=online
+      test.model.pth_file=data/models/herdnet_v2_hn/best_model.pth
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/      
+      test.results_dir=data/test_results/herdnet_v2_hn/
+    deps:
+      - oficial_herdnet/configs/test/herdnet.yaml
+      - data/patches-512-ol-160-m01/test_points_gt.csv
+      - data/patches-512-ol-160-m01/test/
+      - data/models/herdnet_v2_hn/best_model.pth
+    outs:
+      - data/test_results/herdnet_v2_hn/
 
   infer-train-herdnet-v2:
     desc: >
@@ -358,25 +397,52 @@ stages:
 
   train-herdnet-v2-hn:
     desc: Keep training herdnet v2 but now with hard negatives
+    # Validación incluyendo HNs genera error...
+    # train.datasets.validate.csv_file=data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+    # train.datasets.validate.root_dir=data/patches-512-ol-160-m01-w-hard-negs/val
     cmd: python oficial_herdnet/tools/train.py
-      train.wandb_run="'Herdnet v2-part2 Hard Negs'"
+      train.wandb_run="'Herdnet v2-Hard Negs'"
       train.wandb_mode=offline
       train.model.load_from=data/models/herdnet_v2/best_model.pth
       train.training_settings.epochs=50
       train.datasets.train.csv_file=data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
       train.datasets.train.root_dir=data/patches-512-ol-160-m01-w-hard-negs/train
-      train.datasets.validate.csv_file=data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
-      train.datasets.validate.root_dir=data/patches-512-ol-160-m01-w-hard-negs/val
+      train.datasets.validate.csv_file=data/patches-512-ol-160-m01/val_points_gt.csv
+      train.datasets.validate.root_dir=data/patches-512-ol-160-m01/val      
       train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
       train.training_settings.work_dir=data/models/herdnet_v2_hn/
     deps:
-      - data/patches-512-ol-160-m01/train_points_gt.csv
-      - data/patches-512-ol-160-m01/train/
+      - data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      - data/patches-512-ol-160-m01-w-hard-negs/train
       - data/patches-512-ol-160-m01/val_points_gt.csv
       - data/patches-512-ol-160-m01/val/
     outs:
       - data/models/herdnet_v2_hn/
 
+  train-herdnet-v2-hn2:
+    desc: Keep training herdnet v2 but now with hard negatives
+    # Validación incluyendo HNs genera error...
+    # train.datasets.validate.csv_file=data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
+    # train.datasets.validate.root_dir=data/patches-512-ol-160-m01-w-hard-negs/val
+    cmd: python oficial_herdnet/tools/train.py
+      train.wandb_run="'Herdnet v2-Hard Negs-part2'"
+      train.wandb_mode=offline
+      train.model.load_from=data/models/herdnet_v2_hn/best_model.pth
+      train.training_settings.epochs=100
+      train.datasets.train.csv_file=data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      train.datasets.train.root_dir=data/patches-512-ol-160-m01-w-hard-negs/train
+      train.datasets.validate.csv_file=data/patches-512-ol-160-m01/val_points_gt.csv
+      train.datasets.validate.root_dir=data/patches-512-ol-160-m01/val
+      train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
+      train.training_settings.work_dir=data/models/herdnet_v2_hn2/
+    deps:
+      - data/models/herdnet_v2_hn/best_model.pth
+      - data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
+      - data/patches-512-ol-160-m01-w-hard-negs/train
+      - data/patches-512-ol-160-m01/val_points_gt.csv
+      - data/patches-512-ol-160-m01/val/
+    outs:
+      - data/models/herdnet_v2_hn2/
 
   test-full-to-points:
     cmd: python oficial_herdnet/tools/csv_to_points.py
@@ -508,12 +574,16 @@ stages:
     cmd: >
        python oficial_herdnet/tools/train.py  --config-path $PWD/configs/
        train=faster_rcnn_herdnet_trainer
+       train.wandb_mode=offline
+       train.wandb_run=faster-rcnn-resnet-50
+       train.model.kwargs.architecture=resnet50
        train.training_settings.work_dir=data/models/faster-rcnn/resnet50-100-epochs-tbl4
+       train.training_settings.lr=0.0001
        train.training_settings.epochs=100
     deps:
       - configs/train/faster_rcnn_herdnet_trainer.yaml
       - oficial_herdnet/tools/train.py
-      - data/patches-512-ol-160-m0.3/train/gt.csv
+      - data/patches-512-ol-160-m01/train/gt.csv
     outs:
       - data/models/faster-rcnn/resnet50-100-epochs-tbl4
 
@@ -526,11 +596,12 @@ stages:
       train.wandb_run=faster-rcnn-resnet-101
       train.model.kwargs.architecture=resnet101
       train.training_settings.work_dir=data/models/faster-rcnn/resnet101-100-epochs-tbl4
+      train.training_settings.lr=0.0001
       train.training_settings.epochs=100
     deps:
       - configs/train/faster_rcnn_herdnet_trainer.yaml
       - oficial_herdnet/tools/train.py
-      - data/patches-512-ol-160-m0.3/train/gt.csv
+      - data/patches-512-ol-160-m01/train/gt.csv
     outs:
       - data/models/faster-rcnn/resnet101-100-epochs-tbl4
 

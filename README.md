@@ -43,6 +43,12 @@ poe serve-hn   # Arrance el servicio con un modelo Herdnet (WORK IN PROGRESS...)
 Para cambiar el modelo usado por la API cambiar el valor de MODEL_PATH y MODEL_CFG_PATH 
 en la sección `[poe.tasks.serve]` de pyproject.toml.
 
+### Arrancar UI (dashboard de streamlit en local)
+
+```bash
+poe start dashboard
+```
+
 ## Ejecución de pruebas e2e
 
 ```bash
