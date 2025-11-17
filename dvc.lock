@@ -1215,6 +1215,23 @@ stages:
       size: 440589576
       nfiles: 4
 
+  test-herdnet-v2-hn2:
+    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
+      config\" test.wandb_run=\"'Test herdnet v2-hn2'\" test.wandb_mode=online test.model.pth_file=data/models/herdnet_v2_hn2/best_model.pth
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/       test.results_dir=data/test_results/herdnet_v2_hn2/\n"
+    deps:
+    - path: oficial_herdnet/configs/test/herdnet.yaml
+      hash: md5
+      md5: 82b371d39b1b3997cd54449b51452ab8
+      size: 1186
+    outs:
+    - path: data/test_results/herdnet_v2_hn2/
+      hash: md5
+      md5: b4f368b6849611401261d26cb07321be.dir
+      size: 486236
+      nfiles: 4
+
   train-herdnet-v4:
     cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet Train 4
       head_conv 128'" train.wandb_mode='online' train.model.kwargs.head_conv=128
