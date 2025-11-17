@@ -14,6 +14,7 @@ COPY pyproject.toml uv.lock  README.md ./
 RUN uv pip install --system --group dashboard-deps
 
 # 6. Copiar el resto del código de la aplicación del dashboard
+COPY api/ ./api/
 COPY dashboard/ ./dashboard/
 RUN uv pip install --system -e "."  # install our project
 
