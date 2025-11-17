@@ -287,34 +287,29 @@ stages:
       \         add_info.best_model_pth_path=data/models/tmp/faster-rcnn/best_model-by-epoch-70.pth\n"
 
   train-faster-rcnn-hn-trainer:
-    cmd: "python oficial_herdnet/tools/train.py  --config-path $PWD/configs/ train=faster_rcnn_herdnet_trainer\
-      \  train.training_settings.work_dir=data/models/faster-rcnn/resnet50-100-epochs-tbl4
-      train.training_settings.epochs=100\n"
+    cmd: "python oficial_herdnet/tools/train.py  --config-path $PWD/configs/ train=faster_rcnn_herdnet_trainer
+      train.wandb_mode=offline train.wandb_run=faster-rcnn-resnet-50 train.model.kwargs.architecture=resnet50
+      train.training_settings.work_dir=data/models/faster-rcnn/resnet50-100-epochs-tbl4
+      train.training_settings.lr=0.0001 train.training_settings.epochs=100\n"
     deps:
     - path: configs/train/faster_rcnn_herdnet_trainer.yaml
       hash: md5
-      md5: ff9f05a188d5325a613d5ee5769db05d
-      size: 2265
-    - path: data/patches-512-ol-160-m0.3/train/gt.csv
+      md5: f75372023df1cfc93a9b1f9af7789eb3
+      size: 2305
+    - path: data/patches-512-ol-160-m01/train/gt.csv
       hash: md5
-      md5: ab0941404acb2006ee1e210438de8c4c
-      size: 1212027
+      md5: e03cc597951b1eb7631bb3424cfc3e81
+      size: 1311131
     - path: oficial_herdnet/tools/train.py
       hash: md5
-      md5: e2bfa812a8a05e5ac2f44125f26d90ec
-      size: 13040
-    - path: data/test/
-      hash: md5
-      md5: 543905ee38c7af30e4a5ccc4b1670752.dir
-      size: 2117638463
-      nfiles: 258
+      md5: c3cb9bcffe9e3eda4d40b1dc593b7076
+      size: 14266
     outs:
     - path: data/models/faster-rcnn/resnet50-100-epochs-tbl4
       hash: md5
-      md5: d81b61b11fb66679e17cbea3d2b3325e.dir
-      size: 1490431295
-      nfiles: 5
-
+      md5: 07964d9d19de52e18378bc4658c4c394.dir
+      size: 993451434
+      nfiles: 4
   test-faster-rcnn-resnet50-patches:
     cmd: "python oficial_herdnet/tools/test.py  --config-path $PWD/configs/ test=faster_rcnn
       test.device_name=\"cuda\" test.wandb_mode=\"online\" test.wandb_run=test-frcnn-resnet50
@@ -352,21 +347,31 @@ stages:
     deps:
     - path: ./configs/test/faster_rcnn.yaml
       hash: md5
-      md5: 2f8a1595e15f79ee52a6e081e33715bb
-      size: 1231
-
+      md5: 48ebb007dd125641546591d2a518ef30
+      size: 1184
     - path: data/models/faster-rcnn/resnet50-100-epochs-tbl4
       hash: md5
-      md5: d81b61b11fb66679e17cbea3d2b3325e.dir
-      size: 1490431295
-      nfiles: 5
+      md5: 07964d9d19de52e18378bc4658c4c394.dir
+      size: 993451434
+      nfiles: 4
+    - path: data/test/
+      hash: md5
+      md5: 543905ee38c7af30e4a5ccc4b1670752.dir
+      size: 2117638463
+      nfiles: 258
     outs:
     - path: data/test_results/frcnn-resnet50-full-imgs
       hash: md5
+<<<<<<< Updated upstream
       md5: 67ba715b47bc3e01aad498392943b781.dir
       size: 1245499
       nfiles: 4
 
+=======
+      md5: bd37ef557b3f1d2bce0bcd3f0903bc17.dir
+      size: 2070204
+      nfiles: 4
+>>>>>>> Stashed changes
   train-faster-rcnn-resnet-101:
     cmd: "python oficial_herdnet/tools/train.py  --config-path $PWD/configs/ train=faster_rcnn_herdnet_trainer
       train.wandb_mode=offline train.wandb_run=faster-rcnn-resnet-101 train.model.kwargs.architecture=resnet101
@@ -1214,4 +1219,33 @@ stages:
       hash: md5
       md5: 67731009792a1e5620ae66de61791a5e.dir
       size: 440589576
+      nfiles: 4
+  test-herdnet-v2-hn2:
+    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
+      config\" test.wandb_run=\"'Test herdnet v2-hn2'\" test.wandb_mode=online test.model.pth_file=data/models/herdnet_v2_hn2/best_model.pth
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/       test.results_dir=data/test_results/herdnet_v2_hn2/\n"
+    deps:
+    - path: data/models/herdnet_v2_hn2/best_model.pth
+      hash: md5
+      md5: 2edbbe1c89b74656a9b8368d498c005c
+      size: 219993031
+    - path: data/patches-512-ol-160-m01/test/
+      hash: md5
+      md5: 71eb378f9db92d36b358703d400013cd.dir
+      size: 75831301
+      nfiles: 2559
+    - path: data/patches-512-ol-160-m01/test_points_gt.csv
+      hash: md5
+      md5: d637312c2d5d6bd6acb1d05ac5560362
+      size: 230725
+    - path: oficial_herdnet/configs/test/herdnet.yaml
+      hash: md5
+      md5: 82b371d39b1b3997cd54449b51452ab8
+      size: 1186
+    outs:
+    - path: data/test_results/herdnet_v2_hn2/
+      hash: md5
+      md5: 2f6bddfc157736c443e8d7aa81030fb6.dir
+      size: 495119
       nfiles: 4
