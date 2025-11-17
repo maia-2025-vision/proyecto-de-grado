@@ -1,15 +1,25 @@
 """Utilidades de visualización para dibujar detecciones en imágenes."""
 
 import io
-from typing import Any
+from dataclasses import dataclass
+from typing import TypeAlias
 from urllib.parse import urlparse
 
 import boto3
+import numpy as np
+import pandas as pd
 import requests
 import streamlit as st
 from botocore.exceptions import ClientError
+from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
+from PIL.ImageDraw import ImageDraw as PILImageDraw
 from PIL.ImageFont import FreeTypeFont
+
+from api.schemas.req_resp_types import Detections
+from dashboard.utils.api_client import ImageResults
+
+Font: TypeAlias = FreeTypeFont | ImageFont.ImageFont
 
 # Paleta de colores para las especies
 SPECIES_COLORS = {
@@ -21,6 +31,7 @@ SPECIES_COLORS = {
     6: "#FFA500",  # Naranja - Elephant
     0: "#FFFFFF",  # Blanco - Unknown
 }
+
 SPECIES_MAP = {
     1: "Alcelaphinae",
     2: "Buffalo",
@@ -42,6 +53,7 @@ def download_image(url: str) -> Image.Image | None:
     Returns:
         Un objeto `PIL.Image.Image` si la descarga es exitosa, o `None` si falla.
     """
+    logger.info(f"Descargando imagen {url}")
     if url.startswith("s3://"):
         try:
             s3_client = boto3.client("s3")
@@ -57,7 +69,7 @@ def download_image(url: str) -> Image.Image | None:
             st.error(f"Error al descargar desde S3 ({url}): {e}")
             return None
         except Exception as e:
-            st.error(f"Error inesperado al procesar imagen S3 ({url}): {e}")
+            st.error(f"Error inesperado al descargar imagen S3 ({url}): {e}")
             return None
     else:
         # Fallback for standard HTTP(S) URLs
@@ -66,17 +78,66 @@ def download_image(url: str) -> Image.Image | None:
             response.raise_for_status()
             return Image.open(io.BytesIO(response.content)).convert("RGB")
         except requests.exceptions.RequestException as e:
-            st.error(f"No se pudo descargar la imagen desde {url}: {e}")
+            error_msg = f"No se pudo descargar la imagen desde {url}: {e}"
+            st.error(error_msg)
+            logger.error(error_msg)
+
             return None
 
 
-def draw_detections_on_image(
+def get_font() -> Font:
+    try:
+        return ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
+    except OSError:
+        return ImageFont.load_default()
+
+
+def draw_text_labels(
+    draw: PILImageDraw,
+    *,
+    label: int,
+    score: float,
+    xmin: int,
+    ymin: int,
+    font: Font,
+    text_color: str,
+) -> None:
+    species_name = SPECIES_MAP.get(label, f"ID_{label}")
+    text = f"{species_name} ({score:.2f})"
+    text_bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = text_bbox[2] - text_bbox[0]
+    text_height = text_bbox[3] - text_bbox[1]
+
+    text_x = xmin
+    text_y = ymin - text_height - 2
+
+    if text_y < 0:
+        text_y = 2
+
+    box_color = SPECIES_COLORS.get(label, "#FFFFFF")
+    draw.rectangle(
+        [(text_x, text_y), (text_x + text_width + 4, text_y + text_height + 4)],
+        fill=box_color,
+    )
+    draw.text((text_x, text_y), text, fill=text_color, font=font)
+
+
+@dataclass
+class AnnotParams:
+    """Parametros para pintar cajar o puntos."""
+
+    confidence_threshold: float
+    selected_labels: list[int]
+    add_text_boxes: bool = False
+    line_width: int = 1
+    point_size: int = 1
+    text_color: str = "#FFFFFF"
+
+
+def draw_boxes_on_image(
     image: Image.Image,
-    detections: dict[str, Any],
-    confidence_threshold: float,
-    selected_labels: list[int],
-    text_color: str = "#FFFFFF",
-    line_width: int = 3,
+    detections: Detections,
+    annot_params: AnnotParams,
 ) -> Image.Image:
     """Dibuja cajas delimitadoras (bounding boxes) y etiquetas sobre una imagen.
 
@@ -84,10 +145,7 @@ def draw_detections_on_image(
         image: El objeto de imagen PIL sobre el cual dibujar.
         detections: Un diccionario con las detecciones, que debe contener
                     'boxes', 'labels' y 'scores'.
-        confidence_threshold: El umbral de confianza mínimo para mostrar una detección.
-        selected_labels: Una lista de IDs de etiquetas para filtrar qué especies mostrar.
-        text_color: El color del texto de las etiquetas.
-        line_width: El grosor de la línea de las cajas delimitadoras.
+        annot_params: Parameters for drawing bounding boxes.
 
     Returns:
         Un nuevo objeto de imagen PIL con las detecciones dibujadas.
@@ -95,63 +153,60 @@ def draw_detections_on_image(
     img_with_boxes = image.copy()
     draw = ImageDraw.Draw(img_with_boxes)
 
-    try:
-        font: FreeTypeFont | ImageFont.ImageFont = ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
-    except OSError:
-        font = ImageFont.load_default()
+    scores_raw = detections.scores or []
+    labels_raw = detections.labels or []
+    boxes_raw = detections.boxes or []
 
-    scores = detections.get("scores", [])
-    labels = detections.get("labels", [])
-    boxes = detections.get("boxes", [])
+    scores = list(scores_raw)
+    labels = list(labels_raw)
+    boxes = list(boxes_raw)
 
-    for i, score in enumerate(scores):
+    geometry = boxes if boxes else []
+    max_len = min(len(scores), len(labels), len(geometry)) if geometry else 0
+
+    font = get_font()
+    for i in range(max_len):
+        score = scores[i]
         label = labels[i]
-        if score >= confidence_threshold and label in selected_labels:
+        box = boxes[i]
+
+        if score is None or box is None:
+            continue
+
+        draw_label = not annot_params.selected_labels or label in annot_params.selected_labels
+        if score >= annot_params.confidence_threshold and draw_label:
             box_color = SPECIES_COLORS.get(label, "#FFFFFF")
-
-            # Dibujar Bounding Box
-            box = boxes[i]
-            draw.rectangle(box, outline=box_color, width=line_width)
-
-            # Preparar y dibujar etiqueta con fondo
-            species_name = SPECIES_MAP.get(label, "Unknown")
-            label_text = f"{species_name} ({score:.2f})"
-
-            text_bbox = draw.textbbox((0, 0), label_text, font=font)
-            text_width = text_bbox[2] - text_bbox[0]
-            text_height = text_bbox[3] - text_bbox[1]
-
-            # Asegurarse de que el texto no se salga de la imagen
-            text_x = box[0]
-            text_y = box[1] - text_height - 5
-            if text_y < 0:
-                text_y = box[3] + 5
+            xmin, ymin, xmax, ymax = box
 
             draw.rectangle(
-                [(text_x, text_y), (text_x + text_width + 4, text_y + text_height + 4)],
-                fill=box_color,
+                [(xmin, ymin), (xmax, ymax)], outline=box_color, width=annot_params.line_width
             )
-            draw.text((text_x + 2, text_y + 2), label_text, fill=text_color, font=font)
 
+            if annot_params.add_text_boxes:
+                draw_text_labels(
+                    draw,
+                    label=label,
+                    score=score,
+                    xmin=int(xmin),
+                    ymin=int(ymin),
+                    font=font,
+                    text_color=annot_params.text_color,
+                )
     return img_with_boxes
 
 
-def draw_centroids_on_image(
+def draw_points_on_image(
     image: Image.Image,
-    detections: dict[str, Any],
-    confidence_threshold: float,
-    selected_labels: list[int],
-    point_size: int = 5,
+    detections: Detections,
+    annot_params: AnnotParams,
 ) -> Image.Image:
-    """Dibuja los centroides de las detecciones como puntos en una imagen.
+    """Dibuja los puntos de las detecciones como puntos en una imagen.
 
     Args:
         image: El objeto de imagen PIL sobre el cual dibujar.
         detections: Un diccionario con las detecciones, que debe contener
-                    'boxes', 'labels' y 'scores'.
-        confidence_threshold: El umbral de confianza mínimo para mostrar una detección.
-        selected_labels: Una lista de IDs de etiquetas para filtrar qué especies mostrar.
-        point_size: El radio en píxeles de los puntos a dibujar.
+                    'points', 'labels' y 'scores'.
+        annot_params: Parameters for drawing points.
 
     Returns:
         Un nuevo objeto de imagen PIL con los centroides dibujados.
@@ -159,29 +214,87 @@ def draw_centroids_on_image(
     img_with_points = image.copy()
     draw = ImageDraw.Draw(img_with_points)
 
-    scores = detections.get("scores", [])
-    labels = detections.get("labels", [])
-    boxes = detections.get("boxes", [])
+    scores_raw = detections.scores or []
+    labels_raw = detections.labels or []
+    points_raw = detections.points or []
 
-    for i, score in enumerate(scores):
+    scores = list(scores_raw)
+    labels = list(labels_raw)
+    points = list(points_raw)
+
+    geometry_len = len(points)  #  if use_points else len(boxes)
+
+    max_len = min(len(scores), len(labels), geometry_len)
+
+    font = get_font()
+
+    for i in range(max_len):
+        score = scores[i]
         label = labels[i]
-        if score >= confidence_threshold and label in selected_labels:
-            box = boxes[i]
-            xmin, ymin, xmax, ymax = box
+        coords = points[i]
 
-            # Calcular el centroide
-            center_x = (xmin + xmax) / 2
-            center_y = (ymin + ymax) / 2
+        if score is None or coords is None:
+            continue
 
-            # Definir el color y el radio del punto
+        is_label_selected = (
+            not annot_params.selected_labels or label in annot_params.selected_labels
+        )
+        if score >= annot_params.confidence_threshold and is_label_selected:
+            center_x, center_y = coords
+
             point_color = SPECIES_COLORS.get(label, "#FFFFFF")
-            radius = point_size
+            radius = annot_params.point_size
 
-            # Dibujar el círculo (elipse con el mismo radio para x e y)
             draw.ellipse(
                 (center_x - radius, center_y - radius, center_x + radius, center_y + radius),
-                fill=point_color,
+                # fill=point_color,
+                fill=None,  # empty elipse
                 outline=point_color,
+                width=annot_params.line_width,
             )
 
+            # draw cross-hairs:
+            draw.line(
+                [(center_x, center_y - radius), (center_x, center_y + radius)],
+                fill=point_color,
+                width=annot_params.line_width,
+            )
+
+            draw.line(
+                [(center_x - radius, center_y), (center_x + radius, center_y)],
+                fill=point_color,
+                width=annot_params.line_width,
+            )
+
+            if annot_params.add_text_boxes:
+                draw_text_labels(
+                    draw,
+                    label=label,
+                    score=score,
+                    xmin=center_x + radius + 2,
+                    ymin=center_y + radius + 2,
+                    font=font,
+                    text_color=annot_params.text_color,
+                )
+
     return img_with_points
+
+
+def render_summary_tables(img_results: ImageResults, annot_params: AnnotParams) -> None:
+    dets_df = pd.DataFrame(
+        {"labels": img_results.detections.labels, "score": img_results.detections.scores}
+    )
+
+    dets_df = dets_df[dets_df.score >= annot_params.confidence_threshold]
+
+    dets_df["Especie"] = dets_df["labels"].map(lambda lbl: SPECIES_MAP.get(lbl, "Unknown"))
+    dets_df["Confianza [%]"] = np.round(dets_df["score"] * 100.0, 1)
+
+    conteo_por_especies = dets_df.groupby("Especie").agg({"labels": "count"}).reset_index()
+
+    st.subheader("Conteos por Especie")
+    st.dataframe(conteo_por_especies, hide_index=True)
+
+    st.subheader("Detecciones individuales")
+    dets_df2 = dets_df.sort_values("score", ascending=False)[["Especie", "Confianza [%]"]]
+    st.dataframe(dets_df2)

@@ -24,7 +24,6 @@ data/models/*
 data/models/herdnet_v2/*
 !data/models/herdnet_v2/best_model.pth
 data_exploration/
-#dashboard/
 docs/
 marimo-nbs/
 notebooks/
