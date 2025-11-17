@@ -298,8 +298,9 @@ stages:
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
       test.wandb_run="Test herdnet v4"
-      test.wandb_mode=offline
-      test.model.pth_file=data/models/herdnet_v4/best_model.pth      
+      test.wandb_mode=offline      
+      test.model.pth_file=data/models/herdnet_v4/best_model.pth
+      test.model.kwargs.head_conv=128
       test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
       test.dataset.root_dir=data/test/
       test.results_dir=data/test_results/herdnet_v4_full_imgs/
