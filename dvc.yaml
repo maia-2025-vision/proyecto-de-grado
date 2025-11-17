@@ -314,7 +314,26 @@ stages:
       - data/models/herdnet_v2_hn/best_model.pth
     outs:
       - data/test_results/herdnet_v2_hn/
-
+  
+  test-herdnet-v2-hn2:
+    # Nota: a diferencia de test-herdnet-v2 y test-herdnet-v1, este test usa imágenes full-size
+    # usamos el stitcher del config
+    cmd: >
+      python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
+      test.wandb_run="'Test herdnet v2-hn2'"
+      test.wandb_mode=online
+      test.model.pth_file=data/models/herdnet_v2_hn2/best_model.pth
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/      
+      test.results_dir=data/test_results/herdnet_v2_hn2/
+    deps:
+      - oficial_herdnet/configs/test/herdnet.yaml
+      # - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      # - data/test/
+      # - data/models/herdnet_v2_hn2/best_model.pth
+    outs:
+      - data/test_results/herdnet_v2_hn2/
+  
   infer-train-herdnet-v2:
     desc: >
       First step for HNM, infer over full size images.
@@ -443,7 +462,7 @@ stages:
       - data/patches-512-ol-160-m01/val/
     outs:
       - data/models/herdnet_v2_hn2/
-
+  
   test-full-to-points:
     cmd: python oficial_herdnet/tools/csv_to_points.py
       -i data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
