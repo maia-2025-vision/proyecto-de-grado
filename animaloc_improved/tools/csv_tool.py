@@ -10,6 +10,17 @@ from typer import Typer
 app = Typer()
 
 
+def flatten_df_column_names(df: pd.DataFrame, sep: str = "_") -> pd.DataFrame:
+    df = df.copy()
+
+    # Check if columns are MultiIndex
+    if isinstance(df.columns, pd.MultiIndex):
+        # Join each tuple of column levels with the separator
+        df.columns = [sep.join(map(str, col)).strip(sep) for col in df.columns]
+
+    return df
+
+
 @app.command(
     "concat",
     help="Concatenate two csvs. Only columns in first csv will be output. "
