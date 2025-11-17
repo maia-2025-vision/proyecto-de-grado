@@ -365,7 +365,6 @@ stages:
       hash: md5
       md5: 67ba715b47bc3e01aad498392943b781.dir
       size: 1245499
-      nfiles: 4
 
   train-faster-rcnn-resnet-101:
     cmd: "python oficial_herdnet/tools/train.py  --config-path $PWD/configs/ train=faster_rcnn_herdnet_trainer
@@ -492,7 +491,6 @@ stages:
       md5: 79df0937818f2d2b84b71b9bef521db7.dir
       size: 709421
       nfiles: 4
-
   test-full-to-points:
     cmd: python oficial_herdnet/tools/csv_to_points.py -i 
       data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv -o 
@@ -505,13 +503,14 @@ stages:
       size: 120385
     - path: oficial_herdnet/tools/csv_to_points.py
       hash: md5
-      md5: 0c788acb5c74a5d8ba91f3caf89b4300
-      size: 1939
+      md5: 7cd233b7f117b68478aff02815763a63
+      size: 1463
     outs:
     - path: data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
       hash: md5
-      md5: a6877229623fe95c5ba7883097fe07c3
-      size: 98469
+      md5: 668fd89290f3f60f4d87c9f5fc106203
+      size: 96169
+
   desc-faster-rcnn-resnet101:
     cmd: "python tools/describe_model.py --config-path=$PWD/configs test=faster_rcnn
       test.device_name=\"cpu\" test.model.kwargs.architecture=resnet101 test.model.kwargs.trainable_backbone_layers=4
@@ -819,10 +818,6 @@ stages:
       test.model.pth_file=data/models/herdnet_v2/best_model.pth test.dataset.csv_file=data/patches-512-ol-160-m01/test_points_gt.csv
       test.dataset.root_dir=data/patches-512-ol-160-m01/test/ test.stitcher=null test.results_dir=data/test_results/herdnet_v2/\n"
     deps:
-    - path: data/models/herdnet_v2/best_model.pth
-      hash: md5
-      md5: 15e9b74d76d6be4087015455bde1f255
-      size: 219993031
     - path: data/patches-512-ol-160-m01/test/
       hash: md5
       md5: 71eb378f9db92d36b358703d400013cd.dir
@@ -834,13 +829,13 @@ stages:
       size: 230725
     - path: oficial_herdnet/configs/test/herdnet.yaml
       hash: md5
-      md5: 82b371d39b1b3997cd54449b51452ab8
-      size: 1186
+      md5: d821ab5e2e0e26a6f9a6bb801b48ad61
+      size: 1241
     outs:
     - path: data/test_results/herdnet_v2/
       hash: md5
-      md5: bf70e2ca75959d663e9590c716a2c045.dir
-      size: 727170
+      md5: 0bf1e281c011436a5d962bc7c780ca88.dir
+      size: 724039
       nfiles: 4
   infer-train-herdnet-v2:
     cmd: python animaloc_improved/tools/infer_v2.py data/train/ 
@@ -926,100 +921,6 @@ stages:
       hash: md5
       md5: b313cf7f7b219a533edc0b07a121501f
       size: 161926
-
-  train-herdnet-v2-hn:
-    cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet v2-Hard
-      Negs'" train.wandb_mode=offline 
-      train.model.load_from=data/models/herdnet_v2/best_model.pth 
-      train.training_settings.epochs=50 
-      train.datasets.train.csv_file=data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
-      train.datasets.train.root_dir=data/patches-512-ol-160-m01-w-hard-negs/train
-      train.datasets.validate.csv_file=data/patches-512-ol-160-m01/val_points_gt.csv
-      train.datasets.validate.root_dir=data/patches-512-ol-160-m01/val 
-      train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
-      train.training_settings.work_dir=data/models/herdnet_v2_hn/
-    deps:
-    - path: data/patches-512-ol-160-m01-w-hard-negs/train
-      hash: md5
-      md5: aefbe2de2c2f77b4f5c62fd5f528a968.dir
-      size: 599160482
-      nfiles: 17153
-    - path: data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
-      hash: md5
-      md5: ae801f4e45df4492aea72313839b899d
-      size: 3077570
-    - path: data/patches-512-ol-160-m01/val/
-      hash: md5
-      md5: 66d0c949e34d595a2da73c7a1cd5b190.dir
-      size: 42355412
-      nfiles: 1167
-    - path: data/patches-512-ol-160-m01/val_points_gt.csv
-      hash: md5
-      md5: 5c329172fbad52ddd362b5e67bccf651
-      size: 95080
-    outs:
-    - path: data/models/herdnet_v2_hn/
-      hash: md5
-      md5: c35da8c5cd51f2181fc1789dd2543a98.dir
-      size: 440355254
-      nfiles: 4
-
-  test-herdnet-v2-hn:
-    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
-      config\" test.wandb_run=\"'Test herdnet v2-hn'\" test.wandb_mode=online test.model.pth_file=data/models/herdnet_v2_hn/best_model.pth
-      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      test.dataset.root_dir=data/test/       test.results_dir=data/test_results/herdnet_v2_hn/\n"
-    deps:
-    - path: data/models/herdnet_v2_hn/best_model.pth
-      hash: md5
-      md5: 0749d96a1d4ef19ef6da4f871bb7ca55
-      size: 219993031
-    - path: data/patches-512-ol-160-m01/test/
-      hash: md5
-      md5: 71eb378f9db92d36b358703d400013cd.dir
-      size: 75831301
-      nfiles: 2559
-    - path: data/patches-512-ol-160-m01/test_points_gt.csv
-      hash: md5
-      md5: d637312c2d5d6bd6acb1d05ac5560362
-      size: 230725
-    - path: oficial_herdnet/configs/test/herdnet.yaml
-      hash: md5
-      md5: 82b371d39b1b3997cd54449b51452ab8
-      size: 1186
-    outs:
-    - path: data/test_results/herdnet_v2_hn/
-      hash: md5
-      md5: e8d40be97ae7fd09e6f73337c1567c70.dir
-      size: 517853
-      nfiles: 4
-
-  test-herdnet-v2-full-imgs:
-    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
-      config\" test.wandb_run=\"'Test herdnet v2 full images'\" test.wandb_mode=online
-      test.model.pth_file=data/models/herdnet_v2/best_model.pth test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      test.dataset.root_dir=data/test/       test.results_dir=data/test_results/herdnet_v2_full_imgs/\n"
-    deps:
-    - path: data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      hash: md5
-      md5: 668fd89290f3f60f4d87c9f5fc106203
-      size: 96169
-    - path: data/test/
-      hash: md5
-      md5: 543905ee38c7af30e4a5ccc4b1670752.dir
-      size: 2117638463
-      nfiles: 258
-    - path: oficial_herdnet/configs/test/herdnet.yaml
-      hash: md5
-      md5: 82b371d39b1b3997cd54449b51452ab8
-      size: 1186
-    outs:
-    - path: data/test_results/herdnet_v2_full_imgs/
-      hash: md5
-      md5: 22333f03282308053c895ac5f5f81f32.dir
-      size: 684609
-      nfiles: 4
-
   patches-1024-ol-320-mv01-train:
     cmd: python oficial_herdnet/tools/patcher.py data/train 1024 1024 320 
       data/patches-1024-ol-320-m01/train -csv 
@@ -1051,7 +952,6 @@ stages:
       hash: md5
       md5: c29dfdea2f47b7e29974037aed26cccf
       size: 634859
-
   patches-1024-ol-320-mv01-val:
     cmd: python oficial_herdnet/tools/patcher.py data/val 1024 1024 320 
       data/patches-1024-ol-320-m01/val -csv 
@@ -1083,7 +983,6 @@ stages:
       hash: md5
       md5: 7b74f6a20aed472ad0a3cd1b46441850
       size: 85985
-
   patches-1024-ol-320-mv01-test:
     cmd: python oficial_herdnet/tools/patcher.py data/test 1024 1024 320 
       data/patches-1024-ol-320-m01/test -csv 
@@ -1096,6 +995,11 @@ stages:
       hash: md5
       md5: 30731a9a455b58e36394dd89e24849dc
       size: 120385
+    - path: data/test/
+      hash: md5
+      md5: 543905ee38c7af30e4a5ccc4b1670752.dir
+      size: 2117638463
+      nfiles: 258
     - path: oficial_herdnet/tools/patcher.py
       hash: md5
       md5: c07f8d75238ff27ea1404b230d36bb88
@@ -1110,7 +1014,6 @@ stages:
       hash: md5
       md5: 4cfabe5e790e7c94779ebf6b915ecdff
       size: 211969
-
   train-herdnet-v3:
     cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet Train 3
       1024x1024'" train.wandb_mode='online' train.datasets.img_size=[1024,1024] 
@@ -1146,7 +1049,6 @@ stages:
       md5: 4034d8f7f3ee31701ebd403ba3419b72.dir
       size: 441239988
       nfiles: 4
-
   test-herdnet-v3:
     cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
       config\" test.wandb_run=\"'Test herdnet v3 patches 1024'\" test.wandb_mode=online
@@ -1173,65 +1075,6 @@ stages:
       md5: af14a8c87a8371a467a64aa3ac3e8ca4.dir
       size: 667353
       nfiles: 4
-
-  train-herdnet-v2-hn2:
-    cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet v2-Hard
-      Negs-part2'" train.wandb_mode=offline 
-      train.model.load_from=data/models/herdnet_v2_hn/best_model.pth 
-      train.training_settings.epochs=100 
-      train.datasets.train.csv_file=data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
-      train.datasets.train.root_dir=data/patches-512-ol-160-m01-w-hard-negs/train
-      train.datasets.validate.csv_file=data/patches-512-ol-160-m01/val_points_gt.csv
-      train.datasets.validate.root_dir=data/patches-512-ol-160-m01/val 
-      train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
-      train.training_settings.work_dir=data/models/herdnet_v2_hn2/
-    deps:
-    - path: data/models/herdnet_v2_hn/best_model.pth
-      hash: md5
-      md5: 501f8737a2fe4d5be54176765545b819
-      size: 219993031
-    - path: data/patches-512-ol-160-m01-w-hard-negs/train
-      hash: md5
-      md5: aefbe2de2c2f77b4f5c62fd5f528a968.dir
-      size: 599160482
-      nfiles: 17153
-    - path: data/patches-512-ol-160-m01-w-hard-negs/train_points_gt.csv
-      hash: md5
-      md5: ae801f4e45df4492aea72313839b899d
-      size: 3077570
-    - path: data/patches-512-ol-160-m01/val/
-      hash: md5
-      md5: 66d0c949e34d595a2da73c7a1cd5b190.dir
-      size: 42355412
-      nfiles: 1167
-    - path: data/patches-512-ol-160-m01/val_points_gt.csv
-      hash: md5
-      md5: 5c329172fbad52ddd362b5e67bccf651
-      size: 95080
-    outs:
-    - path: data/models/herdnet_v2_hn2/
-      hash: md5
-      md5: 67731009792a1e5620ae66de61791a5e.dir
-      size: 440589576
-      nfiles: 4
-
-  test-herdnet-v2-hn2:
-    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
-      config\" test.wandb_run=\"'Test herdnet v2-hn2'\" test.wandb_mode=online test.model.pth_file=data/models/herdnet_v2_hn2/best_model.pth
-      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      test.dataset.root_dir=data/test/       test.results_dir=data/test_results/herdnet_v2_hn2/\n"
-    deps:
-    - path: oficial_herdnet/configs/test/herdnet.yaml
-      hash: md5
-      md5: 82b371d39b1b3997cd54449b51452ab8
-      size: 1186
-    outs:
-    - path: data/test_results/herdnet_v2_hn2/
-      hash: md5
-      md5: b4f368b6849611401261d26cb07321be.dir
-      size: 486236
-      nfiles: 4
-
   train-herdnet-v4:
     cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet Train 4
       head_conv 128'" train.wandb_mode='online' train.model.kwargs.head_conv=128
@@ -1263,55 +1106,29 @@ stages:
       md5: fd3eaf7bbd206a4b1168e69962434b2b.dir
       size: 450021789
       nfiles: 4
-
-  test-herdnet-v3-full-imgs:
+  test-herdnet-v4:
     cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
-      config\" test.wandb_run=\"'Test herdnet v3 patches 1024'\" test.wandb_mode=online
-      test.model.pth_file=data/models/herdnet_v3/best_model.pth test.dataset.img_size=[1024,1024]
-      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      test.dataset.root_dir=data/test/ test.results_dir=data/test_results/herdnet_v3_full_imgs/\n"
+      config\" test.wandb_run=\"'Test herdnet v4 head_conv 128'\" test.wandb_mode=online
+      test.model.pth_file=data/models/herdnet_v4/best_model.pth test.model.kwargs.head_conv=128
+      test.dataset.csv_file=data/patches-512-ol-160-m01/test_points_gt.csv test.dataset.root_dir=data/patches-512-ol-160-m01/test/
+      test.stitcher=null test.results_dir=data/test_results/herdnet_v4/\n"
     deps:
-    - path: data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+    - path: data/patches-512-ol-160-m01/test/
       hash: md5
-      md5: a6877229623fe95c5ba7883097fe07c3
-      size: 98469
-    - path: data/test/
+      md5: 71eb378f9db92d36b358703d400013cd.dir
+      size: 75831301
+      nfiles: 2559
+    - path: data/patches-512-ol-160-m01/test_points_gt.csv
       hash: md5
-      md5: 543905ee38c7af30e4a5ccc4b1670752.dir
-      size: 2117638463
-      nfiles: 258
+      md5: d637312c2d5d6bd6acb1d05ac5560362
+      size: 230725
     - path: oficial_herdnet/configs/test/herdnet.yaml
       hash: md5
       md5: 82b371d39b1b3997cd54449b51452ab8
       size: 1186
     outs:
-    - path: data/test_results/herdnet_v3_full_imgs/
+    - path: data/test_results/herdnet_v4/
       hash: md5
-      md5: 75572a35caa65c85dc29d471bc2e323a.dir
-      size: 531024
-      nfiles: 4
-  test-herdnet-v4-full-imgs:
-    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
-      config\" test.wandb_run=\"Test herdnet v4\" test.wandb_mode=online       test.model.pth_file=data/models/herdnet_v4/best_model.pth
-      test.model.kwargs.head_conv=128 test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      test.dataset.root_dir=data/test/ test.results_dir=data/test_results/herdnet_v4_full_imgs/\n"
-    deps:
-    - path: data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      hash: md5
-      md5: a6877229623fe95c5ba7883097fe07c3
-      size: 98469
-    - path: data/test/
-      hash: md5
-      md5: 543905ee38c7af30e4a5ccc4b1670752.dir
-      size: 2117638463
-      nfiles: 258
-    - path: oficial_herdnet/configs/test/herdnet.yaml
-      hash: md5
-      md5: 82b371d39b1b3997cd54449b51452ab8
-      size: 1186
-    outs:
-    - path: data/test_results/herdnet_v4_full_imgs/
-      hash: md5
-      md5: 33d41ad3bfdc1367110c80157c73b5c8.dir
-      size: 735184
+      md5: 63796e0b54c35011837c6182dc58171b.dir
+      size: 725566
       nfiles: 4
