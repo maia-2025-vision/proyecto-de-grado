@@ -224,7 +224,7 @@ stages:
     outs:
       - data/test_results/herdnet_v2/
   
-  test-herdnet-v3:
+  test-herdnet-v3-full-imgs:
     # test.sticher=null because we are running over patches of size 1024x1024
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
@@ -232,34 +232,16 @@ stages:
       test.wandb_mode=online
       test.model.pth_file=data/models/herdnet_v3/best_model.pth
       test.dataset.img_size=[1024,1024]
-      test.dataset.csv_file=data/patches-1024-ol-320-m01/test_points_gt.csv
-      test.dataset.root_dir=data/patches-1024-ol-320-m01/test/
-      test.stitcher=null
-      test.results_dir=data/test_results/herdnet_v3/
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/
+      test.results_dir=data/test_results/herdnet_v3_full_imgs/
     deps:
       - oficial_herdnet/configs/test/herdnet.yaml
       - data/patches-1024-ol-320-m01/test_points_gt.csv
       - data/patches-1024-ol-320-m01/test/
     outs:
-      - data/test_results/herdnet_v3/
+      - data/test_results/herdnet_v3_full_imgs/
 
-  test-herdnet-v1-full-images:
-    # test.sticher=null because we are running over patches of size 512x512
-    cmd: >
-      python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
-      test.wandb_run='Test-herdnet_v1-full-images'
-      test.wandb_mode=offline
-      test.model.pth_file=data/models/herdnet_v1/best_model.pth
-      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      test.dataset.root_dir=data/test/   
-      test.results_dir=data/test_results/herdnet_v1_full_imgs/
-    deps:
-      - oficial_herdnet/configs/test/herdnet.yaml
-      - data/patches-512-ol-160-m01/test_points_gt.csv
-      - data/patches-512-ol-160-m01/test/
-      - data/models/herdnet_v1/best_model.pth
-    outs:
-      - data/test_results/herdnet_v1_full_imgs/
 
   test-herdnet-v2-full-imgs: # sobre imágenes full
     cmd: >
