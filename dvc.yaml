@@ -225,7 +225,6 @@ stages:
       - data/test_results/herdnet_v2/
   
   test-herdnet-v3-full-imgs:
-    # test.sticher=null because we are running over patches of size 1024x1024
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
       test.wandb_run="'Test herdnet v3 patches 1024'"
@@ -418,7 +417,7 @@ stages:
     outs:
       - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
 
-  test-herdnet-v1-fullimgs:
+  test-herdnet-v1-fullimgs: # sobre imágenes full
     cmd: >
       python oficial_herdnet/tools/test.py --config-path $PWD/oficial_herdnet/configs/
       test=herdnet
