@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 from api.detector import Detector
-<<<<<<< HEAD
 from api.schemas.shared_types import (
     BBoxFormat as _BBoxFormat,
     ModelMetadata as _ModelMetadata,
@@ -10,9 +9,6 @@ from api.schemas.shared_types import (
 # Re-export shared aliases so other modules importing from this file keep working.
 BBoxFormat = _BBoxFormat
 ModelMetadata = _ModelMetadata
-=======
-from api.schemas.shared_types import ModelMetadata
->>>>>>> d735b94 (fix type errors)
 
 
 @dataclass
