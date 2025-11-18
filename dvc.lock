@@ -1170,7 +1170,7 @@ stages:
     cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet Train 4
       head_conv 128'" train.wandb_mode='online' train.model.kwargs.head_conv=128
       train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
-      train.training_settings.work_dir=data/models/herdnet_v4/
+      train.training_settings.work_dir=data/models/herdnet_v4/ 
       train.training_settings.stitcher=null
     deps:
     - path: data/patches-512-ol-160-m01/train/
@@ -1249,4 +1249,30 @@ stages:
       hash: md5
       md5: 33d41ad3bfdc1367110c80157c73b5c8.dir
       size: 735184
+      nfiles: 4
+  test-herdnet-v4:
+    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
+      config\" test.wandb_run=\"'Test herdnet v4 head_conv 128'\" test.wandb_mode=online
+      test.model.pth_file=data/models/herdnet_v4/best_model.pth test.model.kwargs.head_conv=128
+      test.dataset.csv_file=data/patches-512-ol-160-m01/test_points_gt.csv test.dataset.root_dir=data/patches-512-ol-160-m01/test/
+      test.stitcher=null test.results_dir=data/test_results/herdnet_v4/\n"
+    deps:
+    - path: data/patches-512-ol-160-m01/test/
+      hash: md5
+      md5: 71eb378f9db92d36b358703d400013cd.dir
+      size: 75831301
+      nfiles: 2559
+    - path: data/patches-512-ol-160-m01/test_points_gt.csv
+      hash: md5
+      md5: d637312c2d5d6bd6acb1d05ac5560362
+      size: 230725
+    - path: oficial_herdnet/configs/test/herdnet.yaml
+      hash: md5
+      md5: 82b371d39b1b3997cd54449b51452ab8
+      size: 1186
+    outs:
+    - path: data/test_results/herdnet_v4/
+      hash: md5
+      md5: 63796e0b54c35011837c6182dc58171b.dir
+      size: 725566
       nfiles: 4
