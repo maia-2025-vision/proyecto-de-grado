@@ -148,10 +148,10 @@ stages:
       - data/patches-1024-ol-320-m01/val/
     outs:
       - data/models/herdnet_v3/
-  
+
   train-herdnet-v4:
     desc: From v2 change model head_conv to 128
-    cmd: python oficial_herdnet/tools/train.py 
+    cmd: python oficial_herdnet/tools/train.py
       train.wandb_run="'Herdnet Train 4 head_conv 128'"
       train.wandb_mode='online'
       train.model.kwargs.head_conv=128
@@ -185,7 +185,7 @@ stages:
     outs:
       - data/model_descs/parameters-herdnet-v1.csv
 
-  test-herdnet-v0:
+  test-herdnet-v0: # sobre patches!
     # test.sticher=null because we are running over patches of size 512x512
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
@@ -203,7 +203,7 @@ stages:
     outs:
       - data/test_results/herdnet_v0/
 
-  test-herdnet-v1:
+  test-herdnet-v1: # sobre patches
     # test.sticher=null because we are running over patches of size 512x512
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
@@ -222,7 +222,7 @@ stages:
     outs:
       - data/test_results/herdnet_v1/
 
-  test-herdnet-v2:
+  test-herdnet-v2: # sobre patches
     # test.sticher=null because we are running over patches of size 512x512
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
@@ -259,7 +259,7 @@ stages:
       - data/patches-1024-ol-320-m01/test/
     outs:
       - data/test_results/herdnet_v3/
-  
+
   test-herdnet-v4:
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
@@ -278,8 +278,7 @@ stages:
     outs:
       - data/test_results/herdnet_v4/
 
-  test-herdnet-v2-full-imgs:
-    # test.sticher=null because we are running over patches of size 512x512
+  test-herdnet-v2-full-imgs: # sobre imágenes full
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
       test.wandb_run="'Test herdnet v2 full images'"
@@ -296,44 +295,40 @@ stages:
     outs:
       - data/test_results/herdnet_v2_full_imgs/
 
-  test-herdnet-v2-hn:
-    # Nota: a diferencia de test-herdnet-v2 y test-herdnet-v1, este test usa imágenes full-size
-    # usamos el stitcher del config
+  test-herdnet-v3-full-imgs:
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
-      test.wandb_run="'Test herdnet v2-hn'"
+      test.wandb_run="'Test herdnet v3 patches 1024'"
       test.wandb_mode=online
-      test.model.pth_file=data/models/herdnet_v2_hn/best_model.pth
+      test.model.pth_file=data/models/herdnet_v3/best_model.pth
+      test.dataset.img_size=[1024,1024]
       test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      test.dataset.root_dir=data/test/      
-      test.results_dir=data/test_results/herdnet_v2_hn/
+      test.dataset.root_dir=data/test/
+      test.results_dir=data/test_results/herdnet_v3_full_imgs/
     deps:
       - oficial_herdnet/configs/test/herdnet.yaml
-      - data/patches-512-ol-160-m01/test_points_gt.csv
-      - data/patches-512-ol-160-m01/test/
-      - data/models/herdnet_v2_hn/best_model.pth
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      - data/test/
     outs:
-      - data/test_results/herdnet_v2_hn/
-  
-  test-herdnet-v2-hn2:
-    # Nota: a diferencia de test-herdnet-v2 y test-herdnet-v1, este test usa imágenes full-size
-    # usamos el stitcher del config
+      - data/test_results/herdnet_v3_full_imgs/
+
+  test-herdnet-v4-full-imgs:
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
-      test.wandb_run="'Test herdnet v2-hn2'"
-      test.wandb_mode=online
-      test.model.pth_file=data/models/herdnet_v2_hn2/best_model.pth
+      test.wandb_run="Test herdnet v4"
+      test.wandb_mode=online      
+      test.model.pth_file=data/models/herdnet_v4/best_model.pth
+      test.model.kwargs.head_conv=128
       test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      test.dataset.root_dir=data/test/      
-      test.results_dir=data/test_results/herdnet_v2_hn2/
+      test.dataset.root_dir=data/test/
+      test.results_dir=data/test_results/herdnet_v4_full_imgs/
     deps:
       - oficial_herdnet/configs/test/herdnet.yaml
-      # - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
-      # - data/test/
-      # - data/models/herdnet_v2_hn2/best_model.pth
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      - data/test/
     outs:
-      - data/test_results/herdnet_v2_hn2/
-  
+      - data/test_results/herdnet_v4_full_imgs/
+
   infer-train-herdnet-v2:
     desc: >
       First step for HNM, infer over full size images.
@@ -439,7 +434,7 @@ stages:
       - data/models/herdnet_v2_hn/
 
   train-herdnet-v2-hn2:
-    desc: Keep training herdnet v2 but now with hard negatives
+    desc: Keep training herdnet v2 but now with hard negatives - part 2, 100 more epochs
     # Validación incluyendo HNs genera error...
     # train.datasets.validate.csv_file=data/patches-512-ol-160-m01-w-hard-negs/val_points_gt.csv
     # train.datasets.validate.root_dir=data/patches-512-ol-160-m01-w-hard-negs/val
@@ -462,7 +457,26 @@ stages:
       - data/patches-512-ol-160-m01/val/
     outs:
       - data/models/herdnet_v2_hn2/
-  
+
+  test-herdnet-v2-hn2:
+    # Nota: a diferencia de test-herdnet-v2 y test-herdnet-v1, este test usa imágenes full-size
+    # usamos el stitcher del config
+    cmd: >
+      python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
+      test.wandb_run="'Test herdnet v2-hn2'"
+      test.wandb_mode=online
+      test.model.pth_file=data/models/herdnet_v2_hn2/best_model.pth
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/      
+      test.results_dir=data/test_results/herdnet_v2_hn2/
+    deps:
+      - oficial_herdnet/configs/test/herdnet.yaml
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      - data/test/
+      - data/models/herdnet_v2_hn2/best_model.pth
+    outs:
+      - data/test_results/herdnet_v2_hn2/
+
   test-full-to-points:
     cmd: python oficial_herdnet/tools/csv_to_points.py
       -i data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
@@ -473,7 +487,7 @@ stages:
     outs:
       - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
 
-  test-herdnet-v1-fullimgs:
+  test-herdnet-v1-fullimgs: # sobre imágenes full
     cmd: >
       python oficial_herdnet/tools/test.py --config-path $PWD/oficial_herdnet/configs/
       test=herdnet
