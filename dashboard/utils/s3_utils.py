@@ -1,6 +1,8 @@
 """Utilidades para la interacción con S3."""
 
-from datetime import date
+import json
+from datetime import UTC, date, datetime
+from uuid import uuid4
 
 import boto3
 import streamlit as st
@@ -60,3 +62,42 @@ def upload_files_to_s3(
 
     progress_bar.empty()
     return s3_urls
+
+
+def upload_feedback_payload(
+    *,
+    region: str,
+    flyover: str,
+    records: list[dict[str, object]],
+) -> str | None:
+    """Sube un archivo JSON con las reclasificaciones hechas desde el dashboard."""
+    if not records:
+        st.warning("No hay feedback para subir.")
+        return None
+
+    s3_client = get_s3_client()
+    if not s3_client:
+        return None
+
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    object_key = f"{region}/{flyover}/feedback/{timestamp}-{uuid4().hex}.json"
+
+    payload = {
+        "region": region,
+        "flyover": flyover,
+        "generated_at": timestamp,
+        "source": "dashboard",
+        "records": records,
+    }
+
+    try:
+        s3_client.put_object(
+            Bucket=S3_BUCKET_NAME,
+            Key=object_key,
+            Body=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            ContentType="application/json",
+        )
+        return f"s3://{S3_BUCKET_NAME}/{object_key}"
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"Error al subir feedback a S3: {exc}")
+        return None

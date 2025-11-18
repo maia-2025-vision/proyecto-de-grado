@@ -130,6 +130,7 @@ def get_counts_for_flyover(region: str, flyover: str) -> dict[str, Any]:
         return {"error": str(e)}
 
 
+@st.cache_data
 def get_counts_for_region(region: str) -> dict[str, Any]:
     """Obtiene los conteos agregados para una región específica."""
     endpoint = f"{API_BASE_URL}/counts/{region}"
