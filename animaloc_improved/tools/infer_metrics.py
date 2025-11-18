@@ -77,7 +77,6 @@ def predict_single_image(model: torch.nn.Module, image_path: str, device: str = 
 
     # Setup evaluator with stitcher for inference
     device_obj = torch.device(device)
-    model = model.to(device_obj)
 
     metrics = PointsMetrics(radius=5, num_classes=7)
 
@@ -100,16 +99,42 @@ def predict_single_image(model: torch.nn.Module, image_path: str, device: str = 
         print_freq=1,
     )
 
-    # Run inference
-    evaluator.evaluate(wandb_flag=False, viz=False, log_meters=False)
+    try:
+        with torch.no_grad():
+            # Run inference
+            evaluator.evaluate(wandb_flag=False, viz=False, log_meters=False)
 
-    # Get detections
-    detections = evaluator.detections
-    detections = detections.dropna()
+            # Get detections
+            detections = evaluator.detections
+            detections = detections.dropna()
 
-    print(f"Found {len(detections)} predictions")
+            detections_copy = detections.copy()
 
-    return {"detections": detections, "image_size": image.size}
+            print(f"Found {len(detections_copy)} predictions")
+
+            return {"detections": detections_copy, "image_size": image.size}
+    finally:
+        # Clean up GPU memory
+        if "evaluator" in locals():
+            del evaluator
+        if "stitcher" in locals():
+            del stitcher
+        if "metrics" in locals():
+            del metrics
+        if "dataloader" in locals():
+            del dataloader
+        if "dataset" in locals():
+            del dataset
+
+        # Force garbage collection
+        import gc
+
+        gc.collect()
+
+        # Clear CUDA cache if available
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
 
 
 def match_predictions_to_gt(
@@ -199,7 +224,7 @@ def create_visualization(
             radius=5,
             color=colors["ground_truth"],
             fill=False,
-            linewidth=2,
+            linewidth=1,
             label="Ground Truth" if coord is gt_coords[0] else "",
         )
         ax.add_patch(circle)
@@ -208,7 +233,7 @@ def create_visualization(
             coord[1] - 10,
             f"GT:{species_map[label]}",
             color=colors["ground_truth"],
-            fontsize=8,
+            fontsize=6,
             weight="bold",
         )
 
@@ -221,7 +246,7 @@ def create_visualization(
         for coord, label, score in zip(pred_coords, pred_labels, pred_scores, strict=False):
             circle = patches.Circle(
                 coord,
-                radius=6,
+                radius=3,
                 color=colors["predictions"],
                 fill=True,
                 alpha=0.7,
@@ -233,7 +258,7 @@ def create_visualization(
                 coord[1] + 10,
                 f"P:{species_map.get(label, 'Unknown')} ({score:.2f})",
                 color=colors["predictions"],
-                fontsize=8,
+                fontsize=6,
                 weight="bold",
             )
 
@@ -244,7 +269,7 @@ def create_visualization(
             [tp["gt_coord"][0], tp["pred_coord"][0]],
             [tp["gt_coord"][1], tp["pred_coord"][1]],
             color=colors["correct"],
-            linewidth=2,
+            linewidth=1,
             alpha=0.7,
         )
 
@@ -252,17 +277,17 @@ def create_visualization(
     for fp in matches["false_positives"]:
         circle = patches.Circle(
             fp["coord"],
-            radius=10,
+            radius=4,
             color=colors["false_positive"],
             fill=False,
-            linewidth=3,
+            linewidth=1,
             linestyle="--",
         )
         ax.add_patch(circle)
 
     for fn in matches["false_negatives"]:
         circle = patches.Circle(
-            fn["coord"], radius=10, color=colors["missed"], fill=False, linewidth=3, linestyle=":"
+            fn["coord"], radius=4, color=colors["missed"], fill=False, linewidth=1, linestyle=":"
         )
         ax.add_patch(circle)
 
