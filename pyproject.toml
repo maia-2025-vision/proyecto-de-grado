@@ -157,7 +157,7 @@ extend-immutable-calls = [
 python_version = "3.13"
 # TODO: fix typing errors in dashboard
 # TODO: fix typing errors in api...
-exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|data_exploration|marimo-nbs|oficial_herdnet/tools)/'
+exclude='^(.venv|model|research|.dvc|data|.*scratch|pages|data_exploration|marimo-nbs|oficial_herdnet/tools)/|animaloc_improved.tools.infer_metrics'
 strict=true
 disallow_untyped_defs = true
 disallow_any_unimported = true
@@ -170,6 +170,7 @@ show_error_codes = true
 [[tool.mypy.overrides]]
 module = ["animaloc.*", "albumentations.*", "torchvision.*"]
 ignore_missing_imports = true
+
 
 
 [tool.poe.env]

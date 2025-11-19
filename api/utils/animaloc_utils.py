@@ -18,7 +18,7 @@ from torchvision.transforms import ToTensor
 
 from animaloc_improved.eval.stitchers import FasterRCNNStitcherV2
 from api.detector import Detector, RawDetections
-from api.schemas.internal_types import BBoxFormat, ModelMetadata
+from api.schemas.shared_types import BBoxFormat, ModelMetadata
 
 
 def pick_inference_device() -> str:
