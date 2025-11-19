@@ -1,11 +1,14 @@
 """Página de Streamlit para visualizar las métricas de las detecciones."""
 
+from typing import Any
+
 import pandas as pd
 import streamlit as st
 from loguru import logger
 
 from dashboard.utils.api_client import (
     get_counts_for_flyover,
+    get_counts_for_region,
     get_flyovers,
     get_regions,
 )
@@ -16,7 +19,46 @@ st.set_page_config(page_title="Conteos de Sobrevuelo", page_icon="📊", layout=
 st.title("📊 Conteos de Sobrevuelo")
 
 
-count_results = {}
+count_results: dict[str, Any] = {}
+region_counts: dict[str, Any] = {}
+selected_region: str | None = None
+selected_flyover: str | None = None
+
+
+def build_region_summary_table(region_payload: dict[str, Any]) -> pd.DataFrame:
+    """Convierte el payload de /counts/<region> en un dataframe amigable."""
+    totals_by_flyover = region_payload.get("totals_by_flyover") or {}
+    rows: list[dict[str, Any]] = []
+
+    for flyover_name, species_counts in sorted(totals_by_flyover.items()):
+        row: dict[str, Any] = {"Sobrevuelo": flyover_name}
+        if isinstance(species_counts, dict):
+            for species_name, count in species_counts.items():
+                row[str(species_name)] = count
+        rows.append(row)
+
+    if not rows:
+        return pd.DataFrame()
+
+    df = pd.DataFrame(rows).fillna(0)
+    species_columns = [name for name in SPECIES_MAP.values() if name in df.columns]
+    other_columns = [col for col in df.columns if col not in {"Sobrevuelo", *species_columns}]
+    ordered_cols = ["Sobrevuelo"] + species_columns + other_columns
+    return df[ordered_cols].sort_values(by="Sobrevuelo")
+
+
+def render_region_summary(region: str, region_payload: dict[str, Any]) -> None:
+    """Muestra la tabla agregada por sobrevuelo + gráfico temporal."""
+    df_region = build_region_summary_table(region_payload)
+    if df_region.empty:
+        st.info("Aún no hay métricas agregadas para esta región.")
+        return
+
+    st.subheader(f"Conteos agregados por sobrevuelo — {region}")
+    st.dataframe(df_region, hide_index=True, width="stretch")
+
+    chart_df = df_region.set_index("Sobrevuelo")
+    st.line_chart(chart_df)
 
 
 def get_counts_by_image(region: str, flyover: str, rows: list[dict[str, object]]) -> pd.DataFrame:
@@ -63,6 +105,13 @@ with st.sidebar:
     else:
         selected_flyover = None
 
+    if selected_region:
+        with st.spinner("Cargando métricas de región..."):
+            region_counts = get_counts_for_region(selected_region)
+        if "error" in region_counts:
+            st.error(f"Error al cargar métricas agregadas: {region_counts['error']}")
+            region_counts = {}
+
     # load_disabled = not (selected_region and selected_flyover)
     # if st.button("Cargar Métricas", disabled=load_disabled, type="primary"):
     if selected_region and selected_flyover:
@@ -75,7 +124,11 @@ with st.sidebar:
 # -----------------------------------------------------------------------------
 # Contenido principal
 # -----------------------------------------------------------------------------
-# if current_metrics and current_metrics["payload"].get("total_counts") is not None:
+
+if selected_region:
+    render_region_summary(selected_region, region_counts)
+    st.markdown("---")
+
 if len(count_results) > 0:
     logger.info(f"{count_results.keys()=}")
     # payload = count_results["payload"]
