@@ -1328,3 +1328,9 @@ stages:
       hash: md5
       md5: c892ceadc51626a3981517bec3e28904
       size: 853640
+    outs:
+    - path: data/cnt_metrics_v2/
+      hash: md5
+      md5: 9f2669b47d3a75e88b837b96bed5723e.dir
+      size: 383969
+      nfiles: 21
