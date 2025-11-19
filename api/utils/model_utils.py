@@ -12,8 +12,8 @@ from PIL import Image
 from torch import nn
 
 from api.detector import DetectionsDict, Detector, RawDetections
-from api.schemas.internal_types import BBoxFormat, ModelMetadata
 from api.schemas.req_resp_types import ThresholdCounts
+from api.schemas.shared_types import BBoxFormat, ModelMetadata
 from api.utils.animaloc_utils import (
     faster_rcnn_detector_from_cfg_file,
     herdnet_detector_from_cfg_file,
