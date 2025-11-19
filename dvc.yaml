@@ -791,3 +791,45 @@ stages:
       - data/test_results/frcnn-resnet101-full-imgs
     outs:
       - data/test_results/frcnn-resnet101-full-imgs-xlsx
+
+  count-metrics-v2:
+    desc: >
+      Calculate count metrics from detections for all models
+
+    cmd: python animaloc_improved/tools/count_metrics_v2.py
+      --gt "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv"
+      --preds "data/test_results/frcnn-resnet50-full-imgs/detections.csv"
+      --out-dir "data/cnt_metrics_v2/frcn_resnet50_full_imgs/"
+      &&
+      python animaloc_improved/tools/count_metrics_v2.py
+      --gt "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv"
+      --preds "data/test_results/frcnn-resnet101-full-imgs/detections.csv"
+      --out-dir "data/cnt_metrics_v2/frcn_resnet101_full_imgs/"
+      &&
+      python animaloc_improved/tools/count_metrics_v2.py
+      --gt "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv"
+      --preds "data/test_results/herdnet_v1_fullimgs/detections.csv"
+      --out-dir "data/cnt_metrics_v2/herdnet_v1_full_imgs/"
+      &&
+      python animaloc_improved/tools/count_metrics_v2.py
+      --gt "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv"
+      --preds "data/test_results/herdnet_v2_full_imgs/detections.csv"
+      --out-dir "data/cnt_metrics_v2/herdnet_v2_full_imgs/"
+      &&
+      python animaloc_improved/tools/count_metrics_v2.py
+      --gt "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv"
+      --preds "data/test_results/herdnet_v2_hn2/detections.csv"
+      --out-dir "data/cnt_metrics_v2/herdnet_v2_hn2_full_imgs/"
+      &&
+      python animaloc_improved/tools/count_metrics_v2.py
+      --gt "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv"
+      --preds "data/test_results/herdnet_v3_full_imgs/detections.csv"
+      --out-dir "data/cnt_metrics_v2/herdnet_v3_full_imgs/"
+      &&
+      python animaloc_improved/tools/count_metrics_v2.py
+      --gt "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv"
+      --preds "data/test_results/herdnet_v4_full_imgs/detections.csv"
+      --out-dir "data/cnt_metrics_v2/herdnet_v4_full_imgs/"
+    deps:
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      - data/test_results/herdnet_v1_fullimgs/detections.csv

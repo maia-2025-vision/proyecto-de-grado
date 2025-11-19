@@ -21,6 +21,7 @@ Three & Four\\  % row
 \hline
 \end{tabular}
 \caption{An Example of a Table}
+
 \end{table}
 """
 
@@ -64,7 +65,7 @@ def df_to_latex(
             if bold_row_headers:
                 row_line_parts.append(f"\\textbf{{{row_idx}}}")
             else:
-                row_line_parts.append(str(row_idx))
+                row_line_parts.append(row_idx)
         row_line_parts.extend([str(val) for val in row.values])
 
         parts.append(" & ".join(row_line_parts) + r"\\")  # each row
@@ -94,7 +95,7 @@ def _make_column_header(col_name: str, bold_col_headers: bool) -> str:
 
 
 # %%
-def _interactive_test() -> None:
+def _interactive_test():
     df = pd.DataFrame({"ColA": [1, 2, 3], "ColB": [4, 5, 6]})
 
     print(df_to_latex(df, "tabla ejemplo"))

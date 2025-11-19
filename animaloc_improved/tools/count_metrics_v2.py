@@ -35,7 +35,7 @@ def _load_and_agg_g_truth(g_truth_path: Path) -> pd.DataFrame:
     )
 
     # pick a column for counting
-    count_col = "x" if "x" in g_truth.columns else "min_x"
+    count_col = "x" if "x" in g_truth.columns else "x_min"
 
     # aggregate by image and label
     g_truth_cnts = (
@@ -60,7 +60,7 @@ def _load_and_agg_preds(preds_path: Path) -> pd.DataFrame:
     predicted = predicted.loc[~invalid_row_mask].copy()
     predicted["labels"] = predicted["labels"].astype(int)
 
-    count_col = "x" if "x" in predicted.columns else "min_x"
+    count_col = "x" if "x" in predicted.columns else "x_min"
     predicted_cnts = (
         predicted.groupby(["images", "labels"])
         .agg({count_col: "count"})
@@ -233,7 +233,10 @@ def main(
     means_binary = _calc_binary_means(bin_metrics)
 
     all_metrics = pd.concat([means_by_label, means_binary]).drop(columns=["MSE"])
-    logger.info(f"Aggregated count metrics:\n{all_metrics.to_markdown()}")
+    selected_metrics = all_metrics[
+        ["Especie", "Σ(C)", "M(C)", "M(Ĉ)", "MAE", "RMSE", "MPE", "MAPE"]
+    ]
+    logger.info(f"Aggregated count metrics:\n{selected_metrics.to_markdown()}")
     out_path3 = out_dir / "aggregated_count_metrics_v2.csv"
     all_metrics.to_csv(out_path3, index=False)
 
