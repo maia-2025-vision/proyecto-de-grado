@@ -833,3 +833,6 @@ stages:
     deps:
       - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
       - data/test_results/herdnet_v1_fullimgs/detections.csv
+    outs:
+      - data/cnt_metrics_v2/
+
