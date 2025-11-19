@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from api.detector import Detector
-from api.schemas.shared_types import BBoxFormat, ModelMetadata
+from api.schemas.shared_types import ModelMetadata
 
 
 @dataclass
