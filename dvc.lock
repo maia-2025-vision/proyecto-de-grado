@@ -1290,3 +1290,41 @@ stages:
       md5: 75572a35caa65c85dc29d471bc2e323a.dir
       size: 531024
       nfiles: 4
+  count-metrics-v2:
+    cmd: python animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/frcnn-resnet50-full-imgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/frcn_resnet50_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/frcnn-resnet101-full-imgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/frcn_resnet101_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/herdnet_v1_fullimgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/herdnet_v1_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/herdnet_v2_full_imgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/herdnet_v2_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/herdnet_v2_hn2/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/herdnet_v2_hn2_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/herdnet_v3_full_imgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/herdnet_v3_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/herdnet_v4_full_imgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/herdnet_v4_full_imgs/"
+    deps:
+    - path: data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      hash: md5
+      md5: a6877229623fe95c5ba7883097fe07c3
+      size: 98469
+    - path: data/test_results/herdnet_v1_fullimgs/detections.csv
+      hash: md5
+      md5: c892ceadc51626a3981517bec3e28904
+      size: 853640
