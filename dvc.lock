@@ -1276,3 +1276,18 @@ stages:
       md5: 63796e0b54c35011837c6182dc58171b.dir
       size: 725566
       nfiles: 4
+  measure_crowdedness_by_img:
+    cmd: "python animaloc_improved/tools/measure_crowdedness_by_img.py --gt-dir data/groundtruth/csv
+      --input-suffix '_big_size_A_B_E_K_WH_WB-fixed-header.csv' --out-dir data/gt-preprocessed/stats-by-image/\n"
+    deps:
+    - path: data/groundtruth/csv
+      hash: md5
+      md5: 5fb9cd0bf9611b0136f78a4d43c8aea3.dir
+      size: 1067020
+      nfiles: 6
+    outs:
+    - path: data/gt-preprocessed/stats-by-image/
+      hash: md5
+      md5: 78572570f862c2b6a24d7de5daea37be.dir
+      size: 142510
+      nfiles: 1

@@ -1,4 +1,18 @@
 stages:
+  measure_crowdedness_by_img:
+    desc: > 
+      Calcular crowdedness by image y otras estadísticas sobre bounding boxes:
+    cmd: >
+      python animaloc_improved/tools/measure_crowdedness_by_img.py
+      --gt-dir data/groundtruth/csv
+      --input-suffix '_big_size_A_B_E_K_WH_WB-fixed-header.csv'
+      --out-dir data/gt-preprocessed/stats-by-image/
+    deps:
+      - data/groundtruth/csv
+    outs:
+      - data/gt-preprocessed/stats-by-image/
+
+
   patches-512-ol-160-mv01-train:
     cmd: python oficial_herdnet/tools/patcher.py data/train 512 512 160 
       data/patches-512-ol-160-m01/train 
