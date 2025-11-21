@@ -107,8 +107,8 @@ def inference(
 
     # for image in unique_images[5:]:
     collected_results = []
-    for image in ["018f5ab5b7516a47ff2ac48a9fc08353b533c30f.JPG"]:
-        # for image in unique_images:
+    # for image in ["018f5ab5b7516a47ff2ac48a9fc08353b533c30f.JPG"]:
+    for image in unique_images:
         image_path = img_root / image
         gt_img_df = get_single_image_gt(gt_all_imgs_df, image)
         predictions = evaluator.detect_on_image(image_path=image_path)
