@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+from typing import TypedDict
 
 import albumentations as A
 import matplotlib.patches as patches
@@ -12,11 +14,12 @@ from animaloc.eval import HerdNetEvaluator, HerdNetStitcher
 from animaloc.eval.metrics import PointsMetrics
 from animaloc.models import HerdNet, LossWrapper, load_model
 from PIL import Image
+from torch import nn
 from torch.utils.data import DataLoader
 
 
 def load_trained_model(
-    model_path: str, num_classes: int = 7, down_ratio: int = 2
+    model_path: str | Path, num_classes: int = 7, down_ratio: int = 2
 ) -> torch.nn.Module:
     """Load the trained HerdNet model."""
     print(f"Loading model from: {model_path}")
@@ -44,7 +47,9 @@ def get_single_image_data(csv_file: str, image_name: str) -> pd.DataFrame:
     return image_data
 
 
-def predict_single_image(model: torch.nn.Module, image_path: str, device: str = "cuda") -> dict:
+def predict_single_image(
+    model: torch.nn.Module, image_path: str | Path, device: str = "cuda"
+) -> dict:
     """Make predictions on a single image using HerdNet."""
     print(f"Making predictions for: {os.path.basename(image_path)}")
 
@@ -110,7 +115,7 @@ def predict_single_image(model: torch.nn.Module, image_path: str, device: str = 
 
             detections_copy = detections.copy()
 
-            print(f"Found {len(detections_copy)} predictions")
+            # print(f"Found {len(detections_copy)} predictions")
 
             return {"detections": detections_copy, "image_size": image.size}
     finally:
@@ -145,7 +150,7 @@ def match_predictions_to_gt(
 
     pred_coords = predictions[["x", "y"]].values
     pred_labels = predictions["labels"].values
-    pred_scores = predictions.get("scores", [1.0] * len(predictions)).values
+    pred_scores = predictions.get("scores", np.array([1.0] * len(predictions))).values
 
     gt_coords = ground_truth[["x", "y"]].values
     gt_labels = ground_truth["labels"].values
@@ -172,6 +177,10 @@ def match_predictions_to_gt(
                         "label": pred_label,
                         "score": pred_score,
                         "distance": closest_distance,
+                        # added pred_label, gt_label for easier downstream processing
+                        "pred_label": pred_label,
+                        # gt_label: actually the same as pred_label due to condition
+                        "gt_label": closest_gt_label,
                     }
                 )
                 gt_matched[closest_idx] = True
@@ -180,6 +189,7 @@ def match_predictions_to_gt(
                 matches["false_positives"].append(
                     {
                         "coord": pred_coord,
+                        "label": pred_label,  # added as the others have it
                         "pred_label": pred_label,
                         "gt_label": closest_gt_label,
                         "score": pred_score,
@@ -189,19 +199,26 @@ def match_predictions_to_gt(
         else:
             # No close GT point or already matched
             matches["false_positives"].append(
-                {"coord": pred_coord, "label": pred_label, "score": pred_score}
+                {
+                    "coord": pred_coord,
+                    "label": pred_label,
+                    "pred_label": pred_label,
+                    "score": pred_score,
+                }
             )
 
     # Add unmatched GT points as false negatives
     for i, (gt_coord, gt_label) in enumerate(zip(gt_coords, gt_labels, strict=False)):
         if not gt_matched[i]:
-            matches["false_negatives"].append({"coord": gt_coord, "label": gt_label})
+            matches["false_negatives"].append(
+                {"coord": gt_coord, "label": gt_label, "gt_label": gt_label}
+            )
 
     return matches
 
 
 def create_visualization(
-    image_path: str,
+    image_path: str | Path,
     ground_truth: pd.DataFrame,
     predictions: pd.DataFrame,
     matches: dict,
@@ -392,3 +409,170 @@ def print_evaluation_results(
         print(f"{species_name}: GT={gt_count}, Pred={pred_count}, TP={tp_class}")
 
     print("=" * 60)
+
+
+class PrecisionRecallEvaluator:
+    """Can run detection on an image and then eval Precision-Recall with different strategies."""
+
+    def __init__(
+        self,
+        model: nn.Module,
+        match_strategy: str,
+        match_tolerance: float,
+        device: str,
+        species_map: dict,
+    ):
+        self.model = model
+        self.match_strategy = match_strategy
+        self.match_tolerance = match_tolerance
+        self.device = device
+        self.species_map = species_map
+
+    def detect_on_image(self, *, image_path: Path) -> pd.DataFrame:
+        """Run model detection on a single image."""
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image not found: {image_path}")
+
+        # Make predictions
+        prediction_results = predict_single_image(
+            model=self.model,
+            image_path=image_path,
+            # lmds_kwargs=lmds_kwargs,
+            device=self.device,
+        )
+        detections = prediction_results["detections"]
+
+        if "x" in detections:  # i.e some actual detections
+            return detections.sort_values("x")
+        else:
+            assert len(detections) == 1, f"{detections.head()=}"
+            # ret = detections[["images"]].copy()
+            # return empty dataframe with the right columns
+            return pd.DataFrame({"images": [], "x": [], "y": [], "labels": [], "scores": []})
+
+    def evaluate_preds(
+        self, *, ground_truth: pd.DataFrame, predictions: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Call matching subroutine and then eval precision and recall."""
+        # Match predictions to ground truth
+        preds_binary = predictions.copy()
+        # binary case animal vs. background
+        preds_binary["labels"] = np.where(predictions["labels"] != 0, 1, 0)
+
+        gt_binary = ground_truth.copy()
+        # For test set gt labels is always != 0, but maybe in other case there is background
+        gt_binary["labels"] = np.where(ground_truth["labels"] != 0, 1, 0)
+
+        if self.match_strategy == "point2point":
+            matches = match_predictions_to_gt(
+                predictions, ground_truth, threshold=self.match_tolerance
+            )
+            matches_binary = match_predictions_to_gt(
+                preds_binary, gt_binary, threshold=self.match_tolerance
+            )
+        else:
+            raise NotImplementedError(
+                f"Match strategy {self.match_strategy} is not implemented yet ."
+            )
+
+        evaluation = eval_precision_recall(
+            matches=matches,
+            ground_truth=ground_truth,
+            predictions=predictions,
+            species_map=self.species_map,
+            is_binary=False,
+        )
+
+        binary_evaluation = eval_precision_recall(
+            matches=matches_binary,
+            ground_truth=gt_binary,
+            predictions=preds_binary,
+            species_map={},  # not used in binary case
+            is_binary=True,
+        )
+
+        evaluation["binary"] = binary_evaluation
+
+        return evaluation
+
+
+class SpeciesStats(TypedDict):
+    """Simple TP, FP, FN."""
+
+    FN: int
+    FP: int
+    TP: int
+    PP: int
+    num_gt_annots: int
+    num_pred_annots: int
+
+
+def eval_precision_recall(
+    matches: dict,
+    ground_truth: pd.DataFrame,
+    predictions: pd.DataFrame,
+    species_map: dict[int, str],
+    is_binary: bool,
+) -> dict[str, int | float | dict[int, SpeciesStats]]:
+    """Print detailed evaluation metrics."""
+    n_tp = len(matches["true_positives"])
+    n_fp = len(matches["false_positives"])
+    n_fn = len(matches["false_negatives"])
+
+    precision = n_tp / (n_tp + n_fp) if (n_tp + n_fp) > 0 else 0
+    recall = n_tp / (n_tp + n_fn) if (n_tp + n_fn) > 0 else 0
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+    result = {
+        "num_gt_annots": len(ground_truth),
+        "num_gt_positives": n_tp + n_fn,
+        # Ground truth for test only has animals, never background
+        # "num_gt_annots_animal": sum(ground_truth["labels"] != 0),
+        # "num_gt_annots_background": sum(ground_truth["labels"] == 0),
+        "num_preds": len(predictions),
+        "TP": n_tp,
+        "FP": n_fp,
+        "PP": n_tp + n_fp,  # not necessarily equal to num_preds as there might be some preds
+        "FN": n_fn,
+        "recall": recall,
+        "precision": precision,
+        "f1": f1,
+    }
+
+    if not is_binary:
+        # Per-class breakdown
+        # Count GT by class
+
+        gt_by_class = ground_truth["labels"].value_counts().sort_index()
+        pred_by_class = (
+            predictions["labels"].value_counts().sort_index()
+            if not predictions.empty
+            else pd.Series()
+        )
+
+        by_species: dict[int, dict[str, float]] = {}
+        all_classes = set(list(gt_by_class.index) + list(pred_by_class.index))
+        for class_id in sorted(all_classes):
+            species_name = species_map.get(class_id, f"Class_{class_id}")
+            gt_count = int(gt_by_class.get(class_id, 0))
+            pred_count = int(pred_by_class.get(class_id, 0))
+
+            # Count TP for this class
+            tp_class = sum(1 for tp in matches["true_positives"] if tp["pred_label"] == class_id)
+            fp_class = sum(1 for fp in matches["false_positives"] if fp["pred_label"] == class_id)
+            fn_class = sum(1 for fn in matches["false_negatives"] if fn["gt_label"] == class_id)
+
+            by_species[class_id]: SpeciesStats = {
+                "species": species_name,
+                "num_gt_annots": gt_count,
+                "num_preds": pred_count,
+                "TP": tp_class,
+                "FP": fp_class,
+                "PP": tp_class + fp_class,
+                "FN": fn_class,
+            }
+            # print(f"{species_name}: GT={gt_count}, Pred={pred_count}, TP={tp_class}")
+
+        result["by_species"] = by_species
+
+    return result
