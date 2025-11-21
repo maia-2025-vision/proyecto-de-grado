@@ -1405,3 +1405,27 @@ stages:
       hash: md5
       md5: c84077e82784d3d44a4f3025688b223d
       size: 1259055
+  test-v2-infer-herdnet-v3:
+    cmd: "python animaloc_improved/tools/test_v2.py inference --model data/models/herdnet_v3/best_model.pth
+      --gt-path data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      --img-root data/test --out-path data/test_results_v2/herdnet_v3/inference.json\n"
+    deps:
+    - path: 
+        data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      hash: md5
+      md5: 30731a9a455b58e36394dd89e24849dc
+      size: 120385
+    - path: data/models/herdnet_v3/best_model.pth
+      hash: md5
+      md5: 1db290e2f4b41bfca69efbcab2a8d088
+      size: 219993031
+    - path: data/test
+      hash: md5
+      md5: 543905ee38c7af30e4a5ccc4b1670752.dir
+      size: 2117638463
+      nfiles: 258
+    outs:
+    - path: data/test_results_v2/herdnet_v3/inference.json
+      hash: md5
+      md5: 777d7bd59e157fc4cfdfe2e92fb8ddbf
+      size: 1170970
