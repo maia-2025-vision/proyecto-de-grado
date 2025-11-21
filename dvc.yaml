@@ -140,7 +140,7 @@ stages:
       - data/patches-512-ol-160-m01/val/
     outs:
       - data/models/herdnet_v2/
-  
+
   train-herdnet-v3:
     desc: Train with 1024x1024 images
     cmd: python oficial_herdnet/tools/train.py 
@@ -254,7 +254,7 @@ stages:
       - data/models/herdnet_v2/best_model.pth
     outs:
       - data/test_results/herdnet_v2/
-  
+
   test-herdnet-v3:
     # test.sticher=null because we are running over patches of size 1024x1024
     cmd: >
@@ -490,6 +490,39 @@ stages:
       - data/models/herdnet_v2_hn2/best_model.pth
     outs:
       - data/test_results/herdnet_v2_hn2/
+
+  test-v2-infer-herdnet-v2:
+    cmd: >
+      python animaloc_improved/tools/test_v2.py inference
+      --model data/models/herdnet_v2/best_model.pth
+      --gt-path data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      --img-root data/test
+      --out-path data/test_results_v2/herdnet_v2/inference.json
+
+    deps:
+      - data/models/herdnet_v2/best_model.pth
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/test
+
+    outs:
+      - data/test_results_v2/herdnet_v2/inference.json
+
+  test-v2-infer-herdnet-v2-hn2:
+    cmd: >
+      python animaloc_improved/tools/test_v2.py inference
+      --model data/models/herdnet_v2_hn2/best_model.pth
+      --gt-path data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      --img-root data/test
+      --out-path data/test_results_v2/herdnet_v2_hn2/inference.json
+
+    deps:
+      - data/models/herdnet_v2_hn2/best_model.pth
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/test
+
+    outs:
+      - data/test_results_v2/herdnet_v2_hn2/inference.json
+
 
   test-full-to-points:
     cmd: python oficial_herdnet/tools/csv_to_points.py
