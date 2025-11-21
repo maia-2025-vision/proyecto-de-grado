@@ -7,7 +7,7 @@ import typer
 from loguru import logger
 
 import animaloc_improved.tools.infer_metrics as im
-from animaloc_improved.tools.common import SPECIES_MAP
+from animaloc_improved.tools.common import SPECIES_MAP, NumpyEncoder
 
 DEFAULT_MODEL_PATH = Path("data/models/herdnet_v2_hn2/best_model.pth")
 DEFAULT_GT_PATH = Path("data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv")
@@ -16,7 +16,6 @@ DEFAULT_MATCH_TOL_BY_TRAT = {
     "point2point": 5,  # pixels of distance between pred and closest gt point
     "point2bbox": 0.5,  # fraction of width and height of bbox
 }
-
 
 app = typer.Typer(pretty_exceptions_show_locals=False, no_args_is_help=True)
 
@@ -52,15 +51,8 @@ def inference(
     ),
     img_root: Path = typer.Option(DEFAULT_IMG_ROOT, "--img-root", help="path to images root dir"),
     device: str | None = typer.Option(None, "--device", help="accelerator device to use"),
-    match_strategy: str = typer.Option("point2point"),
-    match_tolerance: float | None = typer.Option(
-        None,
-        "--match-tolerance",
-        help="tolerance for matching detections to gt, for match_strategy == 'point2point' "
-        "this becomes (distance) threshold (default 5 px) ",
-    ),
     out_path: Path = typer.Option(
-        Path("./data/test_results_v2/dummy.json"), "--out-path", help="path to output csv"
+        Path("./data/test_results_v2/inference.json"), "--out-path", help="path to output csv"
     ),
 ) -> None:
     assert out_path.suffix == ".json", "out_path must be .json"
@@ -75,10 +67,6 @@ def inference(
 
     model = im.load_trained_model(model_path)
 
-    if match_tolerance is None:
-        match_tolerance = DEFAULT_MATCH_TOL_BY_TRAT[match_strategy]
-        logger.info(f"Using match_tolerance={match_tolerance} for match_strategy={match_strategy}")
-
     device = (
         device or "mps"
         if torch.mps.is_available()
@@ -88,31 +76,21 @@ def inference(
     )
     logger.info(f"Using device: {device}")
 
-    evaluator = im.PrecisionRecallEvaluator(
-        model=model,
-        match_strategy=match_strategy,
-        match_tolerance=match_tolerance,
-        species_map=SPECIES_MAP,
-        device=device,
-    )
-
     # for image in unique_images[5:]:
     collected_results = []
     # for image in ["018f5ab5b7516a47ff2ac48a9fc08353b533c30f.JPG"]:
-    for image in unique_images:
+    for image in unique_images[:2]:
         image_path = img_root / image
         gt_img_df = get_single_image_gt(gt_all_imgs_df, image)
-        predictions = evaluator.detect_on_image(image_path=image_path)
-        results = evaluator.evaluate_preds(ground_truth=gt_img_df, predictions=predictions)
+        predictions = im.predict_single_image_v2(model=model, image_path=image_path, device=device)
         collected_results.append(
             {
                 "images": image,
-                "match_tolerance": match_tolerance,
-                "match_strategy": match_strategy,
-                **results,
-                "groundtruth": gt_img_df.drop("images", axis=1).to_dict(orient="records"),
+                "ground_truth": gt_img_df.drop("images", axis=1).to_dict(
+                    orient="split", index=False
+                ),
                 "predictions": predictions["x,y,labels,scores".split(",")].to_dict(
-                    orient="records"
+                    orient="split", index=False
                 ),
             }
         )
@@ -122,6 +100,63 @@ def inference(
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f_out:
         json.dump(collected_results, f_out, indent=4)
+
+
+@app.command("eval")
+def evaluate(
+    inference_path: Path = typer.Option(
+        Path("./data/test_results_v2/inference.json"), "--out-path", help="path to output csv"
+    ),
+    match_strategy: str = typer.Option("point2point"),
+    match_tolerance: float | None = typer.Option(
+        None,
+        "--match-tolerance",
+        help="tolerance for matching detections to gt, for match_strategy == 'point2point' "
+        "this becomes (distance) threshold (default 5 px) ",
+    ),
+    out_dir: Path = typer.Option(
+        Path("./data/test_results_v2/"), "--out-dir", help="path to output csv"
+    ),
+):
+    with open(inference_path, "rb") as f_in:
+        inference_results = json.load(f_in)
+
+    if match_tolerance is None:
+        match_tolerance = DEFAULT_MATCH_TOL_BY_TRAT[match_strategy]
+        logger.info(f"Using match_tolerance={match_tolerance} for match_strategy={match_strategy}")
+
+    evaluator = im.PrecisionRecallEvaluator(
+        match_strategy=match_strategy,
+        match_tolerance=match_tolerance,
+        species_map=SPECIES_MAP,
+    )
+
+    by_image_results = []
+    for inference in inference_results:
+        image = inference["images"]
+        gt_img_df = pd.DataFrame(**inference["ground_truth"])
+        predictions = pd.DataFrame(**inference["predictions"])
+        results = evaluator.evaluate_preds(ground_truth=gt_img_df, predictions=predictions)
+        image_results = {
+            "images": image,
+            **results,
+        }
+        by_image_results.append(image_results)
+
+    results = {
+        "match_tolerance": match_tolerance,
+        "match_strategy": match_strategy,
+        "by_image_results": by_image_results,
+    }
+
+    logger.info(f"{len(inference_results)=}")
+
+    by_img_path = out_dir / "eval_by_image.json"
+    logger.info(f"Writing by_image_results results ({len(by_image_results)}) to: {by_img_path}")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with open(by_img_path, "w") as f_out:
+        # pprint(results)
+        json.dump(results, f_out, indent=4, cls=NumpyEncoder)
 
 
 if __name__ == "__main__":

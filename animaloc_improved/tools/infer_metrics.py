@@ -411,44 +411,41 @@ def print_evaluation_results(
     print("=" * 60)
 
 
+def predict_single_image_v2(*, model: nn.Module, image_path: Path, device: str) -> pd.DataFrame:
+    """Run model detection on a single image."""
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image not found: {image_path}")
+
+    # Make predictions
+    prediction_results = predict_single_image(
+        model=model,
+        image_path=image_path,
+        # lmds_kwargs=lmds_kwargs,
+        device=device,
+    )
+    detections = prediction_results["detections"]
+
+    if "x" in detections:  # i.e some actual detections
+        return detections.sort_values("x")
+    else:
+        assert len(detections) == 1, f"{detections.head()=}"
+        # ret = detections[["images"]].copy()
+        # return empty dataframe with the right columns
+        return pd.DataFrame({"images": [], "x": [], "y": [], "labels": [], "scores": []})
+
+
 class PrecisionRecallEvaluator:
     """Can run detection on an image and then eval Precision-Recall with different strategies."""
 
     def __init__(
         self,
-        model: nn.Module,
         match_strategy: str,
         match_tolerance: float,
-        device: str,
         species_map: dict,
     ):
-        self.model = model
         self.match_strategy = match_strategy
         self.match_tolerance = match_tolerance
-        self.device = device
         self.species_map = species_map
-
-    def detect_on_image(self, *, image_path: Path) -> pd.DataFrame:
-        """Run model detection on a single image."""
-        if not os.path.exists(image_path):
-            raise FileNotFoundError(f"Image not found: {image_path}")
-
-        # Make predictions
-        prediction_results = predict_single_image(
-            model=self.model,
-            image_path=image_path,
-            # lmds_kwargs=lmds_kwargs,
-            device=self.device,
-        )
-        detections = prediction_results["detections"]
-
-        if "x" in detections:  # i.e some actual detections
-            return detections.sort_values("x")
-        else:
-            assert len(detections) == 1, f"{detections.head()=}"
-            # ret = detections[["images"]].copy()
-            # return empty dataframe with the right columns
-            return pd.DataFrame({"images": [], "x": [], "y": [], "labels": [], "scores": []})
 
     def evaluate_preds(
         self, *, ground_truth: pd.DataFrame, predictions: pd.DataFrame
@@ -491,6 +488,8 @@ class PrecisionRecallEvaluator:
             is_binary=True,
         )
 
+        evaluation["matches"] = matches
+        evaluation["matches_binary"] = matches_binary
         evaluation["binary"] = binary_evaluation
 
         return evaluation
