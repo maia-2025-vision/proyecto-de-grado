@@ -7,16 +7,7 @@ import typer
 from loguru import logger
 
 import animaloc_improved.tools.infer_metrics as im
-
-SPECIES_MAP = {
-    0: "(background)",
-    1: "Alcelaphinae",
-    2: "Buffalo",
-    3: "Kob",
-    4: "Warthog",
-    5: "Waterbuck",
-    6: "Elephant",
-}
+from animaloc_improved.tools.csv_tool import SPECIES_MAP
 
 DEFAULT_MODEL_PATH = Path("data/models/herdnet_v2_hn2/best_model.pth")
 DEFAULT_GT_PATH = Path("data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv")
