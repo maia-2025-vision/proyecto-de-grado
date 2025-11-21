@@ -523,6 +523,21 @@ stages:
     outs:
       - data/test_results_v2/herdnet_v2_hn2/inference.json
 
+  test-v2-infer-herdnet-v3:
+    cmd: >
+      python animaloc_improved/tools/test_v2.py inference
+      --model data/models/herdnet_v3/best_model.pth
+      --gt-path data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      --img-root data/test
+      --out-path data/test_results_v2/herdnet_v3/inference.json
+
+    deps:
+      - data/models/herdnet_v3/best_model.pth
+      - data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      - data/test
+
+    outs:
+      - data/test_results_v2/herdnet_v3/inference.json
 
   test-full-to-points:
     cmd: python oficial_herdnet/tools/csv_to_points.py

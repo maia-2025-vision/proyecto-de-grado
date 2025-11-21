@@ -45,15 +45,11 @@ def ensure_centers(gt_df: pd.DataFrame) -> pd.DataFrame:
 
 @app.command("inference")
 def inference(
-    model_path: Path = typer.Option(DEFAULT_MODEL_PATH, "--model", help="path to model.pth"),
-    gt_path: Path = typer.Option(
-        DEFAULT_GT_PATH, "--gt-path", help="path to gt truth.csv (bbboxes)"
-    ),
-    img_root: Path = typer.Option(DEFAULT_IMG_ROOT, "--img-root", help="path to images root dir"),
+    model_path: Path = typer.Option(..., "--model", help="path to model.pth"),
+    gt_path: Path = typer.Option(..., "--gt-path", help="path to gt truth.csv (bbboxes)"),
+    img_root: Path = typer.Option(..., "--img-root", help="path to images root dir"),
     device: str | None = typer.Option(None, "--device", help="accelerator device to use"),
-    out_path: Path = typer.Option(
-        Path("./data/test_results_v2/inference.json"), "--out-path", help="path to output csv"
-    ),
+    out_path: Path = typer.Option(..., "--out-path", help="path to output csv"),
 ) -> None:
     assert out_path.suffix == ".json", "out_path must be .json"
 
@@ -76,10 +72,9 @@ def inference(
     )
     logger.info(f"Using device: {device}")
 
-    # for image in unique_images[5:]:
     collected_results = []
     # for image in ["018f5ab5b7516a47ff2ac48a9fc08353b533c30f.JPG"]:
-    for image in unique_images[:2]:
+    for image in unique_images:
         image_path = img_root / image
         gt_img_df = get_single_image_gt(gt_all_imgs_df, image)
         predictions = im.predict_single_image_v2(model=model, image_path=image_path, device=device)
