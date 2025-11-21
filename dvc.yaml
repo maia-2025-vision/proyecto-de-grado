@@ -126,7 +126,7 @@ stages:
       - data/patches-512-ol-160-m01/val/
     outs:
       - data/models/herdnet_v2/
-  
+
   train-herdnet-v3:
     desc: Train with 1024x1024 images
     cmd: python oficial_herdnet/tools/train.py 
@@ -223,7 +223,7 @@ stages:
       - data/models/herdnet_v2/best_model.pth
     outs:
       - data/test_results/herdnet_v2/
-  
+
   test-herdnet-v3:
     # test.sticher=null because we are running over patches of size 1024x1024
     cmd: >
@@ -534,7 +534,7 @@ stages:
     outs:
       - data/patches-512-ol-160-m0.3/val-tiny/gt-head-25.csv
 
-  train-faster-rcnn-hn-trainer:
+  train-faster-rcnn-resnet-50:
     desc: Entrenar faster-rcnn via trainer from Herdnet/tools/train.py
     cmd: >
        python oficial_herdnet/tools/train.py  --config-path $PWD/configs/
@@ -542,15 +542,15 @@ stages:
        train.wandb_mode=offline
        train.wandb_run=faster-rcnn-resnet-50
        train.model.kwargs.architecture=resnet50
-       train.training_settings.work_dir=data/models/faster-rcnn/resnet50-100-epochs-tbl4
-       train.training_settings.lr=0.0001
-       train.training_settings.epochs=100
+       train.training_settings.work_dir=data/models/faster-rcnn/resnet50-100-epochs-tbl4/
+       train.training_settings.lr=0.00002
+       train.training_settings.epochs=60
     deps:
       - configs/train/faster_rcnn_herdnet_trainer.yaml
       - oficial_herdnet/tools/train.py
       - data/patches-512-ol-160-m01/train/gt.csv
     outs:
-      - data/models/faster-rcnn/resnet50-100-epochs-tbl4
+      - data/models/faster-rcnn/resnet50-100-epochs-tbl4/
 
   train-faster-rcnn-resnet-101:
     desc: Entrenar faster-rcnn via trainer end Herdnet/tools/train.py
@@ -561,14 +561,34 @@ stages:
       train.wandb_run=faster-rcnn-resnet-101
       train.model.kwargs.architecture=resnet101
       train.training_settings.work_dir=data/models/faster-rcnn/resnet101-100-epochs-tbl4
-      train.training_settings.lr=0.0001
-      train.training_settings.epochs=100
+      train.training_settings.lr=0.0002
+      train.training_settings.epochs=60
     deps:
       - configs/train/faster_rcnn_herdnet_trainer.yaml
       - oficial_herdnet/tools/train.py
       - data/patches-512-ol-160-m01/train/gt.csv
     outs:
       - data/models/faster-rcnn/resnet101-100-epochs-tbl4
+
+  train-faster-rcnn-resnet-101-p2:
+    desc: Entrenar faster-rcnn via trainer end Herdnet/tools/train.py
+    cmd: >
+      python oficial_herdnet/tools/train.py  --config-path $PWD/configs/
+      train=faster_rcnn_herdnet_trainer
+      train.wandb_mode=offline
+      train.wandb_run=faster-rcnn-resnet-101-p2
+      train.model.kwargs.architecture=resnet101
+      train.model.load_from=data/models/faster-rcnn/resnet101-100-epochs-tbl4/best_model.pth
+      train.training_settings.work_dir=data/models/faster-rcnn/resnet101-100-epochs-tbl4-p2
+      train.training_settings.lr=0.0002
+      train.training_settings.epochs=40
+    deps:
+      - configs/train/faster_rcnn_herdnet_trainer.yaml
+      - oficial_herdnet/tools/train.py
+      - data/patches-512-ol-160-m01/train/gt.csv
+    outs:
+      - data/models/faster-rcnn/resnet101-100-epochs-tbl4-p2
+
 
   test-faster-rcnn-resnet101-full:
     desc: >

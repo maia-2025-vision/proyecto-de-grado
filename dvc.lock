@@ -362,40 +362,34 @@ stages:
     outs:
     - path: data/test_results/frcnn-resnet50-full-imgs
       hash: md5
-<<<<<<< Updated upstream
       md5: 67ba715b47bc3e01aad498392943b781.dir
       size: 1245499
       nfiles: 4
 
-=======
-      md5: bd37ef557b3f1d2bce0bcd3f0903bc17.dir
-      size: 2070204
-      nfiles: 4
->>>>>>> Stashed changes
   train-faster-rcnn-resnet-101:
     cmd: "python oficial_herdnet/tools/train.py  --config-path $PWD/configs/ train=faster_rcnn_herdnet_trainer
       train.wandb_mode=offline train.wandb_run=faster-rcnn-resnet-101 train.model.kwargs.architecture=resnet101
       train.training_settings.work_dir=data/models/faster-rcnn/resnet101-100-epochs-tbl4
-      train.training_settings.epochs=100\n"
+      train.training_settings.lr=0.0002 train.training_settings.epochs=60\n"
     deps:
     - path: configs/train/faster_rcnn_herdnet_trainer.yaml
       hash: md5
-      md5: f3a7bc4136e6d2802009465b60fbe938
-      size: 2299
-    - path: data/patches-512-ol-160-m0.3/train/gt.csv
+      md5: f75372023df1cfc93a9b1f9af7789eb3
+      size: 2305
+    - path: data/patches-512-ol-160-m01/train/gt.csv
       hash: md5
-      md5: ab0941404acb2006ee1e210438de8c4c
-      size: 1212027
+      md5: e03cc597951b1eb7631bb3424cfc3e81
+      size: 1311131
     - path: oficial_herdnet/tools/train.py
       hash: md5
-      md5: 7078b8ab8748ae763c7967344fd9a9f2
-      size: 14206
+      md5: c3cb9bcffe9e3eda4d40b1dc593b7076
+      size: 14266
     outs:
     - path: data/models/faster-rcnn/resnet101-100-epochs-tbl4
       hash: md5
-      md5: 320af9eda3b9c8e7e0914cfbc3ce817a.dir
-      size: 1449564593
-
+      md5: 14e4caebb4b4ca0b5d187d3152703404.dir
+      size: 1448826284
+      nfiles: 4
   test-faster-rcnn-resnet101-full:
     cmd: "python oficial_herdnet/tools/test.py  --config-path $PWD/configs/ test=faster_rcnn
       test.device_name=\"cuda\" test.wandb_mode=\"online\" test.dataset.batch_size=1
@@ -1248,4 +1242,53 @@ stages:
       hash: md5
       md5: 2f6bddfc157736c443e8d7aa81030fb6.dir
       size: 495119
+      nfiles: 4
+  train-faster-rcnn-resnet-50:
+    cmd: "python oficial_herdnet/tools/train.py  --config-path $PWD/configs/ train=faster_rcnn_herdnet_trainer
+      train.wandb_mode=offline train.wandb_run=faster-rcnn-resnet-50 train.model.kwargs.architecture=resnet50
+      train.training_settings.work_dir=data/models/faster-rcnn/resnet50-100-epochs-tbl4/
+      train.training_settings.lr=0.00002 train.training_settings.epochs=60\n"
+    deps:
+    - path: configs/train/faster_rcnn_herdnet_trainer.yaml
+      hash: md5
+      md5: f75372023df1cfc93a9b1f9af7789eb3
+      size: 2305
+    - path: data/patches-512-ol-160-m01/train/gt.csv
+      hash: md5
+      md5: e03cc597951b1eb7631bb3424cfc3e81
+      size: 1311131
+    - path: oficial_herdnet/tools/train.py
+      hash: md5
+      md5: c3cb9bcffe9e3eda4d40b1dc593b7076
+      size: 14266
+    outs:
+    - path: data/models/faster-rcnn/resnet50-100-epochs-tbl4/
+      hash: md5
+      md5: c1723eb6c6ccb2ee3d042fe1b6e9aaca.dir
+      size: 993246304
+      nfiles: 4
+  train-faster-rcnn-resnet-101-p2:
+    cmd: "python oficial_herdnet/tools/train.py  --config-path $PWD/configs/ train=faster_rcnn_herdnet_trainer
+      train.wandb_mode=offline train.wandb_run=faster-rcnn-resnet-101-p2 train.model.kwargs.architecture=resnet101
+      train.model.load_from=data/models/faster-rcnn/resnet101-100-epochs-tbl4/best_model.pth
+      train.training_settings.work_dir=data/models/faster-rcnn/resnet101-100-epochs-tbl4-p2
+      train.training_settings.lr=0.0002 train.training_settings.epochs=40\n"
+    deps:
+    - path: configs/train/faster_rcnn_herdnet_trainer.yaml
+      hash: md5
+      md5: f75372023df1cfc93a9b1f9af7789eb3
+      size: 2305
+    - path: data/patches-512-ol-160-m01/train/gt.csv
+      hash: md5
+      md5: e03cc597951b1eb7631bb3424cfc3e81
+      size: 1311131
+    - path: oficial_herdnet/tools/train.py
+      hash: md5
+      md5: c3cb9bcffe9e3eda4d40b1dc593b7076
+      size: 14266
+    outs:
+    - path: data/models/faster-rcnn/resnet101-100-epochs-tbl4-p2
+      hash: md5
+      md5: c4e752eacec31171b150074a82b38e64.dir
+      size: 1448780311
       nfiles: 4
