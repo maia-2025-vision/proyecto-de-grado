@@ -110,8 +110,6 @@ def predict_single_image(model: torch.nn.Module, image_path: str, device: str = 
 
             detections_copy = detections.copy()
 
-            print(f"Found {len(detections_copy)} predictions")
-
             return {"detections": detections_copy, "image_size": image.size}
     finally:
         # Clean up GPU memory
@@ -142,6 +140,17 @@ def match_predictions_to_gt(
 ) -> dict:
     """Match predictions to ground truth based on distance threshold."""
     matches = {"true_positives": [], "false_positives": [], "false_negatives": []}
+
+    # Check if predictions has individual detections (x, y columns)
+    if "x" not in predictions.columns or "y" not in predictions.columns or predictions.empty:
+        # No individual predictions found, all GT are false negatives
+        gt_coords = ground_truth[["x", "y"]].values
+        gt_labels = ground_truth["labels"].values
+
+        for gt_coord, gt_label in zip(gt_coords, gt_labels, strict=False):
+            matches["false_negatives"].append({"coord": gt_coord, "label": gt_label})
+
+        return matches
 
     pred_coords = predictions[["x", "y"]].values
     pred_labels = predictions["labels"].values
@@ -207,6 +216,7 @@ def create_visualization(
     matches: dict,
     colors: dict,
     species_map: dict,
+    show_labels: bool = True,
 ) -> None:
     """Create visualization showing GT, predictions, and matches."""
     # Load image
@@ -224,43 +234,45 @@ def create_visualization(
             radius=5,
             color=colors["ground_truth"],
             fill=False,
-            linewidth=1,
-            label="Ground Truth" if coord is gt_coords[0] else "",
+            linewidth=1 if show_labels else 4,
         )
         ax.add_patch(circle)
-        ax.text(
-            coord[0] + 10,
-            coord[1] - 10,
-            f"GT:{species_map[label]}",
-            color=colors["ground_truth"],
-            fontsize=6,
-            weight="bold",
-        )
+        if show_labels:
+            ax.text(
+                coord[0] + 10,
+                coord[1] - 10,
+                f"GT:{species_map[label]}",
+                color=colors["ground_truth"],
+                fontsize=6,
+                weight="bold",
+            )
 
     # Plot predictions
-    if not predictions.empty:
+    if not predictions.empty and "x" in predictions.columns and "y" in predictions.columns:
         pred_coords = predictions[["x", "y"]].values
         pred_labels = predictions["labels"].values
         pred_scores = predictions.get("scores", [1.0] * len(predictions)).values
 
+        point_radius = 3 if show_labels else 7
+
         for coord, label, score in zip(pred_coords, pred_labels, pred_scores, strict=False):
             circle = patches.Circle(
                 coord,
-                radius=3,
+                radius=point_radius,
                 color=colors["predictions"],
                 fill=True,
                 alpha=0.7,
-                label="Predictions" if coord is pred_coords[0] else "",
             )
             ax.add_patch(circle)
-            ax.text(
-                coord[0] + 10,
-                coord[1] + 10,
-                f"P:{species_map.get(label, 'Unknown')} ({score:.2f})",
-                color=colors["predictions"],
-                fontsize=6,
-                weight="bold",
-            )
+            if show_labels:
+                ax.text(
+                    coord[0] + 10,
+                    coord[1] + 10,
+                    f"P:{species_map.get(label, 'Unknown')} ({score:.2f})",
+                    color=colors["predictions"],
+                    fontsize=6,
+                    weight="bold",
+                )
 
     # # Plot matches with connecting lines
     for tp in matches["true_positives"]:
@@ -276,18 +288,13 @@ def create_visualization(
     # Highlight false positives and false negatives
     for fp in matches["false_positives"]:
         circle = patches.Circle(
-            fp["coord"],
-            radius=4,
-            color=colors["false_positive"],
-            fill=False,
-            linewidth=1,
-            linestyle="--",
+            fp["coord"], radius=point_radius, color=colors["false_positive"], fill=True, alpha=0.7
         )
         ax.add_patch(circle)
 
     for fn in matches["false_negatives"]:
         circle = patches.Circle(
-            fn["coord"], radius=4, color=colors["missed"], fill=False, linewidth=1, linestyle=":"
+            fn["coord"], radius=point_radius, color=colors["missed"], fill=True, alpha=0.7
         )
         ax.add_patch(circle)
 
@@ -299,10 +306,8 @@ def create_visualization(
             marker="o",
             color="w",
             markerfacecolor=colors["ground_truth"],
-            markersize=10,
+            markersize=8,
             label="Ground Truth",
-            markeredgecolor=colors["ground_truth"],
-            markeredgewidth=2,
         ),
         plt.Line2D(
             [0],
@@ -319,24 +324,18 @@ def create_visualization(
             [0],
             marker="o",
             color="w",
-            markerfacecolor="w",
-            markersize=10,
+            markerfacecolor=colors["false_positive"],
+            markersize=8,
             label="False Positives",
-            markeredgecolor=colors["false_positive"],
-            markeredgewidth=3,
-            linestyle="--",
         ),
         plt.Line2D(
             [0],
             [0],
             marker="o",
             color="w",
-            markerfacecolor="w",
-            markersize=10,
+            markerfacecolor=colors["missed"],
+            markersize=8,
             label="Missed (FN)",
-            markeredgecolor=colors["missed"],
-            markeredgewidth=3,
-            linestyle=":",
         ),
     ]
     ax.legend(handles=legend_elements, loc="upper right", bbox_to_anchor=(1, 1))
@@ -354,6 +353,7 @@ def print_evaluation_results(
     n_tp = len(matches["true_positives"])
     n_fp = len(matches["false_positives"])
     n_fn = len(matches["false_negatives"])
+    n_pred = len(predictions) if "x" in predictions.columns and "y" in predictions.columns else 0
 
     precision = n_tp / (n_tp + n_fp) if (n_tp + n_fp) > 0 else 0
     recall = n_tp / (n_tp + n_fn) if (n_tp + n_fn) > 0 else 0
@@ -363,7 +363,7 @@ def print_evaluation_results(
     print("EVALUATION RESULTS")
     print("=" * 60)
     print(f"Ground Truth Points: {len(ground_truth)}")
-    print(f"Predicted Points: {len(predictions)}")
+    print(f"Predicted Points: {n_pred}")
     print(f"True Positives: {n_tp}")
     print(f"False Positives: {n_fp}")
     print(f"False Negatives: {n_fn}")
@@ -371,15 +371,18 @@ def print_evaluation_results(
     print(f"Recall: {recall:.3f}")
     print(f"F1-Score: {f1:.3f}")
 
+    # Count GT by class
+    gt_by_class = ground_truth["labels"].value_counts().sort_index()
+
+    # Only count predictions by class if individual predictions exist
+    if not predictions.empty and "labels" in predictions.columns:
+        pred_by_class = predictions["labels"].value_counts().sort_index()
+    else:
+        pred_by_class = pd.Series(dtype=int)
+
     # Per-class breakdown
     print("\nPER-CLASS BREAKDOWN:")
     print("-" * 40)
-
-    # Count GT by class
-    gt_by_class = ground_truth["labels"].value_counts().sort_index()
-    pred_by_class = (
-        predictions["labels"].value_counts().sort_index() if not predictions.empty else pd.Series()
-    )
 
     for class_id in sorted(set(list(gt_by_class.index) + list(pred_by_class.index))):
         species_name = species_map.get(class_id, f"Class_{class_id}")

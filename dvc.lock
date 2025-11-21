@@ -1342,3 +1342,36 @@ stages:
       md5: 63796e0b54c35011837c6182dc58171b.dir
       size: 725566
       nfiles: 4
+  train-herdnet-v5:
+    cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet Train 5
+      num_layers 60 head_conv 256'" train.wandb_mode='online' 
+      train.model.kwargs.num_layers=60 train.model.kwargs.head_conv=256 
+      train.model.kwargs.pretrained=imagenet 
+      train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
+      train.training_settings.work_dir=data/models/herdnet_v5/ 
+      train.training_settings.batch_size=4 train.training_settings.stitcher=null
+    deps:
+    - path: data/patches-512-ol-160-m01/train/
+      hash: md5
+      md5: 8a7be22b432edc7050cc3cd719c278d3.dir
+      size: 300527679
+      nfiles: 8582
+    - path: data/patches-512-ol-160-m01/train_points_gt.csv
+      hash: md5
+      md5: 4f162229d5e0c3bb1b92e44132e5e4a0
+      size: 707567
+    - path: data/patches-512-ol-160-m01/val/
+      hash: md5
+      md5: 66d0c949e34d595a2da73c7a1cd5b190.dir
+      size: 42355412
+      nfiles: 1167
+    - path: data/patches-512-ol-160-m01/val_points_gt.csv
+      hash: md5
+      md5: 5c329172fbad52ddd362b5e67bccf651
+      size: 95080
+    outs:
+    - path: data/models/herdnet_v5/
+      hash: md5
+      md5: 849dbb86ba48f920f0d25c3134f4a01d.dir
+      size: 817045147
+      nfiles: 4
