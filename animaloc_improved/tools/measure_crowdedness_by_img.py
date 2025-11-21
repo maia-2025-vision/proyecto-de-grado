@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import typer
 from loguru import logger
-from mistree import GetMST
+from mistree import GetMST  # type: ignore[import-untyped]
 
 from animaloc_improved.tools.latex_utils import df_to_latex
 
@@ -42,7 +42,7 @@ def _enrich_bbox_df(gt_df: pd.DataFrame) -> pd.DataFrame:
     return gt_df
 
 
-def _report_cnt_by_split_subset(gt_df: pd.DataFrame) -> pd.DataFrame:
+def _report_cnt_by_split_subset(gt_df: pd.DataFrame) -> None:
     cnts_by_split_subset = (
         gt_df.groupby(["split", "subdataset"])
         .agg(
@@ -133,7 +133,7 @@ def calc_median_mis_edge(img_df: pd.DataFrame) -> float:
     else:
         mis = GetMST(x=img_df["x"].values, y=img_df["y"].values)
         mis.get_stats(k_neighbours=len(img_df) - 1)
-        return np.median(mis.edge_length)
+        return float(np.median(mis.edge_length))
 
 
 def _counts_by_label(img_df: pd.DataFrame) -> dict[int, int]:
@@ -141,7 +141,7 @@ def _counts_by_label(img_df: pd.DataFrame) -> dict[int, int]:
     labels_mode = img_df["labels"].mode()
     if len(labels_mode) > 1:
         print(f"labels_mode={labels_mode.values!r}")
-    return pd.Series(
+    return pd.Series(  # type: ignore[return-value]
         {
             "dominant_species": labels_mode.iloc[0],  # resolve ties arbitrarily
             "counts_by_label": counts_by_label_dict,
@@ -164,12 +164,15 @@ def _produce_stats_by_image(gt_df: pd.DataFrame) -> pd.DataFrame:
 
     med_mis_edge_len = (
         gt_df.groupby("images")
-        .apply(calc_median_mis_edge, include_groups=False)
+        .apply(calc_median_mis_edge, include_groups=False)  # type: ignore[call-overload]
         .reset_index()
         .rename(columns={0: "median_animal_sep"})
     )
 
-    cnts_by_label = gt_df.groupby("images").apply(_counts_by_label, include_groups=False)
+    cnts_by_label = gt_df.groupby("images").apply(
+        _counts_by_label,
+        include_groups=False,  # type: ignore[call-overload]
+    )
 
     print(cnts_by_label, type(cnts_by_label))
 
