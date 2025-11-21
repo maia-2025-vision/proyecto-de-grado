@@ -117,7 +117,7 @@ def evaluate(
     out_dir: Path = typer.Option(
         Path("./data/test_results_v2/"), "--out-dir", help="path to output csv"
     ),
-):
+) -> None:
     with open(inference_path, "rb") as f_in:
         inference_results = json.load(f_in)
 
@@ -136,10 +136,10 @@ def evaluate(
         image = inference["images"]
         gt_img_df = pd.DataFrame(**inference["ground_truth"])
         predictions = pd.DataFrame(**inference["predictions"])
-        results = evaluator.evaluate_preds(ground_truth=gt_img_df, predictions=predictions)
+        results_this_img = evaluator.evaluate_preds(ground_truth=gt_img_df, predictions=predictions)
         image_results = {
             "images": image,
-            **results,
+            **results_this_img,
         }
         by_image_results.append(image_results)
 
