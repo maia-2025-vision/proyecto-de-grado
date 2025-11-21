@@ -7,7 +7,7 @@ import typer
 from loguru import logger
 
 import animaloc_improved.tools.infer_metrics as im
-from animaloc_improved.tools.csv_tool import SPECIES_MAP
+from animaloc_improved.tools.common import SPECIES_MAP
 
 DEFAULT_MODEL_PATH = Path("data/models/herdnet_v2_hn2/best_model.pth")
 DEFAULT_GT_PATH = Path("data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv")
