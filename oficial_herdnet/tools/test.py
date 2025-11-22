@@ -18,7 +18,7 @@ __author__ = "Alexandre Delplanque"
 __license__ = "MIT License"
 __version__ = "0.2.1"
 
-# ruff: noqa: C408
+# ruff: noqa: C408, E402
 
 import warnings
 from collections.abc import Callable
@@ -32,6 +32,11 @@ import pandas as pd
 import torch
 import torchvision
 import wandb
+from pydantic.warnings import UnsupportedFieldAttributeWarning
+
+warnings.filterwarnings(
+    "ignore", message=".*The '(repr|frozen)' attribute", category=UnsupportedFieldAttributeWarning
+)
 from animaloc.data.transforms import DownSample
 from animaloc.eval import BoxesMetrics, Evaluator, Metrics, PointsMetrics
 from animaloc.eval.stitchers import Stitcher
@@ -46,7 +51,7 @@ from torch.utils.data import DataLoader
 import animaloc_improved.eval.stitchers  # noqa
 
 warnings.filterwarnings("ignore", message=".*", module="albumentations.core.composition")
-warnings.filterwarnings("ignore", message=".*", module="pydantic._internal._generate_schema")
+# warnings.filterwarnings("ignore", message=".*", module="pydantic._internal._generate_schema")
 
 
 def _set_species_labels(cls_dict: dict, df: pd.DataFrame) -> None:
@@ -86,6 +91,7 @@ def build_model(cfg: DictConfig) -> torch.nn.Module:
     for k in ["num_classes"]:
         kwargs.pop(k, None)
 
+    logger.info(f"Building model of class {model.__name__} with kwargs: {pformat(kwargs)}")
     model = model(**kwargs, num_classes=cfg.dataset.num_classes)
     model = LossWrapper(model, [])
     model = load_model(model, cfg.model.pth_file)
@@ -110,7 +116,10 @@ def _define_stitcher(model: torch.nn.Module, cfg: DictConfig) -> Stitcher:
     for k in ["model", "size", "device_name"]:
         kwargs.pop(k, None)
 
-    logger.info(f"Creating stitcher of class={name}, type(model)={type(model).__name__}")
+    logger.info(
+        f"Creating stitcher of class={name}, type(model)={type(model).__name__}"
+        f"size={cfg.dataset.img_size} kwargs={pformat(kwargs)}"
+    )
     stitcher = animaloc.eval.stitchers.STITCHERS[name](
         model=model, size=cfg.dataset.img_size, **kwargs, device_name=cfg.device_name
     )
@@ -155,6 +164,16 @@ def _define_evaluator(
 def main(cfg: DictConfig) -> None:
     cfg = cfg.test
     logger.info(f"Full test config:\n{pformat(dict(cfg))}")
+
+    if cfg.device_name is None:
+        cfg.device_name = (
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if (torch.mps.is_available() and "faster" not in cfg.model.name.lower())
+            else "cpu"
+        )
+        logger.info(f"Using device: {cfg.device_name}")
 
     down_ratio = cfg.model.kwargs.get("down_ratio", 1)
     wandb_mode = cfg.get("wandb_mode", "online")

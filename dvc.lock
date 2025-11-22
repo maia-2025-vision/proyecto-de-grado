@@ -1361,7 +1361,7 @@ stages:
       md5: 33d41ad3bfdc1367110c80157c73b5c8.dir
       size: 735184
       nfiles: 4
-      
+
   test-herdnet-v4:
     cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
       config\" test.wandb_run=\"'Test herdnet v4 head_conv 128'\" test.wandb_mode=online
@@ -1392,6 +1392,10 @@ stages:
     cmd: "python animaloc_improved/tools/measure_crowdedness_by_img.py --gt-dir data/groundtruth/csv
       --input-suffix '_big_size_A_B_E_K_WH_WB-fixed-header.csv' --out-dir data/gt-preprocessed/stats-by-image/\n"
     deps:
+    - path: animaloc_improved/tools/measure_crowdedness_by_img.py
+      hash: md5
+      md5: 5aebcd0f7aae5bfab64b26f097c4ee0d
+      size: 8193
     - path: data/groundtruth/csv
       hash: md5
       md5: 5fb9cd0bf9611b0136f78a4d43c8aea3.dir
@@ -1400,8 +1404,8 @@ stages:
     outs:
     - path: data/gt-preprocessed/stats-by-image/
       hash: md5
-      md5: 78572570f862c2b6a24d7de5daea37be.dir
-      size: 142510
+      md5: 9c57b60ce5e7a2bdef64e67e9b804c37.dir
+      size: 190073
       nfiles: 1
   test-v2-infer-herdnet-v2-hn2:
     cmd: "python animaloc_improved/tools/test_v2.py inference --model data/models/herdnet_v2_hn2/best_model.pth
@@ -1475,3 +1479,35 @@ stages:
       hash: md5
       md5: 777d7bd59e157fc4cfdfe2e92fb8ddbf
       size: 1170970
+  test-v2-eval-herdnet-v2:
+    cmd: "python animaloc_improved/tools/test_v2.py eval0 --gt-path data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-fixed-header.csv
+      --detections data/test_results/herdnet_v2_fi_repl/detections.csv --out-dir data/test_results_v2/herdnet_v2/pr_metrics/\n"
+  test-herdnet-v2-fi-repl:
+    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
+      config\" test.wandb_run='Test herdnet v2 fi-repl' test.device_name=null test.wandb_mode=offline
+      test.stitcher.kwargs.up=true test.model.pth_file=data/models/herdnet_v2/best_model.pth
+      test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/       test.results_dir=data/test_results/herdnet_v2_fi_repl/\n"
+    deps:
+    - path: data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      hash: md5
+      md5: a6877229623fe95c5ba7883097fe07c3
+      size: 98469
+    - path: data/test/
+      hash: md5
+      md5: 543905ee38c7af30e4a5ccc4b1670752.dir
+      size: 2117638463
+      nfiles: 258
+    - path: oficial_herdnet/configs/test/herdnet.yaml
+      hash: md5
+      md5: 82b371d39b1b3997cd54449b51452ab8
+      size: 1186
+    outs:
+    - path: data/test_results/herdnet_v2_fi_repl/
+      hash: md5
+      md5: 319534c0690ad4ccc6aec0402fc99efb.dir
+      size: 527545
+      nfiles: 4
+  test-v2-eval-herdnet-v2-a:
+    cmd: "python animaloc_improved/tools/test_v2.py eval --inferences data/test_results_v2/herdnet_v2/inference.json
+      --match-tolerance 10 --out-dir data/test_results_v2/herdnet_v2/pr_metrics/\n"

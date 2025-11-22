@@ -1,4 +1,16 @@
 import json
+import warnings
+
+from pydantic.warnings import UnsupportedFieldAttributeWarning
+
+# ruff: noqa: E402
+# silence annoying warning
+warnings.filterwarnings(
+    "ignore",
+    message=".*The '(repr|frozen)' attribute with value.*",
+    category=UnsupportedFieldAttributeWarning,
+)
+
 from pathlib import Path
 
 import pandas as pd
@@ -97,10 +109,13 @@ def inference(
         json.dump(collected_results, f_out, indent=4)
 
 
-@app.command("eval")
+@app.command("eval", help="evaluate precision, recall and f1 on the output of inference")
 def evaluate(
     inference_path: Path = typer.Option(
-        Path("./data/test_results_v2/inference.json"), "--out-path", help="path to output csv"
+        Path("./data/test_results_v2/inference.json"),
+        "-i",
+        "--inferences",
+        help="path to inferences csv (from 'inference' subcommand)",
     ),
     match_strategy: str = typer.Option("point2point"),
     match_tolerance: float | None = typer.Option(
@@ -115,10 +130,13 @@ def evaluate(
 ) -> None:
     with open(inference_path, "rb") as f_in:
         inference_results = json.load(f_in)
+    logger.info(f"loaded {len(inference_results)=} from {inference_path!s}")
 
     if match_tolerance is None:
         match_tolerance = DEFAULT_MATCH_TOL_BY_TRAT[match_strategy]
         logger.info(f"Using match_tolerance={match_tolerance} for match_strategy={match_strategy}")
+
+    assert match_tolerance is not None, "match_tolerance must be specified."
 
     evaluator = im.PrecisionRecallEvaluator(
         match_strategy=match_strategy,
@@ -126,17 +144,7 @@ def evaluate(
         species_map=SPECIES_MAP,
     )
 
-    by_image_results = []
-    for inference in inference_results:
-        image = inference["images"]
-        gt_img_df = pd.DataFrame(**inference["ground_truth"])
-        predictions = pd.DataFrame(**inference["predictions"])
-        results_this_img = evaluator.evaluate_preds(ground_truth=gt_img_df, predictions=predictions)
-        image_results = {
-            "images": image,
-            **results_this_img,
-        }
-        by_image_results.append(image_results)
+    by_image_results = im.compute_by_image_results(evaluator, inference_results)
 
     results = {
         "match_tolerance": match_tolerance,
@@ -144,14 +152,16 @@ def evaluate(
         "by_image_results": by_image_results,
     }
 
-    logger.info(f"{len(inference_results)=}")
-
+    # pprint(by_image_results[0])
     by_img_path = out_dir / "eval_by_image.json"
     logger.info(f"Writing by_image_results results ({len(by_image_results)}) to: {by_img_path}")
     out_dir.mkdir(parents=True, exist_ok=True)
     with open(by_img_path, "w") as f_out:
         # pprint(results)
         json.dump(results, f_out, indent=4, cls=NumpyEncoder)
+
+    precis_rec_df = im.calc_precis_recall(by_image_results)
+    logger.info(f"Precision and recall metrics:\n{precis_rec_df.to_markdown()}")
 
 
 if __name__ == "__main__":

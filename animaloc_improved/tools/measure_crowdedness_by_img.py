@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import numpy as np
@@ -151,36 +152,37 @@ def _counts_by_label(img_df: pd.DataFrame) -> dict[int, int]:
 
 
 def _produce_stats_by_image(gt_df: pd.DataFrame) -> pd.DataFrame:
-    meta_cols = ["split", "subdataset", "images"]
+    meta_cols = ["split", "subdataset", "images", "rel_path"]
     image_meta = gt_df[meta_cols].drop_duplicates()  # una fila for imagen única
     logger.info(f"{len(image_meta)=}")
 
     num_annots_per_image = (
-        gt_df.groupby(["images"])
+        gt_df.groupby("rel_path")
         .agg({"labels": "count", "L(bbox)": "median"})
         .reset_index()
         .rename(columns={"labels": "num_bboxes", "L(bbox)": "median_l_bbox"})
     )
 
     med_mis_edge_len = (
-        gt_df.groupby("images")
+        gt_df.groupby("rel_path")
         .apply(calc_median_mis_edge, include_groups=False)  # type: ignore[call-overload]
         .reset_index()
         .rename(columns={0: "median_animal_sep"})
     )
 
-    cnts_by_label = gt_df.groupby("images").apply(
+    cnts_by_label = gt_df.groupby("rel_path").apply(
         _counts_by_label,
         include_groups=False,  # type: ignore[call-overload]
     )
-
     print(cnts_by_label, type(cnts_by_label))
 
     stats_by_image = (
-        image_meta.merge(num_annots_per_image, on="images")
-        .merge(cnts_by_label, on="images")
-        .merge(med_mis_edge_len, on="images")
+        image_meta.merge(num_annots_per_image, on="rel_path")
+        .merge(cnts_by_label, on="rel_path")
+        .merge(med_mis_edge_len, on="rel_path")
     )
+
+    stats_by_image["counts_by_label"] = stats_by_image["counts_by_label"].apply(json.dumps)
 
     stats_by_image["normalized_animal_sep"] = (
         stats_by_image["median_animal_sep"] / stats_by_image["median_l_bbox"]
@@ -210,7 +212,7 @@ def main(
     for gt_path in gt_paths:
         df = pd.read_csv(gt_path)
         df["split"] = gt_path.name.split("_")[0]
-        df["images"] = df["split"] + "/" + df["images"]
+        df["rel_path"] = df["split"] + "/" + df["images"]
         gt_parts.append(df)
 
     gt_df = pd.concat(gt_parts)
@@ -228,7 +230,7 @@ def main(
     stats_by_image = _produce_stats_by_image(gt_df)
 
     out_dir.mkdir(exist_ok=True, parents=True)
-    stats_by_img_path = out_dir / (input_suffix.strip("_") + ".csv")
+    stats_by_img_path = out_dir / input_suffix.strip("_")
     logger.info(f"\n{stats_by_image.sample(50).to_markdown()}")
 
     logger.info(f"Writing stats by image to {stats_by_img_path!s}")

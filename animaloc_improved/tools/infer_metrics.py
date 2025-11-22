@@ -1,4 +1,5 @@
 import os
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TypedDict
 
@@ -16,6 +17,8 @@ from animaloc.models import HerdNet, LossWrapper, load_model
 from PIL import Image
 from torch import nn
 from torch.utils.data import DataLoader
+
+from animaloc_improved.tools.common import SPECIES_MAP
 
 
 def load_trained_model(
@@ -575,3 +578,86 @@ def eval_precision_recall(
         result["by_species"] = by_species
 
     return result
+
+
+def compute_by_image_results(
+    evaluator: PrecisionRecallEvaluator, inference_results: list[dict[str, object]]
+) -> list[dict[str, object]]:
+    by_image_results = []
+    for inference in inference_results:
+        image = inference["images"]
+        gt_img_df = pd.DataFrame(**inference["ground_truth"])  # type: ignore
+        predictions = pd.DataFrame(**inference["predictions"])  # type: ignore
+        results_this_img = evaluator.evaluate_preds(ground_truth=gt_img_df, predictions=predictions)
+        image_results = {
+            "images": image,
+            **results_this_img,
+        }
+        by_image_results.append(image_results)
+
+    return by_image_results
+
+
+@dataclass
+class PrecisRecallResult:
+    """Result of running Precision/Recall/F1 evaluation over many images."""
+
+    label: 0
+    species: str
+    TP: int = 0
+    FP: int = 0
+    FN: int = 0
+    cnt_updates = 0
+    num_gt_annots: int = 0
+    num_preds: int = 0
+    precision: float = float("nan")
+    recall: float = float("nan")
+    f1_score: float = float("nan")
+
+    def update(self, tfpn_dict: dict[str, int], num_gt_annots: int):
+        """Tally contribution from one image."""
+        self.cnt_updates += 1
+        self.TP += tfpn_dict["TP"]
+        self.FP += tfpn_dict["FP"]
+        self.FN += tfpn_dict["FN"]
+        self.num_preds += tfpn_dict["num_preds"]
+        self.num_gt_annots += num_gt_annots
+
+    def refresh_metrics(self):
+        """After tallying all contributions, compute final value of precision/recall/f1-score."""
+        self.precision = self.TP / (self.TP + self.FP)
+        self.recall = self.TP / (self.TP + self.FN) if self.TP + self.FN > 0 else 0
+        self.f1_score = (
+            (2 * self.precision * self.recall / (self.precision + self.recall))
+            if self.precision + self.recall > 0
+            else 0
+        )
+
+
+def calc_precis_recall(
+    by_image_results: list[object], species_map: dict[int, str] | None = None
+) -> pd.DataFrame:
+    pr_results: list[PrecisRecallResult] = []  # to be returned after converting it to pd.DataFrame
+    species_map = species_map or SPECIES_MAP
+    n_classes = len(species_map)
+
+    for label in range(n_classes):
+        if label == 0:  # binary case
+            pr_res = PrecisRecallResult(label=0, species="binary")
+            for result in by_image_results:
+                bin_result = result["binary"]
+                pr_res.update(bin_result, num_gt_annots=bin_result["num_gt_positives"])
+            pr_res.refresh_metrics()
+
+        else:
+            pr_res = PrecisRecallResult(label=label, species=species_map[label])
+            for result in by_image_results:
+                by_species = result["by_species"]
+                species_result = by_species.get(label, None)
+                if species_result is not None:
+                    pr_res.update(species_result, num_gt_annots=species_result["num_gt_annots"])
+            pr_res.refresh_metrics()
+
+        pr_results.append(pr_res)
+
+    return pd.DataFrame([asdict(pr_res) for pr_res in pr_results])

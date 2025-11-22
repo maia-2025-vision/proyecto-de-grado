@@ -8,6 +8,7 @@ stages:
       --input-suffix '_big_size_A_B_E_K_WH_WB-fixed-header.csv'
       --out-dir data/gt-preprocessed/stats-by-image/
     deps:
+      - animaloc_improved/tools/measure_crowdedness_by_img.py
       - data/groundtruth/csv
     outs:
       - data/gt-preprocessed/stats-by-image/
@@ -506,6 +507,13 @@ stages:
 
     outs:
       - data/test_results_v2/herdnet_v2/inference.json
+
+  test-v2-eval-herdnet-v2:
+     cmd: >
+      python animaloc_improved/tools/test_v2.py eval
+      --inferences data/test_results_v2/herdnet_v2/inference.json
+      --match-tolerance 10
+      --out-dir data/test_results_v2/herdnet_v2/pr_metrics/
 
   test-v2-infer-herdnet-v2-hn2:
     cmd: >

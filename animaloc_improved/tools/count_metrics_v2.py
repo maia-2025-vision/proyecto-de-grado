@@ -245,5 +245,25 @@ def main(
     )
 
 
+def count_errors_by_image(inference_results: list[dict[str, object]]) -> pd.DataFrame:
+    gt_cnt_rows, pred_cnt_rows = [], []
+    for inf_result in inference_results:
+        image = inf_result["images"]
+
+        gt = pd.DataFrame(**inf_result["ground_truth"])  # type: ignore
+
+        # one-row dfs binary case only
+        true_cnt = (gt["labels"] != 0).sum()
+        gt_cnt_rows.append({"images": image, "true_count": true_cnt, "labels": 1})
+        preds = pd.DataFrame(**inf_result["predictions"])  # type: ignore
+        pred_cnt = (preds["labels"] != 0).sum()
+        pred_cnt_rows.append({"images": image, "pred_count": pred_cnt, "labels": 1})
+
+    gt_cnts_df = pd.DataFrame(gt_cnt_rows)
+    pred_cnts_df = pd.DataFrame(pred_cnt_rows)
+
+    return merge_and_add_errors(gt_cnts_df, pred_cnts_df)
+
+
 if __name__ == "__main__":
     app()
