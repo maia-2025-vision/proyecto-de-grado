@@ -25,6 +25,7 @@ class Settings:
     s3_bucket: str = "cow-detect-maia"
     model_weights_path: Path = Path("./undefined")
     model_cfg_path: Path = Path("./undefined")
+    model_device: str = "auto"
     aws_profile: str | None = None
 
 
@@ -38,6 +39,9 @@ if "MODEL_WEIGHTS_PATH" in os.environ:
 
 if "MODEL_CFG_PATH" in os.environ:
     SETTINGS.model_cfg_path = Path(os.environ["MODEL_CFG_PATH"])
+
+if "MODEL_DEVICE" in os.environ:  # force a device via env-var
+    SETTINGS.model_device = os.environ["MODEL_DEVICE"]
 
 if "AWS_PROFILE" in os.environ:
     SETTINGS.aws_profile = os.environ["AWS_PROFILE"]

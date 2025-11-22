@@ -100,20 +100,23 @@ class MockDetector(nn.Module, Detector):
         return self.idx2species
 
 
-def make_detector(weights_path: Path, cfg_path: Path) -> tuple[Detector, ModelMetadata]:
+def make_detector(
+    weights_path: Path, cfg_path: Path, model_device: str
+) -> tuple[Detector, ModelMetadata]:
     """Restore and return a prediction model from a weights file."""
     num_classes = len(DEFAULT_CLASS_LABEL_2_NAME)
     cfg = OmegaConf.load(cfg_path)
+    cfg.device_name = model_device
 
     if cfg.model.name == "HerdNet":
         return herdnet_detector_from_cfg_file(
             model_pth_path=weights_path,
-            cfg_file=cfg_path,
+            cfg=cfg,
         )
     elif cfg.model.name == "FasterRCNNResNetFPN":
         return faster_rcnn_detector_from_cfg_file(
             model_pth_path=weights_path,
-            cfg_file=cfg_path,
+            cfg=cfg,
         )
 
     elif cfg.model.name == "mock":

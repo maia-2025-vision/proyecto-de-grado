@@ -21,13 +21,20 @@ from api.detector import Detector, RawDetections
 from api.schemas.shared_types import BBoxFormat, ModelMetadata
 
 
-def pick_inference_device() -> str:
-    if torch.cuda.is_available():
-        return "cuda"
-    elif torch.backends.mps.is_available():
-        return "cpu"  # mps doesn't work for FasterRCNN for some reason...
-    else:
-        return "cpu"
+def pick_inference_device(cfg_device_name: str, model_name: str) -> str:
+    if cfg_device_name != "auto":
+        logger.info(f"device set by config: {cfg_device_name}")
+        return cfg_device_name
+    else:  # case  "auto"
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif torch.backends.mps.is_available() and "fasterrcnn" not in model_name.lower():
+            device = "mps"
+        else:  # mps doesn't work for FasterRCNN for some reason...
+            device = "cpu"
+
+        logger.info(f"auto-picked device: {device}  (model name: {model_name})")
+        return device
 
 
 def load_checkpoint(model: torch.nn.Module, pth_path: str) -> Any:
@@ -260,17 +267,15 @@ class HerdnetDetector(torch.nn.Module, Detector):
 
 def faster_rcnn_detector_from_cfg_file(
     model_pth_path: Path,
-    cfg_file: Path,
+    cfg: DictConfig,
 ) -> tuple[Detector, ModelMetadata]:
-    cfg = OmegaConf.load(cfg_file)
     cfg.model.pth_file = model_pth_path
 
     logger.info(f"Excerpts from cfg:\n{pformat(dict(cfg.model))}\n{cfg.dataset.num_classes=}")
 
     # Build model, set to eval mode and load onto device
     assert isinstance(cfg, DictConfig), f"{type(cfg).__name__=}, should be a DictConfig..."
-    device_name = pick_inference_device()
-    logger.info(f"will load checkpoint onto device={device_name}")
+    device_name = pick_inference_device(cfg.device_name, cfg.model.name)
     checkpoint = torch.load(model_pth_path, map_location=device_name)
     model = build_model_from_cfg(cfg, model_state_dict=checkpoint["model_state_dict"])
     model.eval()
@@ -298,7 +303,6 @@ def faster_rcnn_detector_from_cfg_file(
         "trainable_backbone_layers": cfg.model.kwargs.trainable_backbone_layers,
         "num_classes": cfg.model.kwargs.num_classes,
         "weights_path": model_pth_path,
-        "cfg_path": cfg_file,
     }
 
     return detector, metadata
@@ -306,9 +310,8 @@ def faster_rcnn_detector_from_cfg_file(
 
 def herdnet_detector_from_cfg_file(
     model_pth_path: Path,
-    cfg_file: Path,
+    cfg: DictConfig,
 ) -> tuple[Detector, ModelMetadata]:
-    cfg = OmegaConf.load(cfg_file)
     cfg.model.pth_file = model_pth_path
 
     logger.info(f"Excerpts from cfg:\n{pformat(dict(cfg.model))}\n{cfg.dataset.num_classes=}")
@@ -316,8 +319,8 @@ def herdnet_detector_from_cfg_file(
     # Build model, set to eval mode and load onto device
     assert isinstance(cfg, DictConfig), f"{type(cfg).__name__=}, should be a DictConfig..."
     checkpoint_path = cfg.model.pth_file
-    device_name = pick_inference_device()
-    logger.info(f"Will load model onto device: {device_name}")
+
+    device_name = pick_inference_device(cfg.device_name, cfg.model.name)
     checkpoint = torch.load(checkpoint_path, map_location=device_name)
     model = build_model_from_cfg(cfg, model_state_dict=checkpoint["model_state_dict"])
     model.eval()
@@ -345,7 +348,6 @@ def herdnet_detector_from_cfg_file(
         "patch_size": patch_size,
         "num_classes": cfg.dataset.num_classes,
         "weights_path": model_pth_path,
-        "cfg_path": cfg_file,
     }
     logger.info(f"metadata={metadata}")
 

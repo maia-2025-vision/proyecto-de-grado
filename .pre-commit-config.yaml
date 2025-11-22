@@ -15,7 +15,7 @@ repos:
     hooks:
       # Run the Ruff formatter.
       - id: ruff-format
-        exclude: (research|model)/.+\.py
+        exclude: ((research|model)/.+\.py|notebooks)
 
       # Run the Ruff linter.
       - id: ruff

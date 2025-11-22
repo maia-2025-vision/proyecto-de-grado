@@ -26,6 +26,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Never]:
 
     logger.info(f"MODEL_WEIGHTS_PATH={SETTINGS.model_weights_path}")
     logger.info(f"MODEL_CFG_PATH={SETTINGS.model_cfg_path}")
+    logger.info(f"MODEL_DEVICE={SETTINGS.model_device}")
 
     logger.info(f"AWS_PROFILE={SETTINGS.aws_profile!r}")
     aws_key_id = os.getenv("AWS_ACCESS_KEY_ID")
@@ -42,7 +43,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Never]:
     DETECTOR.detector, DETECTOR.model_metadata = make_detector(
         weights_path=SETTINGS.model_weights_path,
         cfg_path=SETTINGS.model_cfg_path,
+        model_device=SETTINGS.model_device,
     )
+    DETECTOR.model_metadata["cfg_path"] = str(SETTINGS.model_cfg_path)
 
     yield  # type: ignore # this works but not sure what to do about type error...
     # Clean up the ML models and release the resources

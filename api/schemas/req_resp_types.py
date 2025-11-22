@@ -100,6 +100,7 @@ class PredictionResult(BaseModel):
     url: str
     detections: Detections
     counts_at_threshold: ThresholdCounts
+    inference_time: Annotated[float, Field(description="Inference time in seconds")] = float("nan")
 
 
 class PredictManyResult(BaseModel):

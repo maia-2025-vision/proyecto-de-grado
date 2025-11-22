@@ -141,7 +141,9 @@ def predict_one(
         logger.info(f"Predicting on image of size: {image.size} with {type(detector).__name__}")
         t0 = time.perf_counter()
         pred = detector.detect_one_image(image)
+        inference_time = time.perf_counter() - t0
         pred_obj: DetectionsDict = {k: v.tolist() for k, v in pred.items()}  # type: ignore
+
         del pred
         pred_obj2 = verify_and_post_process_pred(pred_obj, bbox_format=detector.bbox_format())
         elapsed = time.perf_counter() - t0
@@ -156,6 +158,7 @@ def predict_one(
 
         pred_result = PredictionResult(
             url=url,
+            inference_time=inference_time,
             detections=Detections.model_validate(pred_obj2),
             counts_at_threshold=counts_at_thresh,
         )
