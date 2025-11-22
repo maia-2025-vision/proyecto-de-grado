@@ -9,7 +9,6 @@ r"""
 \renewcommand{\arraystretch}{1.3}
 % if using array.sty, it might be a good idea to tweak the value of
 % \extrarowheight as needed to properly center the text within the cells
-\label{table_example}
 \centering
 %% Some packages, such as MDW tools, offer better commands for making tables
 %% than the plain LaTeX2e tabular which is used here.
@@ -21,6 +20,7 @@ Three & Four\\  % row
 \hline
 \end{tabular}
 \caption{An Example of a Table}
+\label{table_example}
 \end{table}
 """
 
@@ -43,8 +43,6 @@ def df_to_latex(
     if array_stretch is not None:
         parts.append(f"\\renewcommand{{\\arraystretch}}{{{array_stretch}}}")
 
-    if label is not None:
-        parts.append(f"\\label{{{label}}}")
     if centering:
         parts.append("\\centering")
 
@@ -72,6 +70,8 @@ def df_to_latex(
     parts.append(r"\hline")  # bottom border
     parts.append(r"\end{tabular}")
     parts.append(f"\\caption{{{caption}}}")
+    if label is not None:  # put label after caption for proper numbering
+        parts.append(f"\\label{{{label}}}")
     parts.append(r"\end{table}")
 
     return "\n".join(parts)
