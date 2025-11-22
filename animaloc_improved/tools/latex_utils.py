@@ -71,7 +71,7 @@ def df_to_latex(
     parts.append(r"\end{tabular}")
     parts.append(f"\\caption{{{caption}}}")
     if label is not None:  # put label after caption for proper numbering
-        parts.append(f"\\label{{{label}}}")    
+        parts.append(f"\\label{{{label}}}")
     parts.append(r"\end{table}")
 
     return "\n".join(parts)
