@@ -1291,6 +1291,51 @@ stages:
       size: 531024
       nfiles: 4
 
+  count-metrics-v2:
+    cmd: python animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/frcnn-resnet50-full-imgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/frcn_resnet50_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/frcnn-resnet101-full-imgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/frcn_resnet101_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/herdnet_v1_fullimgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/herdnet_v1_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/herdnet_v2_full_imgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/herdnet_v2_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/herdnet_v2_hn2/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/herdnet_v2_hn2_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/herdnet_v3_full_imgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/herdnet_v3_full_imgs/" && python 
+      animaloc_improved/tools/count_metrics_v2.py --gt 
+      "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
+      "data/test_results/herdnet_v4_full_imgs/detections.csv" --out-dir 
+      "data/cnt_metrics_v2/herdnet_v4_full_imgs/"
+    deps:
+    - path: data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      hash: md5
+      md5: a6877229623fe95c5ba7883097fe07c3
+      size: 98469
+    - path: data/test_results/herdnet_v1_fullimgs/detections.csv
+      hash: md5
+      md5: c892ceadc51626a3981517bec3e28904
+      size: 853640
+    outs:
+    - path: data/cnt_metrics_v2/
+      hash: md5
+      md5: 9f2669b47d3a75e88b837b96bed5723e.dir
+      size: 383969
+      nfiles: 21
+
   test-herdnet-v4-full-imgs:
     cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
       config\" test.wandb_run=\"Test herdnet v4\" test.wandb_mode=online       test.model.pth_file=data/models/herdnet_v4/best_model.pth
@@ -1316,6 +1361,7 @@ stages:
       md5: 33d41ad3bfdc1367110c80157c73b5c8.dir
       size: 735184
       nfiles: 4
+      
   test-herdnet-v4:
     cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
       config\" test.wandb_run=\"'Test herdnet v4 head_conv 128'\" test.wandb_mode=online
@@ -1342,6 +1388,21 @@ stages:
       md5: 63796e0b54c35011837c6182dc58171b.dir
       size: 725566
       nfiles: 4
+  measure_crowdedness_by_img:
+    cmd: "python animaloc_improved/tools/measure_crowdedness_by_img.py --gt-dir data/groundtruth/csv
+      --input-suffix '_big_size_A_B_E_K_WH_WB-fixed-header.csv' --out-dir data/gt-preprocessed/stats-by-image/\n"
+    deps:
+    - path: data/groundtruth/csv
+      hash: md5
+      md5: 5fb9cd0bf9611b0136f78a4d43c8aea3.dir
+      size: 1067020
+      nfiles: 6
+    outs:
+    - path: data/gt-preprocessed/stats-by-image/
+      hash: md5
+      md5: 78572570f862c2b6a24d7de5daea37be.dir
+      size: 142510
+      nfiles: 1
   train-herdnet-v5:
     cmd: python oficial_herdnet/tools/train.py train.wandb_run="'Herdnet Train 5
       num_layers 60 head_conv 256'" train.wandb_mode='online' 
