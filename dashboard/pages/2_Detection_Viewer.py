@@ -35,9 +35,9 @@ FEEDBACK_STATE_KEY = "detection_feedback_buffer"
 THUMBNAIL_COLUMNS = 5
 
 
-def ensure_feedback_state() -> dict[str, dict[str, Any]]:
+def ensure_feedback_state() -> dict[str, dict[str, object]]:
     """Devuelve (y crea si no existe) el buffer de cambios en sesión."""
-    return st.session_state.setdefault(FEEDBACK_STATE_KEY, {})
+    return st.session_state.setdefault(FEEDBACK_STATE_KEY, {})  # type: ignore[no-any-return]
 
 
 def update_feedback_entry(entry_key: str, metadata: dict[str, Any], new_label_name: str) -> None:
