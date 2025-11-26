@@ -1290,6 +1290,7 @@ stages:
       md5: 75572a35caa65c85dc29d471bc2e323a.dir
       size: 531024
       nfiles: 4
+
   count-metrics-v2:
     cmd: python animaloc_improved/tools/count_metrics_v2.py --gt 
       "data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv" --preds 
@@ -1334,3 +1335,44 @@ stages:
       md5: 9f2669b47d3a75e88b837b96bed5723e.dir
       size: 383969
       nfiles: 21
+
+  test-herdnet-v4-full-imgs:
+    cmd: "python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name=\"\
+      config\" test.wandb_run=\"Test herdnet v4\" test.wandb_mode=online       test.model.pth_file=data/models/herdnet_v4/best_model.pth
+      test.model.kwargs.head_conv=128 test.dataset.csv_file=data/gt-preprocessed/csv/test_big_size_A_B_E_K_WH_WB-points.csv
+      test.dataset.root_dir=data/test/ test.results_dir=data/test_results/herdnet_v4_full_imgs/\n"
+    deps:
+    - path: data/patches-512-ol-160-m01/test/
+      hash: md5
+      md5: 71eb378f9db92d36b358703d400013cd.dir
+      size: 75831301
+      nfiles: 2559
+    - path: data/patches-512-ol-160-m01/test_points_gt.csv
+      hash: md5
+      md5: d637312c2d5d6bd6acb1d05ac5560362
+      size: 230725
+    - path: oficial_herdnet/configs/test/herdnet.yaml
+      hash: md5
+      md5: 82b371d39b1b3997cd54449b51452ab8
+      size: 1186
+    outs:
+    - path: data/test_results/herdnet_v4/
+      hash: md5
+      md5: 63796e0b54c35011837c6182dc58171b.dir
+      size: 725566
+      nfiles: 4
+  measure_crowdedness_by_img:
+    cmd: "python animaloc_improved/tools/measure_crowdedness_by_img.py --gt-dir data/groundtruth/csv
+      --input-suffix '_big_size_A_B_E_K_WH_WB-fixed-header.csv' --out-dir data/gt-preprocessed/stats-by-image/\n"
+    deps:
+    - path: data/groundtruth/csv
+      hash: md5
+      md5: 5fb9cd0bf9611b0136f78a4d43c8aea3.dir
+      size: 1067020
+      nfiles: 6
+    outs:
+    - path: data/gt-preprocessed/stats-by-image/
+      hash: md5
+      md5: 78572570f862c2b6a24d7de5daea37be.dir
+      size: 142510
+      nfiles: 1

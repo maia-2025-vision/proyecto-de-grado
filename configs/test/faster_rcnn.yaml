@@ -11,6 +11,7 @@ model:
   pth_file: '/override/me/via/commandline'
   kwargs:
     architecture: 'resnet50'
+    # architecture: 'resnet101'
     num_classes: 7
     pretrained_backbone: True
     trainable_backbone_layers: 4

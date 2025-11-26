@@ -271,7 +271,7 @@ stages:
       - data/patches-1024-ol-320-m01/test/
     outs:
       - data/test_results/herdnet_v3/
-  
+
   test-herdnet-v4:
     cmd: >
       python oficial_herdnet/tools/test.py --config-path ../configs/ --config-name="config"
@@ -835,4 +835,3 @@ stages:
       - data/test_results/herdnet_v1_fullimgs/detections.csv
     outs:
       - data/cnt_metrics_v2/
-
