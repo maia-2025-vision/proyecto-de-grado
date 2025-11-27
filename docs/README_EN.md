@@ -50,7 +50,7 @@
 [↑ back to top](#top)
 
 ## Relevant folders 
-- `datos/`: README with how to pull data via DVC and light samples (`datos/muestras/*`).
+- `datos/`: README with how to pull data via DVC and link to the Drive folder.
 - `modelos/`: README with external links (OneDrive) and DVC commands for minimal weights.
 - `notebooks/` and `marimo-nbs/`: analysis, training, and experiments.
 - `data/`: DVC-managed data/models (do not commit heavy assets to Git).
@@ -67,7 +67,7 @@ source .venv/bin/activate
 ### Data & models (DVC)
 - Minimum for inference (HN):  
   ```bash
-  dvc pull data/models/herdnet_v2_hn2/best_model.pth
+  dvc pull data/models/herdnet_v2_hn/best_model.pth
   dvc pull data/groundtruth data/train data/val data/test
   ```
 - Minimum for Faster R-CNN (ResNet50):

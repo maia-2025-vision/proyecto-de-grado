@@ -214,7 +214,7 @@ help="Start the prediction API service with the Faster-RCNN model"
 # cmd="python api/run_api.py"
 cmd="uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload"
 [tool.poe.tasks.serve-hn.env]
-MODEL_WEIGHTS_PATH="data/models/herdnet_v2_hn2/best_model.pth"
+MODEL_WEIGHTS_PATH="data/models/herdnet_v2_hn/best_model.pth"
 MODEL_CFG_PATH="configs/test/herdnet.yaml"
 
 [tool.poe.tasks.e2e]

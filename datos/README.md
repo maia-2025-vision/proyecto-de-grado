@@ -1,8 +1,11 @@
 # Datos (rúbrica)
 
-Esta carpeta existe para cumplir la rúbrica: aquí dejamos referencias claras a los datos y algunas muestras mínimas. Los datos completos (train/val/test, groundtruth, parches) siguen versionados con DVC en `data/`.
+Esta carpeta existe para cumplir la rúbrica: aquí dejamos referencias claras a los datos. Los datos completos (train/val/test, groundtruth, parches) siguen versionados con DVC en `data/`.
 
-## ¿Dónde están los datos completos?
+## Datos
+- Muestra de datos en carpeta de OneDrive:  
+https://uniandes-my.sharepoint.com/:f:/g/personal/m_restrepom2_uniandes_edu_co/IgDGZxNV1Lo5R6YWVQ4kV2mJAf48dHXvYutq1Q-A7_xIHn4?e=0YVPpA
+
 - Requiere credenciales AWS (`AWS_PROFILE=dvc-user`).
 - Comandos mínimos:
   ```bash
@@ -11,11 +14,6 @@ Esta carpeta existe para cumplir la rúbrica: aquí dejamos referencias claras a
   dvc pull data/patches-512-ol-160-m01
   ```
 - Más rutas opcionales están en `dvc.yaml`.
-
-## Muestras incluidas (livianas)
-- Anotaciones (primeras 10 filas): `datos/muestras/anotaciones_sample.csv`.
-- Imágenes de entrenamiento (reducidas a máx 640px): `datos/muestras/imagenes/train/*.jpg`.
-- Parches de prueba (reducidos): `datos/muestras/imagenes/patches/*.jpg`.
 
 ## Notas para calificación
 - No subimos datasets completos ni modelos pesados al repo; se bajan con DVC/S3.

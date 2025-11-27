@@ -50,7 +50,7 @@
 [↑ volver arriba](#top)
 
 ## Carpetas relevantes
-- `datos/`: README con cómo bajar datos via DVC y muestras ligeras (`datos/muestras/*`).
+- `datos/`: README con cómo bajar datos via DVC y enlace a carpeta con datos de muestra en Drive.
 - `modelos/`: README con enlaces externos (OneDrive) y comandos DVC.
 - `notebooks/` y `marimo-nbs/`: notebooks de análisis, entrenamiento y pruebas.
 - `data/`: datos y modelos gestionados por DVC (no subir pesados a Git).
@@ -67,7 +67,7 @@ source .venv/bin/activate
 ### Datos y modelos (DVC)
 - Mínimo para inferencia (HN):
   ```bash
-  dvc pull data/models/herdnet_v2_hn2/best_model.pth
+  dvc pull data/models/herdnet_v2_hn/best_model.pth
   dvc pull data/groundtruth data/train data/val data/test
   ```
 - Mínimo para Faster R-CNN (ResNet50):
