@@ -97,9 +97,10 @@ def build_detection_entries(
         if xmin >= xmax or ymin >= ymax:
             continue
 
-        # Crear thumbnail mostrando la imagen completa con marcador
-        marker_center = (int(center_x), int(center_y))
-        thumbnail = create_thumbnail_with_marker(image, marker_center, size=patch_size)
+        # Crear thumbnail a partir del recorte alrededor de la detección
+        crop = image.crop((xmin, ymin, xmax, ymax))
+        marker_center = (int(center_x - xmin), int(center_y - ymin))
+        thumbnail = create_thumbnail_with_marker(crop, marker_center, size=patch_size)
         entries.append(
             {
                 "index": idx,
