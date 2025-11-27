@@ -1,6 +1,7 @@
 """Utilidades de visualización para dibujar detecciones en imágenes."""
 
 import io
+import os
 from dataclasses import dataclass
 from typing import TypeAlias
 from urllib.parse import urlparse
@@ -43,6 +44,89 @@ SPECIES_MAP = {
 }
 
 
+def ensure_size(thumb: Image.Image, w: int, h: int) -> Image.Image:
+    """Agrega borde blanco a la derecha y abajo de una imagen para alcanzar el tamaño w x h.
+
+    Args:
+        thumb: Imagen a redimensionar
+        w: Ancho objetivo
+        h: Alto objetivo
+
+    Returns:
+        Nueva imagen de tamaño w x h con la imagen original en la esquina superior izquierda
+    """
+    current_w, current_h = thumb.size
+
+    # Verificar que la imagen no sea más grande que el tamaño objetivo
+    assert current_w <= w, f"El ancho actual ({current_w}) es mayor que el objetivo ({w})"
+    assert current_h <= h, f"El alto actual ({current_h}) es mayor que el objetivo ({h})"
+
+    # Si ya tiene el tamaño correcto, retornar la imagen original
+    if current_w == w and current_h == h:
+        return thumb
+
+    # Crear una nueva imagen blanca del tamaño objetivo
+    new_image = Image.new("RGB", (w, h), "white")
+
+    # Pegar la imagen original en la esquina superior izquierda
+    new_image.paste(thumb, (0, 0))
+
+    return new_image
+
+
+def create_thumbnail_with_marker(
+    image: Image.Image, center: tuple[int, int], size: int = 200
+) -> Image.Image:
+    """Crea un thumbnail de tamaño fijo mostrando la imagen completa con un punto marcador.
+
+    Args:
+        image: Imagen original completa
+        center: Coordenadas (x, y) del punto de detección
+        size: Tamaño del thumbnail (cuadrado)
+
+    Returns:
+        Thumbnail de tamaño size x size con la imagen escalada y un punto marcador
+    """
+    from PIL import ImageDraw
+
+    # Calcular el factor de escala para que la imagen quepa en el thumbnail
+    width, height = image.size
+    scale = min(size / width, size / height)
+
+    # Calcular nuevas dimensiones manteniendo aspect ratio
+    new_width = int(width * scale)
+    new_height = int(height * scale)
+
+    # Escalar la imagen
+    scaled_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+    # Crear imagen blanca del tamaño objetivo
+    thumbnail = Image.new("RGB", (size, size), "white")
+
+    # Centrar la imagen escalada
+    x_offset = (size - new_width) // 2
+    y_offset = (size - new_height) // 2
+    thumbnail.paste(scaled_image, (x_offset, y_offset))
+
+    # Calcular posición del marcador en la imagen escalada
+    marker_x = int(center[0] * scale) + x_offset
+    marker_y = int(center[1] * scale) + y_offset
+
+    # Dibujar punto marcador
+    draw = ImageDraw.Draw(thumbnail)
+    radius = max(3, int(size / 50))  # Radio proporcional al tamaño
+
+    # Círculo rojo sin borde blanco
+    draw.ellipse(
+        [marker_x - radius, marker_y - radius, marker_x + radius, marker_y + radius],
+        fill="red",
+        outline=None,
+        width=0,
+    )
+
+    return thumbnail
+
+
 @st.cache_data
 def download_image(url: str) -> Image.Image | None:
     """Descarga una imagen desde una URL S3 o HTTP y la devuelve como objeto PIL.
@@ -56,7 +140,7 @@ def download_image(url: str) -> Image.Image | None:
     logger.info(f"Descargando imagen {url}")
     if url.startswith("s3://"):
         try:
-            s3_client = boto3.client("s3")
+            s3_client = boto3.Session(profile_name=os.environ.get("AWS_PROFILE")).client("s3")
             parsed_url = urlparse(url)
             bucket_name = parsed_url.netloc
             object_key = parsed_url.path.lstrip("/")
