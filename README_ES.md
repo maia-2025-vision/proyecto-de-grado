@@ -66,7 +66,7 @@ source .venv/bin/activate
 
 ### Levantar backend
 - Local: `poe serve-hn` (HerdNet) o `poe serve-frc` (FRC) — API en `http://localhost:8000`.
-- Docker: `poe dockerize-api` y luego `poe docker-run-api-hnet-prof` ,
+- Docker: `poe dockerize-api` y luego `poe docker-run-api` ,
 
 ### Mapa del repo 
 - `api/` Servicio FastAPI (entry: `api/main.py`, tareas/config en `pyproject.toml`).
@@ -89,10 +89,33 @@ source .venv/bin/activate
 [↑ volver arriba](#top)
 
 ## Inicio rápido
-### Prerrequisitos
-- `astral-uv` instalado (https://docs.astral.sh/uv/getting-started/installation/)
-- Versión de Python en `.python-version`
-- DVC configurado (requiere acceso al remoto S3)
+### Prerrequisitos críticos
+1. **Credenciales AWS** (obligatorio)
+   - Solicita acceso al equipo para obtener:
+     - AWS Access Key ID
+     - AWS Secret Access Key
+   - Buckets usados:
+     - `mammals-detect-dvc` (modelos/datos vía DVC)
+     - `cow-detect-maia` (imágenes/resultados)
+
+2. **Herramientas del sistema**
+   - Git
+   - Python 3.13+ (se instalará vía `uv`)
+   - [uv](https://docs.astral.sh/uv/getting-started/installation/)
+
+### Configuración AWS
+Configura tus credenciales AWS con el perfil requerido por DVC:
+```bash
+aws configure --profile dvc-user
+
+```
+
+
+### Clonar repositorio
+```bash
+git clone https://github.com/maia-2025-vision/proyecto-de-grado.git
+cd proyecto-de-grado
+```
 
 ### Instalación
 ```bash
@@ -101,6 +124,14 @@ uv sync --all-extras
 source .venv/bin/activate
 dvc pull  # datos/modelos
 ```
+
+**Opcional: Instalar proyecto en modo editable**
+Esto evita errores de importación (`ModuleNotFoundError`) al ejecutar scripts desde directorios que no sean la raíz.
+```bash
+uv pip install -e .
+```
+
+
 
 ### Ejecutar servicios
 ```bash

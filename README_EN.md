@@ -66,9 +66,9 @@ source .venv/bin/activate
 
 ### Run backend
 - Local: `poe serve-hn` (HerdNet) or `poe serve-frc` (FRC) — API on `http://localhost:8000`.
-- Docker: `poe dockerize-api` then `poe docker-run-api-hnet-prof` (mounts AWS creds if pulling from S3).
+- Docker: `poe dockerize-api` then `poe docker-run-api` (mounts AWS creds when pulling from S3).
 
-### Repo layout (1-line map)
+### Repo layout 
 - `api/` FastAPI service (entry: `api/main.py`, deps config in `pyproject.toml`).
 - `dashboard/` Streamlit UI (`dashboard/app.py`, `pages/`).
 - `oficial_herdnet/` Training scripts/configs (Hydra) for HerdNet.
@@ -89,18 +89,53 @@ source .venv/bin/activate
 [↑ back to top](#top)
 
 ## Getting Started
-### Prerequisites
-- `astral-uv` installed (see https://docs.astral.sh/uv/getting-started/installation/)
-- Python version from `.python-version`
-- DVC configured (`dvc pull` requires access to S3 remote)
 
-### Setup
+### Critical Prerequisites
+1. **AWS Credentials** (required)
+   - Request access from the team to obtain:
+     - AWS Access Key ID
+     - AWS Secret Access Key
+   - Buckets used:
+     - `mammals-detect-dvc` (models/data via DVC)
+     - `cow-detect-maia` (images/results)
+
+2. **System tools**
+   - Git
+   - Python 3.13+ (will be installed via `uv`)
+   - [uv](https://docs.astral.sh/uv/getting-started/installation/)
+
+### AWS Configuration
+Configure your AWS credentials with the profile required by DVC:
+```bash
+aws configure --profile dvc-user
+# AWS Access Key ID: [your-key-provided-by-team]
+# AWS Secret Access Key: [your-secret-provided-by-team]
+# Default region name: us-east-1
+# Default output format: json
+```
+
+
+### Clone Repository
+```bash
+git clone https://github.com/maia-2025-vision/proyecto-de-grado.git
+cd proyecto-de-grado
+```
+
+### Installation
 ```bash
 uv python install
 uv sync --all-extras
 source .venv/bin/activate
-dvc pull  # fetch data/models
+dvc pull  # data/models
 ```
+
+**Optional: Install project in editable mode**
+This prevents import errors (`ModuleNotFoundError`) when running scripts from non-root directories.
+```bash
+uv pip install -e .
+```
+
+
 
 ### Run services
 ```bash
