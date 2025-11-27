@@ -80,8 +80,8 @@ COPY --from=builder --chown=api-user:api-user /app/pyproject.toml ./
 COPY --from=builder --chown=api-user:api-user /app/README.md ./
 
 # Copiar el modelo por defecto dentro de la imagen (opción 1)
-RUN mkdir -p /app/data/models/herdnet_v2_hn
-COPY --chown=api-user:api-user data/models/herdnet_v2_hn/best_model.pth /app/data/models/herdnet_v2_hn/best_model.pth
+RUN mkdir -p /app/data/models/herdnet_v2_hn2
+COPY --chown=api-user:api-user data/models/herdnet_v2_hn2/best_model.pth /app/data/models/herdnet_v2_hn2/best_model.pth
 
 # Cambiar al usuario no-root
 USER api-user
@@ -90,7 +90,7 @@ USER api-user
 EXPOSE 8000
 
 # Pequeño cambio para más versatilidad:
-ENV MODEL_WEIGHTS_PATH="data/models/herdnet_v2_hn/best_model.pth"
+ENV MODEL_WEIGHTS_PATH="data/models/herdnet_v2_hn2/best_model.pth"
 ENV MODEL_CFG_PATH="configs/test/herdnet.yaml"
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 

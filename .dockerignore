@@ -19,11 +19,7 @@ build/
 *.egg-info
 data/*
 data/models/
-data/models/*
-data/models/herdnet_v2/
-data/models/herdnet_v2/*
-data/models/herdnet_v2_hn2/
-data/models/herdnet_v2_hn2/*
+!data/models/herdnet_v2_hn2/best_model.pth
 data_exploration/
 docs/
 marimo-nbs/

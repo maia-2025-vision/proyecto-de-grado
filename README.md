@@ -67,7 +67,7 @@ source .venv/bin/activate
 ### Datos y modelos (DVC)
 - Mínimo para inferencia (HN):
   ```bash
-  dvc pull data/models/herdnet_v2_hn/best_model.pth
+  dvc pull data/models/herdnet_v2_hn2/best_model.pth
   dvc pull data/groundtruth data/train data/val data/test
   ```
 - Mínimo para Faster R-CNN (ResNet50):
