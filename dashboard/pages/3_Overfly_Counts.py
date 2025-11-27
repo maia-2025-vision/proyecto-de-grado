@@ -55,7 +55,7 @@ def render_region_summary(region: str, region_payload: dict[str, Any]) -> None:
         st.info("Aún no hay métricas agregadas para esta región.")
         return
 
-    st.subheader(f"Conteos agregados por sobrevuelo — {region}")
+    st.subheader(f"Conteos de la región  — {region}")
     st.dataframe(df_region, hide_index=True, width="stretch")
 
     chart_df = df_region.melt("Sobrevuelo", var_name="Especie", value_name="Conteo")
