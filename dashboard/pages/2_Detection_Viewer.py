@@ -382,6 +382,10 @@ def render_feedback_panel(
                     data = feedback_state[key]
                     if data["region"] == region and data["flyover"] == flyover:
                         feedback_state.pop(key, None)
+                        # También limpiar el estado del widget para que se resetee visualmente
+                        widget_key = f"{key}-select"
+                        if widget_key in st.session_state:
+                            del st.session_state[widget_key]
     else:
         st.info("Cuando cambies una etiqueta aparecerá aquí para subirla.")
 
