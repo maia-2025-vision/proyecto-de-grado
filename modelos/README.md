@@ -3,7 +3,7 @@
 
 ## Pesos mínimos (DVC)
 ```bash
-aws configure --profile dvc-user  # si no lo has hecho
+aws configure --profile dvc-user  
 dvc pull data/models/herdnet_v2_hn2/best_model.pth
 dvc pull data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
 ```
@@ -14,5 +14,5 @@ dvc pull data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
 
 
 ## Rutas usadas por la API
-- HerdNet: `MODEL_WEIGHTS_PATH=data/models/herdnet_v2_hn/best_model.pth` (ver `pyproject.toml`, tarea `serve-hn`).
+- HerdNet: `MODEL_WEIGHTS_PATH=data/models/herdnet_v2_hn2/best_model.pth` (ver `pyproject.toml`, tarea `serve-hn`).
 - Faster R-CNN: `MODEL_WEIGHTS_PATH=data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth` (tarea `serve-frc`).

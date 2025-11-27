@@ -62,7 +62,9 @@
 uv python install          # usa .python-version
 uv sync --all-extras       # instala dependencias
 source .venv/bin/activate
+dvc pull
 ```
+
 
 ### Datos y modelos (DVC)
 - Mínimo para inferencia (HN):
@@ -129,13 +131,7 @@ git clone https://github.com/maia-2025-vision/proyecto-de-grado.git
 cd proyecto-de-grado
 ```
 
-### Instalación
-```bash
-uv python install
-uv sync --all-extras
-source .venv/bin/activate
-dvc pull  # datos/modelos
-```
+
 
 **Opcional: Instalar proyecto en modo editable**
 Esto evita errores de importación (`ModuleNotFoundError`) al ejecutar scripts desde directorios que no sean la raíz.

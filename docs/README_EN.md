@@ -62,12 +62,13 @@
 uv python install          # uses .python-version
 uv sync --all-extras       # install deps
 source .venv/bin/activate
+dvc pull
 ```
 
 ### Data & models (DVC)
 - Minimum for inference (HN):  
   ```bash
-  dvc pull data/models/herdnet_v2_hn/best_model.pth
+  dvc pull data/models/herdnet_v2_hn2/best_model.pth
   dvc pull data/groundtruth data/train data/val data/test
   ```
 - Minimum for Faster R-CNN (ResNet50):
@@ -133,13 +134,7 @@ git clone https://github.com/maia-2025-vision/proyecto-de-grado.git
 cd proyecto-de-grado
 ```
 
-### Installation
-```bash
-uv python install
-uv sync --all-extras
-source .venv/bin/activate
-dvc pull  # data/models
-```
+
 
 **Optional: Install project in editable mode**
 This prevents import errors (`ModuleNotFoundError`) when running scripts from non-root directories.
