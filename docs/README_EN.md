@@ -24,15 +24,16 @@
 ## Table of Contents
 1. [About](#about)
 2. [Built With](#built-with)
-3. [Developer Guide](#developer-guide)
-4. [Getting Started](#getting-started)
-5. [Usage](#usage)
-6. [Dashboard Guide](#dashboard-guide)
-7. [Roadmap](#roadmap)
-8. [Contributing](#contributing)
-9. [License](#license)
-10. [Contact](#contact)
-11. [Acknowledgments](#acknowledgments)
+3. [Relevant folders](#relevant-folders)
+4. [Developer Guide](#developer-guide)
+5. [Getting Started](#getting-started)
+6. [Usage](#usage)
+7. [Dashboard Guide](#dashboard-guide)
+8. [Roadmap](#roadmap)
+9. [Contributing](#contributing)
+10. [License](#license)
+11. [Contact](#contact)
+12. [Acknowledgments](#acknowledgments)
 
 ## About
 - Goal: Detect and count multiple African mammal species (Virunga + AED datasets) in dense herds from aerial imagery.
@@ -48,6 +49,13 @@
 - Docker for API/UI packaging
 [↑ back to top](#top)
 
+## Relevant folders 
+- `datos/`: README with how to pull data via DVC and light samples (`datos/muestras/*`).
+- `modelos/`: README with external links (OneDrive) and DVC commands for minimal weights.
+- `notebooks/` and `marimo-nbs/`: analysis, training, and experiments.
+- `data/`: DVC-managed data/models (do not commit heavy assets to Git).
+[↑ back to top](#top)
+
 ## Developer Guide
 ### Dev setup (uv)
 ```bash
@@ -61,6 +69,10 @@ source .venv/bin/activate
   ```bash
   dvc pull data/models/herdnet_v2_hn2/best_model.pth
   dvc pull data/groundtruth data/train data/val data/test
+  ```
+- Minimum for Faster R-CNN (ResNet50):
+  ```bash
+  dvc pull data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
   ```
 - Optional: fetch patches/results as needed per stage in `dvc.yaml` (e.g., `dvc pull data/patches-512-ol-160-m01`).
 

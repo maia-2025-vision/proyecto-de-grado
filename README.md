@@ -24,15 +24,16 @@
 ## Tabla de Contenidos
 1. [Sobre el proyecto](#sobre-el-proyecto)
 2. [Tecnologías](#tecnologias)
-3. [Guía para desarrolladores](#guia-para-desarrolladores)
-4. [Inicio rápido](#inicio-rapido)
-5. [Uso](#uso)
-6. [Guía del Dashboard](#guia-del-dashboard)
-7. [Hoja de ruta](#hoja-de-ruta)
-8. [Contribuir](#contribuir)
-9. [Licencia](#licencia)
-10. [Contacto](#contacto)
-11. [Agradecimientos](#agradecimientos)
+3. [Carpetas relevantes](#carpetas-relevantes)
+4. [Guía para desarrolladores](#guia-para-desarrolladores)
+5. [Inicio rápido](#inicio-rapido)
+6. [Uso](#uso)
+7. [Guía del Dashboard](#guia-del-dashboard)
+8. [Hoja de ruta](#hoja-de-ruta)
+9. [Contribuir](#contribuir)
+10. [Licencia](#licencia)
+11. [Contacto](#contacto)
+12. [Agradecimientos](#agradecimientos)
 
 ## Sobre el proyecto
 - Objetivo: Detectar y contar mamíferos africanos (datasets Virunga + AED) en manadas densas desde imágenes aéreas.
@@ -48,6 +49,13 @@
 - Docker para empaquetar API/UI
 [↑ volver arriba](#top)
 
+## Carpetas relevantes
+- `datos/`: README con cómo bajar datos via DVC y muestras ligeras (`datos/muestras/*`).
+- `modelos/`: README con enlaces externos (OneDrive) y comandos DVC.
+- `notebooks/` y `marimo-nbs/`: notebooks de análisis, entrenamiento y pruebas.
+- `data/`: datos y modelos gestionados por DVC (no subir pesados a Git).
+[↑ volver arriba](#top)
+
 ## Guía para desarrolladores
 ### Setup con uv
 ```bash
@@ -61,6 +69,10 @@ source .venv/bin/activate
   ```bash
   dvc pull data/models/herdnet_v2_hn2/best_model.pth
   dvc pull data/groundtruth data/train data/val data/test
+  ```
+- Mínimo para Faster R-CNN (ResNet50):
+  ```bash
+  dvc pull data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
   ```
 - Opcional: trae parches/resultados según los stages de `dvc.yaml` (ej. `dvc pull data/patches-512-ol-160-m01`).
 
