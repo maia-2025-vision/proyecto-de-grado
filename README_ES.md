@@ -13,7 +13,7 @@
     <a href="#hoja-de-ruta">Hoja de ruta</a>
   </p>
   <p>
-    <img alt="Python" src="https://img.shields.io/badge/Python-3.11+-blue">
+    <img alt="Python" src="https://img.shields.io/badge/Python-3.13+-blue">
     <img alt="FastAPI" src="https://img.shields.io/badge/API-FastAPI-009688">
     <img alt="Streamlit" src="https://img.shields.io/badge/UI-Streamlit-ff4b4b">
     <img alt="DVC" src="https://img.shields.io/badge/Data-DVC-945DD6">
@@ -37,7 +37,7 @@
 ## Sobre el proyecto
 - Objetivo: Detectar y contar mamíferos africanos (datasets Virunga + AED) en manadas densas desde imágenes aéreas.
 - Modelos: HerdNet (puntos/densidad) y Faster R-CNN (cajas), con variantes de entrenamiento (p.ej., HN-4, FRC-50/101).
-- Entregables: pipelines reproducibles (DVC), tracking de experimentos (W&B), API de inferencia (FastAPI) y dashboard para usuarios no técnicos.
+
 [↑ volver arriba](#top)
 
 ## Tecnologías
@@ -66,9 +66,9 @@ source .venv/bin/activate
 
 ### Levantar backend
 - Local: `poe serve-hn` (HerdNet) o `poe serve-frc` (FRC) — API en `http://localhost:8000`.
-- Docker: `poe dockerize-api` y luego `poe docker-run-api-hnet-prof` (monta credenciales AWS si jalas desde S3).
+- Docker: `poe dockerize-api` y luego `poe docker-run-api-hnet-prof` ,
 
-### Mapa del repo (1 línea por carpeta/archivo)
+### Mapa del repo 
 - `api/` Servicio FastAPI (entry: `api/main.py`, tareas/config en `pyproject.toml`).
 - `dashboard/` UI Streamlit (`app.py`, `pages/`, utilidades en `utils/`).
 - `oficial_herdnet/` Scripts/config Hydra para entrenar HerdNet.
@@ -132,7 +132,7 @@ curl -X POST "http://localhost:8000/predict" \
 [↑ volver arriba](#top)
 
 ## Guía del Dashboard
-- Arranque: `poe start-dashboard` (API en `localhost:8000`). Docker: `poe dockerize-dashboard` -> `poe docker-run-dashboard` (http://localhost:8501).
+- Arrancar: `poe start-dashboard` (API en `localhost:8000`). Docker: `poe dockerize-dashboard` -> `poe docker-run-dashboard` (http://localhost:8501).
 - Pasos (con capturas sugeridas en `docs/img/`):
   1) Bienvenida — navegar por la barra lateral. (`dashboard-step1-bienvenida.png`)
   2) Cargar y procesar — arrastra `.jpg/.png/.jpeg`; define Etiqueta (ej., `Kruger_Sur_2025-11-10`) y fecha/hora; clic en “Procesar Imágenes”. (`dashboard-step2-carga.png`)
@@ -144,10 +144,7 @@ curl -X POST "http://localhost:8000/predict" \
 [↑ volver arriba](#top)
 
 ## Hoja de ruta
-- [ ] Agregar imágenes de ejemplo + capturas reales en `docs/img/`.
-- [ ] Documentar “model zoo” (HN-1..4, FRC-50/101) con métricas y descargas.
-- [ ] Recetas de despliegue (API + dashboard) en cloud.
-- [ ] Ampliar tests (API e2e, smoke del dashboard).
+
 [↑ volver arriba](#top)
 
 ## Contribuir
@@ -163,17 +160,23 @@ curl -X POST "http://localhost:8000/predict" \
 [↑ volver arriba](#top)
 
 ## Licencia
-Especifica la licencia (ej., MIT/Apache-2.0) si aplica.
+
 [↑ volver arriba](#top)
 
 ## Contacto
-- A. Alea — a.alea@uniandes.edu.co
-- M. Gutiérrez — mf.gutierreza1@uniandes.edu.co
-- J.D. Pineda — jd.pineda@uniandes.edu.co
-- M. Restrepo — m.restrepom2@uniandes.edu.co
+- Andrés Alea — a.alea@uniandes.edu.co
+- Mixer Gutiérrez — mf.gutierreza1@uniandes.edu.co
+- Jose Daniel Pineda — jd.pineda@uniandes.edu.co
+- Mateo Restrepo — m.restrepom2@uniandes.edu.co
 [↑ volver arriba](#top)
 
 ## Agradecimientos
+Los autores quisieran agradecer al profesor Isaí Daniel
+Chacón, de la Universidad de los Andes, por los valiosos
+consejos e indicaciones nos brindó durante la realización de
+este trabajo.
+[↑ volver arriba](#top)
+## Referencias
 - Repo HerdNet de Alexandre Delplanque (base de entrenamiento)
 - Datasets: Virunga + Aerial Elephant Dataset
 - Herramientas: DVC, W&B, Streamlit, FastAPI

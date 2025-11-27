@@ -13,7 +13,7 @@
     <a href="#roadmap">Roadmap</a>
   </p>
   <p>
-    <img alt="Python" src="https://img.shields.io/badge/Python-3.11+-blue">
+    <img alt="Python" src="https://img.shields.io/badge/Python-3.13+-blue">
     <img alt="FastAPI" src="https://img.shields.io/badge/API-FastAPI-009688">
     <img alt="Streamlit" src="https://img.shields.io/badge/UI-Streamlit-ff4b4b">
     <img alt="DVC" src="https://img.shields.io/badge/Data-DVC-945DD6">
@@ -163,17 +163,21 @@ curl -X POST "http://localhost:8000/predict" \
 [↑ back to top](#top)
 
 ## License
-Specify project license here (e.g., MIT/Apache-2.0) if applicable.
+
 [↑ back to top](#top)
 
 ## Contact
-- A. Alea — a.alea@uniandes.edu.co
-- M. Gutiérrez — mf.gutierreza1@uniandes.edu.co
-- J.D. Pineda — jd.pineda@uniandes.edu.co
-- M. Restrepo — m.restrepom2@uniandes.edu.co
+- Andrés Alea — a.alea@uniandes.edu.co
+- Mixer Gutiérrez — mf.gutierreza1@uniandes.edu.co
+- Jose Daniel Pineda — jd.pineda@uniandes.edu.co
+- Mateo Restrepo — m.restrepom2@uniandes.edu.co
 [↑ back to top](#top)
 
 ## Acknowledgments
+The authors would like to thank teacher Isaí Daniel Chacón from Universidad de los Andes for the invaluable advice and guidance provided throughout this project.
+[↑ back to top](#top)
+
+## References
 - HerdNet repo by Alexandre Delplanque (training pipeline base)
 - Datasets: Virunga + Aerial Elephant Dataset
 - Tools: DVC, W&B, Streamlit, FastAPI

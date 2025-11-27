@@ -357,23 +357,13 @@ def render_feedback_panel(
     if pending_entries:
         st.success(f"{len(pending_entries)} reclasificaciones listas para subir.")
         if st.button("Subir feedback a S3", type="primary"):
-            payload = [
-                {
-                    "region": entry["region"],
-                    "flyover": entry["flyover"],
-                    "image": entry["image"],
-                    "image_url": entry["image_url"],
-                    "detection_index": entry["detection_index"],
-                    "original_label": entry["original_label"],
-                    "original_label_name": entry["original_label_name"],
-                    "new_label": entry["new_label"],
-                    "new_label_name": entry["new_label_name"],
-                    "score": entry["score"],
-                    "center": entry["center"],
-                    "bbox": entry["bbox"],
-                }
-                for entry in pending_entries
-            ]
+            payload = []
+            for entry in pending_entries:
+                item = entry.copy()
+
+                for key in ["patch", "index", "label_id", "label_name"]:
+                    item.pop(key, None)
+                payload.append(item)
             s3_uri = upload_feedback_payload(region=region, flyover=flyover, records=payload)
             if s3_uri:
                 st.success(f"Feedback subido correctamente a {s3_uri}")

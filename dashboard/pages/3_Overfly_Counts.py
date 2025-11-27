@@ -2,6 +2,7 @@
 
 from typing import Any
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 from loguru import logger
@@ -57,8 +58,17 @@ def render_region_summary(region: str, region_payload: dict[str, Any]) -> None:
     st.subheader(f"Conteos agregados por sobrevuelo — {region}")
     st.dataframe(df_region, hide_index=True, width="stretch")
 
-    chart_df = df_region.set_index("Sobrevuelo")
-    st.line_chart(chart_df)
+    chart_df = df_region.melt("Sobrevuelo", var_name="Especie", value_name="Conteo")
+    chart = (
+        alt.Chart(chart_df)
+        .mark_line()
+        .encode(
+            x=alt.X("Sobrevuelo", axis=alt.Axis(labelAngle=-45)),
+            y="Conteo",
+            color="Especie",
+        )
+    )
+    st.altair_chart(chart, use_container_width=True)
 
 
 def get_counts_by_image(region: str, flyover: str, rows: list[dict[str, object]]) -> pd.DataFrame:
