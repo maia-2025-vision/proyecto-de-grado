@@ -98,7 +98,8 @@ def build_detection_entries(
             continue
 
         # Crear thumbnail mostrando la imagen completa con marcador
-        thumbnail = create_thumbnail_with_marker(image, (center_x, center_y), size=patch_size)
+        marker_center = (int(center_x), int(center_y))
+        thumbnail = create_thumbnail_with_marker(image, marker_center, size=patch_size)
         entries.append(
             {
                 "index": idx,
