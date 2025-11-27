@@ -223,11 +223,10 @@ def draw_img_and_annots(
     image_results: ImageResults,
     annot_params: AnnotParams,
     mode_placeholder: DeltaGenerator,
-    cached_image: Image.Image | None = None,
 ) -> None:
     image_url = image_results.url
 
-    image = cached_image or download_image(image_url)
+    image = download_image(image_url)
     if not image:
         st.error("No fue posible descargar la imagen seleccionada.")
     else:
@@ -432,9 +431,7 @@ def render_page() -> None:
             img_results = det_results.results_by_image[selected_image_fname]
             base_image = download_image(img_results.url)
             with col_img:
-                draw_img_and_annots(
-                    img_results, annot_params, mode_placeholder, cached_image=base_image
-                )
+                draw_img_and_annots(img_results, annot_params, mode_placeholder)
             with col_summary:
                 render_summary_tables(img_results, annot_params)
 
