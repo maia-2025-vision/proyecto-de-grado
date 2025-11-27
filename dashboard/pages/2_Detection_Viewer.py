@@ -19,6 +19,7 @@ from dashboard.utils.s3_utils import upload_feedback_payload
 from dashboard.utils.visualization import (
     SPECIES_MAP,
     AnnotParams,
+    create_thumbnail_with_marker,
     download_image,
     draw_boxes_on_image,
     draw_points_on_image,
@@ -96,14 +97,15 @@ def build_detection_entries(
         if xmin >= xmax or ymin >= ymax:
             continue
 
-        patch = image.crop((xmin, ymin, xmax, ymax))
+        # Crear thumbnail mostrando la imagen completa con marcador
+        thumbnail = create_thumbnail_with_marker(image, (center_x, center_y), size=patch_size)
         entries.append(
             {
                 "index": idx,
                 "label_id": label,
                 "label_name": SPECIES_MAP.get(label, f"Label {label}"),
                 "score": score,
-                "patch": patch,
+                "patch": thumbnail,
                 "center": (center_x, center_y),
                 "bbox": bbox,
             }
@@ -319,7 +321,7 @@ def render_feedback_panel(
                 caption = entry["label_name"]
                 if entry["score"] is not None:
                     caption = f"{caption} ({entry['score']:.2f})"
-                st.image(entry["patch"], caption=caption, use_container_width=True)
+                st.image(entry["patch"], caption=caption, width=patch_size)
 
                 entry_key = f"{region}|{flyover}|{image_name}|{entry['index']}"
                 default_idx = (
