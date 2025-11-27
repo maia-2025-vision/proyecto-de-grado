@@ -58,7 +58,8 @@ def build_detection_entries(
     *,
     image: Image.Image,
     detections: Detections,
-    patch_size: int,
+    crop_size: int,
+    thumb_size: int,
 ) -> list[dict[str, Any]]:
     """Genera los parches que se mostrarán en el grid de feedback."""
     entries: list[dict[str, Any]] = []
@@ -88,7 +89,7 @@ def build_detection_entries(
         else:
             continue
 
-        half_patch = patch_size / 2
+        half_patch = crop_size / 2
         xmin = max(0, int(center_x - half_patch))
         ymin = max(0, int(center_y - half_patch))
         xmax = min(width, int(center_x + half_patch))
@@ -97,9 +98,10 @@ def build_detection_entries(
         if xmin >= xmax or ymin >= ymax:
             continue
 
-        # Crear thumbnail mostrando la imagen completa con marcador
-        marker_center = (int(center_x), int(center_y))
-        thumbnail = create_thumbnail_with_marker(image, marker_center, size=patch_size)
+        # Crear thumbnail a partir del recorte alrededor de la detección
+        crop = image.crop((xmin, ymin, xmax, ymax))
+        marker_center = (int(center_x - xmin), int(center_y - ymin))
+        thumbnail = create_thumbnail_with_marker(crop, marker_center, size=thumb_size)
         entries.append(
             {
                 "index": idx,
@@ -292,17 +294,31 @@ def render_feedback_panel(
         step=4,
         key=f"feedback-limit-{region}-{flyover}",
     )
-    patch_size = st.slider(
-        "Tamaño del recorte (px)",
+
+    zoom_pct = st.slider(
+        "Zoom del recorte (%)",
+        min_value=50,
+        max_value=200,
+        value=100,
+        step=10,
+        key=f"feedback-zoom-{region}-{flyover}",
+    )
+
+    crop_size = st.slider(
+        "Tamaño de recorte (px)",
         min_value=64,
         max_value=256,
         value=160,
         step=16,
-        key=f"feedback-size-{region}-{flyover}",
+        key=f"feedback-crop-{region}-{flyover}",
     )
+    thumb_size = max(32, int(crop_size * zoom_pct / 100))
 
     detection_entries = build_detection_entries(
-        image=base_image, detections=image_results.detections, patch_size=patch_size
+        image=base_image,
+        detections=image_results.detections,
+        crop_size=crop_size,
+        thumb_size=thumb_size,
     )
     if not detection_entries:
         st.info("No hay detecciones disponibles para generar thumbnails.")
@@ -321,7 +337,7 @@ def render_feedback_panel(
                 caption = entry["label_name"]
                 if entry["score"] is not None:
                     caption = f"{caption} ({entry['score']:.2f})"
-                st.image(entry["patch"], caption=caption, width=patch_size)
+                st.image(entry["patch"], caption=caption, width=thumb_size)
 
                 entry_key = f"{region}|{flyover}|{image_name}|{entry['index']}"
                 default_idx = (
