@@ -67,7 +67,6 @@ class FlyoverResults(BaseModel):
     error: str | None = None
 
 
-@st.cache_data
 def get_detection_results(region: str, flyover: str) -> FlyoverResults:
     """Obtiene los resultados de detección para un sobrevuelo específico."""
     endpoint = f"{API_BASE_URL}/results/{region}/{flyover}"
@@ -116,7 +115,6 @@ def process_images(image_urls: list[str]) -> dict[str, Any]:
         return {"error": str(e)}
 
 
-@st.cache_data
 def get_counts_for_flyover(region: str, flyover: str) -> dict[str, Any]:
     """Obtiene los conteos de un sobrevuelo específico."""
     endpoint = f"{API_BASE_URL}/counts/{region}/{flyover}"
@@ -130,7 +128,6 @@ def get_counts_for_flyover(region: str, flyover: str) -> dict[str, Any]:
         return {"error": str(e)}
 
 
-@st.cache_data
 def get_counts_for_region(region: str) -> dict[str, Any]:
     """Obtiene los conteos agregados para una región específica."""
     endpoint = f"{API_BASE_URL}/counts/{region}"
