@@ -57,6 +57,7 @@
 [↑ volver arriba](#top)
 
 ## Guía para desarrolladores
+
 ### Setup con uv
 ```bash
 uv python install          # usa .python-version
@@ -64,7 +65,6 @@ uv sync --all-extras       # instala dependencias
 source .venv/bin/activate
 dvc pull
 ```
-
 
 ### Datos y modelos (DVC)
 - Mínimo para inferencia (HN):
@@ -189,7 +189,7 @@ curl -X POST "http://localhost:8000/predict" \
 ## Contribuir
 - Instalar hooks: `pre-commit install`
 - Lint/type-check: `poe check`, `poe type-check`
-- e2e:
+- Tests end-to-end:
   ```bash
   poe e2e predict-one
   poe e2e predict-many

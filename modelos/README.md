@@ -2,13 +2,15 @@
 
 
 ## Pesos mínimos (DVC)
+
+
 ```bash
-aws configure --profile dvc-user  
+aws configure --profile dvc-user  # credenciales fueron compartidas en el documento de entrega  
 dvc pull data/models/herdnet_v2_hn2/best_model.pth
 dvc pull data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
 ```
 
-## Enlaces externos (OneDrive)
+## Enlaces a archivos con pesos (.pth)
 - Carpeta compartida (HerdNet v2 HN y Faster R-CNN ResNet50):
   https://uniandes-my.sharepoint.com/:f:/g/personal/m_restrepom2_uniandes_edu_co/IgDmPNnFNTkpSq_Dc8qcatbyAZFl3EskTaDTrUyM6mI-xdI?e=MtBuIv
 
