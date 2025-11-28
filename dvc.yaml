@@ -179,6 +179,26 @@ stages:
       - data/patches-512-ol-160-m01/val/
     outs:
       - data/models/herdnet_v4/
+  
+  train-herdnet-v5:
+    desc: From v2 change model num_layers to 60
+    cmd: python oficial_herdnet/tools/train.py 
+      train.wandb_run="'Herdnet Train 5 num_layers 60 head_conv 256'"
+      train.wandb_mode='online'
+      train.model.kwargs.num_layers=60
+      train.model.kwargs.head_conv=256
+      train.model.kwargs.pretrained=imagenet
+      train.losses.CrossEntropyLoss.kwargs.weight=[0.1,1.2,1.9,1.16,6.37,12.12,1.0]
+      train.training_settings.work_dir=data/models/herdnet_v5/
+      train.training_settings.batch_size=4
+      train.training_settings.stitcher=null
+    deps:
+      - data/patches-512-ol-160-m01/train_points_gt.csv
+      - data/patches-512-ol-160-m01/train/
+      - data/patches-512-ol-160-m01/val_points_gt.csv
+      - data/patches-512-ol-160-m01/val/
+    outs:
+      - data/models/herdnet_v5/
 
   desc-herdnet-v1:
     desc: >

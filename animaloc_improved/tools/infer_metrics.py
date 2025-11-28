@@ -1,4 +1,9 @@
+import argparse
+import gc
 import os
+import sys
+import time
+import tracemalloc
 
 import albumentations as A
 import matplotlib.patches as patches
@@ -13,6 +18,69 @@ from animaloc.eval.metrics import PointsMetrics
 from animaloc.models import HerdNet, LossWrapper, load_model
 from PIL import Image
 from torch.utils.data import DataLoader
+
+
+def eval_image(
+    model_path,
+    csv_file,
+    image_root,
+    image_name,
+    device,
+    threshold,
+    show_labels=True,
+    figsize=None,
+    dpi=300,
+) -> None:
+    species_map = {
+        1: "Alcelaphinae",
+        2: "Buffalo",
+        3: "Kob",
+        4: "Warthog",
+        5: "Waterbuck",
+        6: "Elephant",
+    }
+
+    colors = {
+        "ground_truth": "white",
+        "predictions": "lime",
+        "correct": "blue",
+        "missed": "orange",
+        "false_positive": "red",
+    }
+
+    image_path = os.path.join(image_root, image_name)
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image not found: {image_path}")
+
+    model = load_trained_model(model_path)
+    ground_truth = get_single_image_data(csv_file, image_name)
+
+    # Make predictions
+    prediction_results = predict_single_image(model, image_path, device)
+    predictions = prediction_results["detections"]
+
+    # Match predictions to ground truth
+    matches = match_predictions_to_gt(predictions, ground_truth, threshold)
+
+    create_visualization(
+        image_path,
+        ground_truth,
+        predictions,
+        matches,
+        colors,
+        species_map,
+        show_labels,
+        figsize,
+        dpi,
+    )
+
+    print_evaluation_results(matches, ground_truth, predictions, species_map)
+
+    print("\nGround Truth Data:")
+    print(ground_truth.to_string())
+
+    print("\nPredictions:")
+    print(predictions.to_string())
 
 
 def load_trained_model(
@@ -47,6 +115,18 @@ def get_single_image_data(csv_file: str, image_name: str) -> pd.DataFrame:
 def predict_single_image(model: torch.nn.Module, image_path: str, device: str = "cuda") -> dict:
     """Make predictions on a single image using HerdNet."""
     print(f"Making predictions for: {os.path.basename(image_path)}")
+
+    gc.collect()
+    tracemalloc.start()
+    start_time = time.time()
+
+    # GPU memory tracking
+    initial_gpu_memory = 0
+    if device == "cuda" and torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
+        initial_gpu_memory = torch.cuda.memory_allocated() / 1024 / 1024  # MB
+        print(f"Initial GPU memory: {initial_gpu_memory:.2f} MB")
 
     # Load and preprocess image
     image = Image.open(image_path).convert("RGB")
@@ -101,19 +181,54 @@ def predict_single_image(model: torch.nn.Module, image_path: str, device: str = 
 
     try:
         with torch.no_grad():
+            inference_start = time.time()
             # Run inference
             evaluator.evaluate(wandb_flag=False, viz=False, log_meters=False)
+            inference_end = time.time()
 
             # Get detections
             detections = evaluator.detections
             detections = detections.dropna()
-
             detections_copy = detections.copy()
 
-            print(f"Found {len(detections_copy)} predictions")
+            # times
+            end_time = time.time()
+            total_time = end_time - start_time
+            inference_time = inference_end - inference_start
+
+            # Memory CPU
+            current_cpu_memory, peak_cpu_memory = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            peak_cpu_memory_mb = peak_cpu_memory / 1024 / 1024
+            current_cpu_memory_mb = current_cpu_memory / 1024 / 1024
+
+            # Memory GPU
+            gpu_memory_used = 0
+            peak_gpu_memory = 0
+            if device == "cuda" and torch.cuda.is_available():
+                final_gpu_memory = torch.cuda.memory_allocated() / 1024 / 1024  # MB
+                peak_gpu_memory = torch.cuda.max_memory_allocated() / 1024 / 1024  # MB
+                gpu_memory_used = abs(final_gpu_memory - initial_gpu_memory)
+
+            print(f"\n{'=' * 50}")
+            print("PERFORMANCE METRICS")
+            print(f"{'=' * 50}")
+            print(f"Total execution time: {total_time:.3f} seconds")
+            print(f"Inference time: {inference_time:.3f} seconds")
+            print(f"Current CPU Memory: {current_cpu_memory_mb:.2f} MB")
+            print(f"Peak CPU Memory: {peak_cpu_memory_mb:.2f} MB")
+
+            if device == "cuda" and torch.cuda.is_available():
+                print(f"GPU Memory used: {gpu_memory_used:.2f} MB")
+                print(f"Peak GPU Memory: {peak_gpu_memory:.2f} MB")
+            else:
+                print("Device: CPU (no GPU metrics)")
 
             return {"detections": detections_copy, "image_size": image.size}
     finally:
+        if tracemalloc.is_tracing():
+            tracemalloc.stop()
+
         # Clean up GPU memory
         if "evaluator" in locals():
             del evaluator
@@ -125,9 +240,6 @@ def predict_single_image(model: torch.nn.Module, image_path: str, device: str = 
             del dataloader
         if "dataset" in locals():
             del dataset
-
-        # Force garbage collection
-        import gc
 
         gc.collect()
 
@@ -142,6 +254,17 @@ def match_predictions_to_gt(
 ) -> dict:
     """Match predictions to ground truth based on distance threshold."""
     matches = {"true_positives": [], "false_positives": [], "false_negatives": []}
+
+    # Check if predictions has individual detections (x, y columns)
+    if "x" not in predictions.columns or "y" not in predictions.columns or predictions.empty:
+        # No individual predictions found, all GT are false negatives
+        gt_coords = ground_truth[["x", "y"]].values
+        gt_labels = ground_truth["labels"].values
+
+        for gt_coord, gt_label in zip(gt_coords, gt_labels, strict=False):
+            matches["false_negatives"].append({"coord": gt_coord, "label": gt_label})
+
+        return matches
 
     pred_coords = predictions[["x", "y"]].values
     pred_labels = predictions["labels"].values
@@ -207,12 +330,20 @@ def create_visualization(
     matches: dict,
     colors: dict,
     species_map: dict,
+    show_labels: bool = True,
+    figsize: tuple = None,
+    dpi: int = 100,
 ) -> None:
     """Create visualization showing GT, predictions, and matches."""
     # Load image
     image = Image.open(image_path).convert("RGB")
-    fig, ax = plt.subplots(1, 1, figsize=(15, 10))
-    ax.imshow(image)
+
+    if figsize is None:
+        width, height = image.size
+        figsize = (width / dpi, height / dpi)
+
+    fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    ax.imshow(image, interpolation="none")
 
     # Plot ground truth points
     gt_coords = ground_truth[["x", "y"]].values
@@ -224,21 +355,22 @@ def create_visualization(
             radius=5,
             color=colors["ground_truth"],
             fill=False,
-            linewidth=1,
-            label="Ground Truth" if coord is gt_coords[0] else "",
+            linewidth=1 if show_labels else 4,
         )
         ax.add_patch(circle)
-        ax.text(
-            coord[0] + 10,
-            coord[1] - 10,
-            f"GT:{species_map[label]}",
-            color=colors["ground_truth"],
-            fontsize=6,
-            weight="bold",
-        )
+        if show_labels:
+            ax.text(
+                coord[0] + 10,
+                coord[1] - 10,
+                f"GT:{species_map[label]}",
+                color=colors["ground_truth"],
+                fontsize=3,
+                weight="bold",
+            )
 
+    point_radius = 3 if show_labels else 7
     # Plot predictions
-    if not predictions.empty:
+    if not predictions.empty and "x" in predictions.columns and "y" in predictions.columns:
         pred_coords = predictions[["x", "y"]].values
         pred_labels = predictions["labels"].values
         pred_scores = predictions.get("scores", [1.0] * len(predictions)).values
@@ -246,21 +378,21 @@ def create_visualization(
         for coord, label, score in zip(pred_coords, pred_labels, pred_scores, strict=False):
             circle = patches.Circle(
                 coord,
-                radius=3,
+                radius=point_radius,
                 color=colors["predictions"],
                 fill=True,
                 alpha=0.7,
-                label="Predictions" if coord is pred_coords[0] else "",
             )
             ax.add_patch(circle)
-            ax.text(
-                coord[0] + 10,
-                coord[1] + 10,
-                f"P:{species_map.get(label, 'Unknown')} ({score:.2f})",
-                color=colors["predictions"],
-                fontsize=6,
-                weight="bold",
-            )
+            if show_labels:
+                ax.text(
+                    coord[0] + 10,
+                    coord[1] + 10,
+                    f"P:{species_map.get(label, 'Unknown')} ({score:.2f})",
+                    color=colors["predictions"],
+                    fontsize=3,
+                    weight="bold",
+                )
 
     # # Plot matches with connecting lines
     for tp in matches["true_positives"]:
@@ -276,19 +408,12 @@ def create_visualization(
     # Highlight false positives and false negatives
     for fp in matches["false_positives"]:
         circle = patches.Circle(
-            fp["coord"],
-            radius=4,
-            color=colors["false_positive"],
-            fill=False,
-            linewidth=1,
-            linestyle="--",
+            fp["coord"], radius=point_radius, color=colors["false_positive"], fill=True
         )
         ax.add_patch(circle)
 
     for fn in matches["false_negatives"]:
-        circle = patches.Circle(
-            fn["coord"], radius=4, color=colors["missed"], fill=False, linewidth=1, linestyle=":"
-        )
+        circle = patches.Circle(fn["coord"], radius=point_radius, color=colors["missed"], fill=True)
         ax.add_patch(circle)
 
     # Add legend
@@ -297,53 +422,65 @@ def create_visualization(
             [0],
             [0],
             marker="o",
-            color="w",
+            color="k",
+            linewidth=0,
+            markeredgewidth=0.2,
             markerfacecolor=colors["ground_truth"],
-            markersize=10,
+            markersize=2,
             label="Ground Truth",
-            markeredgecolor=colors["ground_truth"],
-            markeredgewidth=2,
         ),
         plt.Line2D(
             [0],
             [0],
             marker="o",
-            color="w",
+            color="k",
+            linewidth=0,
+            markeredgewidth=0.2,
             markerfacecolor=colors["predictions"],
-            markersize=8,
+            markersize=2,
             label="Predictions",
         ),
-        plt.Line2D([0], [0], color=colors["correct"], linewidth=2, label="Correct Matches"),
+        plt.Line2D([0], [0], color=colors["correct"], linewidth=0.5, label="Correct Matches"),
         plt.Line2D(
             [0],
             [0],
             marker="o",
-            color="w",
-            markerfacecolor="w",
-            markersize=10,
+            color="k",
+            linewidth=0,
+            markeredgewidth=0.2,
+            markerfacecolor=colors["false_positive"],
+            markersize=2,
             label="False Positives",
-            markeredgecolor=colors["false_positive"],
-            markeredgewidth=3,
-            linestyle="--",
         ),
         plt.Line2D(
             [0],
             [0],
+            linewidth=0,
             marker="o",
-            color="w",
-            markerfacecolor="w",
-            markersize=10,
+            color="k",
+            markeredgewidth=0.2,
+            markerfacecolor=colors["missed"],
+            markersize=2,
             label="Missed (FN)",
-            markeredgecolor=colors["missed"],
-            markeredgewidth=3,
-            linestyle=":",
         ),
     ]
-    ax.legend(handles=legend_elements, loc="upper right", bbox_to_anchor=(1, 1))
 
-    ax.set_title(f"HerdNet Evaluation: {os.path.basename(image_path)}", fontsize=14, weight="bold")
+    ax.legend(
+        handles=legend_elements,
+        bbox_to_anchor=(1, 1),
+        loc="upper left",
+        fontsize=2,
+        frameon=False,
+    )
+    ax.set_title(f"HerdNet Evaluation: {os.path.basename(image_path)}", fontsize=4, weight="bold")
+
+    ax.set_xlim(0, image.size[0])
+    ax.set_ylim(image.size[1], 0)
+    ax.set_aspect("equal")
     ax.axis("off")
-    plt.tight_layout()
+    # Eliminar todos los márgenes
+    plt.subplots_adjust(left=0, bottom=0, right=1, top=1)
+
     plt.show()
 
 
@@ -354,6 +491,7 @@ def print_evaluation_results(
     n_tp = len(matches["true_positives"])
     n_fp = len(matches["false_positives"])
     n_fn = len(matches["false_negatives"])
+    n_pred = len(predictions) if "x" in predictions.columns and "y" in predictions.columns else 0
 
     precision = n_tp / (n_tp + n_fp) if (n_tp + n_fp) > 0 else 0
     recall = n_tp / (n_tp + n_fn) if (n_tp + n_fn) > 0 else 0
@@ -363,7 +501,7 @@ def print_evaluation_results(
     print("EVALUATION RESULTS")
     print("=" * 60)
     print(f"Ground Truth Points: {len(ground_truth)}")
-    print(f"Predicted Points: {len(predictions)}")
+    print(f"Predicted Points: {n_pred}")
     print(f"True Positives: {n_tp}")
     print(f"False Positives: {n_fp}")
     print(f"False Negatives: {n_fn}")
@@ -371,15 +509,18 @@ def print_evaluation_results(
     print(f"Recall: {recall:.3f}")
     print(f"F1-Score: {f1:.3f}")
 
+    # Count GT by class
+    gt_by_class = ground_truth["labels"].value_counts().sort_index()
+
+    # Only count predictions by class if individual predictions exist
+    if not predictions.empty and "labels" in predictions.columns:
+        pred_by_class = predictions["labels"].value_counts().sort_index()
+    else:
+        pred_by_class = pd.Series(dtype=int)
+
     # Per-class breakdown
     print("\nPER-CLASS BREAKDOWN:")
     print("-" * 40)
-
-    # Count GT by class
-    gt_by_class = ground_truth["labels"].value_counts().sort_index()
-    pred_by_class = (
-        predictions["labels"].value_counts().sort_index() if not predictions.empty else pd.Series()
-    )
 
     for class_id in sorted(set(list(gt_by_class.index) + list(pred_by_class.index))):
         species_name = species_map.get(class_id, f"Class_{class_id}")
@@ -392,3 +533,66 @@ def print_evaluation_results(
         print(f"{species_name}: GT={gt_count}, Pred={pred_count}, TP={tp_class}")
 
     print("=" * 60)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Evaluate HerdNet model on single image")
+
+    # Argumentos requeridos
+    parser.add_argument("--model_path", required=True, help="Path to model file (.pth)")
+    parser.add_argument("--csv_file", required=True, help="Path to CSV file with ground truth")
+    parser.add_argument("--image_root", required=True, help="Root directory of images")
+    parser.add_argument("--image_name", required=True, help="Name of image to evaluate")
+
+    # Argumentos opcionales
+    parser.add_argument(
+        "--device", default="cuda", choices=["cuda", "cpu"], help="Device to use (default: cuda)"
+    )
+    parser.add_argument(
+        "--threshold", type=float, default=15.0, help="Matching threshold (default: 15.0)"
+    )
+    parser.add_argument(
+        "--show_labels", action="store_true", help="Show species labels in visualization"
+    )
+    parser.add_argument("--dpi", type=int, default=100, help="DPI for output image (default: 100)")
+
+    args = parser.parse_args()
+
+    # Validar que los archivos existen
+    if not os.path.exists(args.model_path):
+        print(f"Error: Model file not found: {args.model_path}")
+        sys.exit(1)
+
+    if not os.path.exists(args.csv_file):
+        print(f"Error: CSV file not found: {args.csv_file}")
+        sys.exit(1)
+
+    if not os.path.exists(args.image_root):
+        print(f"Error: Image root directory not found: {args.image_root}")
+        sys.exit(1)
+
+    image_path = os.path.join(args.image_root, args.image_name)
+    if not os.path.exists(image_path):
+        print(f"Error: Image not found: {image_path}")
+        sys.exit(1)
+
+    # Ejecutar evaluación
+    print(f"Evaluating image: {args.image_name}")
+    print(f"Model: {args.model_path}")
+    print(f"Device: {args.device}")
+    print("-" * 50)
+
+    eval_image(
+        model_path=args.model_path,
+        csv_file=args.csv_file,
+        image_root=args.image_root,
+        image_name=args.image_name,
+        device=args.device,
+        threshold=args.threshold,
+        show_labels=args.show_labels,
+        dpi=args.dpi,
+    )
+
+
+if __name__ == "__main__":
+    main()
