@@ -189,11 +189,17 @@ curl -X POST "http://localhost:8000/predict" \
 ### Dashboard Guide
 - Start: `poe start-dashboard` (API at `localhost:8000`). Docker: `poe dockerize-dashboard` -> `poe docker-run-dashboard` (http://localhost:8501).
 - Steps (with screenshots in `docs/img/`):
-  1) Welcome — navigate via sidebar. (`docs/img/home.jpg`)
-  2) Upload & process — set Region and date; click “Procesar Imágenes”. (`docs/img/carga.jpg`)
-  3) Load results — Pick Region and date, click “Cargar Resultados”. (`docs/img/visualizador.jpg`)
-  4) Metrics — Metrics of detections.(`docs/img/conteos1.jpg`, `docs/img/conteos2.jpg`)
-  5) Feedback — Choose any wrong detection to correct it. (`docs/img/feedback.jpg`)
+  1) Welcome — navigate via sidebar.  
+     ![](docs/img/home.jpg)
+  2) Upload & process — set Region and date; click “Procesar Imágenes”.  
+     ![](docs/img/carga.jpg)
+  3) Load results — Pick Region and date, click “Cargar Resultados”.  
+     ![](docs/img/visualizador.jpg)
+  4) Metrics — Metrics of detections.  
+     ![](docs/img/conteos1.jpg)  
+     ![](docs/img/conteos2.jpg)
+  5) Feedback — Choose any wrong detection to correct it.  
+     ![](docs/img/feedback.jpg)
 [↑ back to top](#top)
 
 ## Roadmap

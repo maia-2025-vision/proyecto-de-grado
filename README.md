@@ -185,12 +185,18 @@ curl -X POST "http://localhost:8000/predict" \
 ## Guía del Dashboard
 - Arrancar: `poe start-dashboard` (API en `localhost:8000`). Docker: `poe dockerize-dashboard` -> `poe docker-run-dashboard` (http://localhost:8501).
 - Pasos:
-  1) Bienvenida — Navegar por la barra lateral. (`docs/img/home.jpg`)
-  2) Cargar y procesar — Define Región y fecha; clic en “Upload”. (`docs/img/carga.jpg`)
-  3) Visualizar resultados — Elige Región y Fecha (Sobrevuelo), luego “Cargar Resultados” y elegir el modo de visualización (puntos o cajas si disponible). (`docs/img/visualizador.jpg`)
-  4) Métricas — Métricas de las detecciones. (`docs/img/conteos1.jpg`,`docs/img/conteos2.jpg`)
-  5) Ajustar detecciones — Elige una detección errada en para corregirla. (`docs/img/feedback.jpg`)
-  
+  1) Bienvenida — Navegar por la barra lateral.  
+     ![](docs/img/home.jpg)
+  2) Cargar y procesar — Define Región y fecha; clic en “Upload”.  
+     ![](docs/img/carga.jpg)
+  3) Visualizar resultados — Elige Región y Fecha (Sobrevuelo), luego “Cargar Resultados” y elegir el modo de visualización (puntos o cajas si disponible).  
+     ![](docs/img/visualizador.jpg)
+  4) Métricas — Métricas de las detecciones.  
+     ![](docs/img/conteos1.jpg)  
+     ![](docs/img/conteos2.jpg)
+  5) Ajustar detecciones — Elige una detección errada en para corregirla.  
+     ![](docs/img/feedback.jpg)
+
 [↑ volver arriba](#top)
 
 ## Hoja de ruta
