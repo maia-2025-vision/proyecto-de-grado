@@ -1,7 +1,7 @@
 # -------------------------
 # Etapa 1: builder 
 # -------------------------
-FROM python:3.13-slim AS builder
+FROM python:3.12-slim AS builder
 
 # Configuración básica de Python y del entorno virtual administrado por uv
 ENV PYTHONUNBUFFERED=1 \
@@ -30,7 +30,7 @@ COPY api/pyproject.cpu.toml ./pyproject.toml
 COPY api/uv.cpu.lock ./uv.lock
 
 # Instalar las dependencias requeridas para la API y el modelo dentro del entorno virtual
-RUN uv sync --frozen --group api --group herdnet
+RUN uv sync --group api --group herdnet
 
 # Copiar el código de la aplicación necesario para empaquetar la API
 COPY api ./api
@@ -47,7 +47,7 @@ RUN uv pip install --no-deps --editable . \
 # -------------------------
 # Etapa 2: final 
 # -------------------------
-FROM python:3.13-slim
+FROM python:3.12-slim
 
 # Variables de entorno para Python y la aplicación
 ENV PYTHONUNBUFFERED=1 \
