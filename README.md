@@ -29,9 +29,8 @@
 5. [Inicio rápido](#inicio-rapido)
 6. [Uso](#uso)
 7. [Guía del Dashboard](#guia-del-dashboard)
-8. [Licencia](#licencia)
-9. [Contacto](#contacto)
-10. [Agradecimientos](#agradecimientos)
+8. [Contacto](#contacto)
+9. [Agradecimientos](#agradecimientos)
 
 ## Sobre el proyecto
 - Objetivo: Detectar y contar mamíferos africanos (datasets Virunga + AED) en manadas densas desde imágenes aéreas.
@@ -61,6 +60,13 @@
 uv python install          # usa .python-version
 uv sync --all-extras       # instala dependencias
 source .venv/bin/activate
+- Instalar hooks: `pre-commit install`
+- Lint/type-check: `poe check`, `poe type-check`
+- Tests end-to-end:
+
+  poe e2e predict-one
+  poe e2e predict-many
+  
 ```
 
 ### Datos y modelos (DVC)
@@ -99,17 +105,9 @@ source .venv/bin/activate
 - Asegura previamente los insumos de los stages (parches/gt) con `dvc pull`.
 [↑ volver arriba](#top)
 
-### Contribuir
-- Instalar hooks: `pre-commit install`
-- Lint/type-check: `poe check`, `poe type-check`
-- Tests end-to-end:
-  ```bash
-  poe e2e predict-one
-  poe e2e predict-many
-  poe e2e predict-one-mult
-  ```
-- En PR, evita subir artefactos DVC salvo que sea necesario.
-[↑ volver arriba](#top)
+
+poe e2e predict-one-mult
+  
 
 ## Inicio rápido
 ### Prerrequisitos críticos
