@@ -32,9 +32,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Never]:
     aws_secret_is_defined = os.getenv("AWS_SECRET_ACCESS_KEY") is not None
 
     if SETTINGS.aws_profile is None and (aws_key_id is None or not aws_secret_is_defined):
-        logger.info(
-            "No AWS_PROFILE or explicit keys: the IAM Task Role will be used if available."
-        )
+        logger.info("No AWS_PROFILE or explicit keys: the IAM Task Role will be used if available.")
 
     global DETECTOR
     DETECTOR.detector, DETECTOR.model_metadata = make_detector(
