@@ -29,11 +29,8 @@
 5. [Inicio rápido](#inicio-rapido)
 6. [Uso](#uso)
 7. [Guía del Dashboard](#guia-del-dashboard)
-8. [Hoja de ruta](#hoja-de-ruta)
-9. [Contribuir](#contribuir)
-10. [Licencia](#licencia)
-11. [Contacto](#contacto)
-12. [Agradecimientos](#agradecimientos)
+8. [Contacto](#contacto)
+9. [Agradecimientos](#agradecimientos)
 
 ## Sobre el proyecto
 - Objetivo: Detectar y contar mamíferos africanos (datasets Virunga + AED) en manadas densas desde imágenes aéreas.
@@ -63,7 +60,13 @@
 uv python install          # usa .python-version
 uv sync --all-extras       # instala dependencias
 source .venv/bin/activate
-dvc pull
+- Instalar hooks: `pre-commit install`
+- Lint/type-check: `poe check`, `poe type-check`
+- Tests end-to-end:
+
+  poe e2e predict-one
+  poe e2e predict-many
+  
 ```
 
 ### Datos y modelos (DVC)
@@ -102,6 +105,10 @@ dvc pull
 - Asegura previamente los insumos de los stages (parches/gt) con `dvc pull`.
 [↑ volver arriba](#top)
 
+
+poe e2e predict-one-mult
+  
+
 ## Inicio rápido
 ### Prerrequisitos críticos
 1. **Credenciales AWS** (obligatorio)
@@ -131,7 +138,15 @@ git clone https://github.com/maia-2025-vision/proyecto-de-grado.git
 cd proyecto-de-grado
 ```
 
-
+### Instalar dependencias y datos mínimos
+```bash
+uv python install
+uv sync --all-extras
+source .venv/bin/activate
+dvc pull data/models/herdnet_v2_hn2/best_model.pth
+dvc pull data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
+dvc pull data/groundtruth data/train data/val data/test
+```
 
 **Opcional: Instalar proyecto en modo editable**
 Esto evita errores de importación (`ModuleNotFoundError`) al ejecutar scripts desde directorios que no sean la raíz.
@@ -139,7 +154,12 @@ Esto evita errores de importación (`ModuleNotFoundError`) al ejecutar scripts d
 uv pip install -e .
 ```
 
-
+### Variables de entorno clave
+- `MODEL_WEIGHTS_PATH`: ruta al modelo. Valores por defecto:
+  - HerdNet (`poe serve-hn` / `docker-run-api`): `data/models/herdnet_v2_hn2/best_model.pth`
+  - Faster R-CNN (`poe serve-frc`): `data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth`
+- `MODEL_CFG_PATH`: configuración asociada (por defecto `configs/test/herdnet.yaml` o `configs/test/faster_rcnn.yaml`).
+- `AWS_PROFILE`: perfil para credenciales AWS (por defecto `dvc-user` en `docker-run-api`). Alternativa: exportar `AWS_ACCESS_KEY_ID` y `AWS_SECRET_ACCESS_KEY`.
 
 ### Ejecutar servicios
 ```bash
@@ -172,35 +192,22 @@ curl -X POST "http://localhost:8000/predict" \
 
 ## Guía del Dashboard
 - Arrancar: `poe start-dashboard` (API en `localhost:8000`). Docker: `poe dockerize-dashboard` -> `poe docker-run-dashboard` (http://localhost:8501).
-- Pasos (con capturas sugeridas en `docs/img/`):
-  1) Bienvenida — navegar por la barra lateral. (`dashboard-step1-bienvenida.png`)
-  2) Cargar y procesar — arrastra `.jpg/.png/.jpeg`; define Etiqueta (ej., `Kruger_Sur_2025-11-10`) y fecha/hora; clic en “Procesar Imágenes”. (`dashboard-step2-carga.png`)
-  3) Monitoreo — spinner mientras sube a S3 y llama la API; mensaje de éxito/error. (`dashboard-step3-progreso.png`)
-  4) Cargar resultados — en “Visualizador y Métricas de Detección”, elige Región (Etiqueta) y Sobrevuelo (fecha/hora), luego “Cargar Resultados”. (`dashboard-step4-selectores.png`)
-  5) Métricas — tabla de conteos por especie + gráfico de barras. (`dashboard-step5-metricas.png`)
-  6) Detecciones — elige una imagen; verás cajas y/o centroides. (`dashboard-step6-detecciones.png`)
-  7) Controles — modo (cajas/centroides/ambos), umbral de confianza, grosor/tamaño, filtro por especie. (`dashboard-step7-controles.png`)
-[↑ volver arriba](#top)
-
-## Hoja de ruta
-
-[↑ volver arriba](#top)
-
-## Contribuir
-- Instalar hooks: `pre-commit install`
-- Lint/type-check: `poe check`, `poe type-check`
-- Tests end-to-end:
-  ```bash
-  poe e2e predict-one
-  poe e2e predict-many
-  poe e2e predict-one-mult
-  ```
-- En PR, evita subir artefactos DVC salvo que sea necesario.
-[↑ volver arriba](#top)
-
-## Licencia
+- Pasos:
+  1) Bienvenida — Navegar por la barra lateral.  
+     ![](docs/img/home.jpg)
+  2) Cargar y procesar — Define Región y fecha; clic en “Upload”.  
+     ![](docs/img/carga.jpg)
+  3) Visualizar resultados — Elige Región y Fecha (Sobrevuelo), luego “Cargar Resultados” y elegir el modo de visualización (puntos o cajas si disponible).  
+     ![](docs/img/visualizador.jpg)
+  4) Métricas — Métricas de las detecciones.  
+     ![](docs/img/conteos1.jpg)  
+     ![](docs/img/conteos2.jpg)
+  5) Ajustar detecciones — Elige una detección errada en para corregirla.  
+     ![](docs/img/feedback.jpg)
 
 [↑ volver arriba](#top)
+
+
 
 ## Contacto
 - Andrés Alea — a.alea@uniandes.edu.co

@@ -29,11 +29,8 @@
 5. [Getting Started](#getting-started)
 6. [Usage](#usage)
 7. [Dashboard Guide](#dashboard-guide)
-8. [Roadmap](#roadmap)
-9. [Contributing](#contributing)
-10. [License](#license)
-11. [Contact](#contact)
-12. [Acknowledgments](#acknowledgments)
+8. [Contact](#contact)
+9. [Acknowledgments](#acknowledgments)
 
 ## About
 - Goal: Detect and count multiple African mammal species (Virunga + AED datasets) in dense herds from aerial imagery.
@@ -62,7 +59,16 @@
 uv python install          # uses .python-version
 uv sync --all-extras       # install deps
 source .venv/bin/activate
-dvc pull
+
+
+- Install pre-commit hooks: `pre-commit install`
+- Lint/type-check: `poe check`, `poe type-check`
+- e2e tests:
+  
+  poe e2e predict-one
+  poe e2e predict-many
+  poe e2e predict-one-mult
+  
 ```
 
 ### Data & models (DVC)
@@ -134,6 +140,15 @@ git clone https://github.com/maia-2025-vision/proyecto-de-grado.git
 cd proyecto-de-grado
 ```
 
+### Install deps and pull minimal data/models
+```bash
+uv python install
+uv sync --all-extras
+source .venv/bin/activate
+dvc pull data/models/herdnet_v2_hn2/best_model.pth
+dvc pull data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
+dvc pull data/groundtruth data/train data/val data/test
+```
 
 
 **Optional: Install project in editable mode**
@@ -142,7 +157,12 @@ This prevents import errors (`ModuleNotFoundError`) when running scripts from no
 uv pip install -e .
 ```
 
-
+### Key environment variables
+- `MODEL_WEIGHTS_PATH`: model path. Defaults:
+  - HerdNet (`poe serve-hn` / `docker-run-api`): `data/models/herdnet_v2_hn2/best_model.pth`
+  - Faster R-CNN (`poe serve-frc`): `data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth`
+- `MODEL_CFG_PATH`: config file (defaults `configs/test/herdnet.yaml` or `configs/test/faster_rcnn.yaml`).
+- `AWS_PROFILE`: AWS profile (default `dvc-user` in `docker-run-api`). Alternative: set `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`.
 
 ### Run services
 ```bash
@@ -175,38 +195,23 @@ curl -X POST "http://localhost:8000/predict" \
 
 ### Dashboard Guide
 - Start: `poe start-dashboard` (API at `localhost:8000`). Docker: `poe dockerize-dashboard` -> `poe docker-run-dashboard` (http://localhost:8501).
-- Steps (with suggested screenshots under `docs/img/`):
-  1) Welcome — navigate via sidebar. (`dashboard-step1-welcome.png`)
-  2) Upload & process — drag/drop `.jpg/.png/.jpeg`; set Label (e.g., `Kruger_Sur_2025-11-10`) and capture date/time; click “Procesar Imágenes”. (`dashboard-step2-carga.png`)
-  3) Monitor — spinner while uploading to S3 and calling API; success/error message. (`dashboard-step3-progreso.png`)
-  4) Load results — in “Visualizador y Métricas de Detección”, pick Región (Label) and Sobrevuelo (date/time), click “Cargar Resultados”. (`dashboard-step4-selectores.png`)
-  5) Metrics — table of species counts + bar chart. (`dashboard-step5-metricas.png`)
-  6) Detections — choose an image; view boxes and/or centroids overlay. (`dashboard-step6-detecciones.png`)
-  7) Controls — sidebar: display mode (boxes/centroids/both), confidence threshold, line/point size, species filter. (`dashboard-step7-controles.png`)
+- Steps (with screenshots in `docs/img/`):
+  1) Welcome — navigate via sidebar.  
+     ![](docs/img/home.jpg)
+  2) Upload & process — set Region and date; click “Procesar Imágenes”.  
+     ![](docs/img/carga.jpg)
+  3) Load results — Pick Region and date, click “Cargar Resultados”.  
+     ![](docs/img/visualizador.jpg)
+  4) Metrics — Metrics of detections.  
+     ![](docs/img/conteos1.jpg)  
+     ![](docs/img/conteos2.jpg)
+  5) Feedback — Choose any wrong detection to correct it.  
+     ![](docs/img/feedback.jpg)
 [↑ back to top](#top)
 
-## Roadmap
-- [ ] Add sample images + filled screenshot assets under `docs/img/`.
-- [ ] Document model  (HN-1..4, FRC-50/101) with metrics and download links.
-- [ ] Add deployment recipes (API + dashboard) for cloud.
-- [ ] Expand tests (API e2e, dashboard smoke).
-[↑ back to top](#top)
 
-## Contributing
-- Install pre-commit hooks: `pre-commit install`
-- Lint/type-check: `poe check`, `poe type-check`
-- e2e tests:
-  ```bash
-  poe e2e predict-one
-  poe e2e predict-many
-  poe e2e predict-one-mult
-  ```
-- Open PRs against main; keep DVC-tracked artifacts out unless necessary.
-[↑ back to top](#top)
 
-## License
 
-[↑ back to top](#top)
 
 ## Contact
 - Andrés Alea — a.alea@uniandes.edu.co
