@@ -32,26 +32,7 @@ from dashboard.utils.visualization import (
 
 SPECIES_NAME_OPTIONS = [SPECIES_MAP[idx] for idx in sorted(SPECIES_MAP.keys())]
 SPECIES_ID_BY_NAME = {name: idx for idx, name in SPECIES_MAP.items()}
-FEEDBACK_STATE_KEY = "detection_feedback_buffer"
 THUMBNAIL_COLUMNS = 5
-
-
-def ensure_feedback_state() -> dict[str, dict[str, object]]:
-    """Devuelve (y crea si no existe) el buffer de cambios en sesión."""
-    return st.session_state.setdefault(FEEDBACK_STATE_KEY, {})  # type: ignore[no-any-return]
-
-
-def update_feedback_entry(entry_key: str, metadata: dict[str, Any], new_label_name: str) -> None:
-    """Agrega o elimina una reclasificación del buffer."""
-    feedback_state = ensure_feedback_state()
-    new_label_id = SPECIES_ID_BY_NAME.get(new_label_name, metadata["original_label"])
-    if new_label_id == metadata["original_label"]:
-        feedback_state.pop(entry_key, None)
-    else:
-        feedback_state[entry_key] = metadata | {
-            "new_label": new_label_id,
-            "new_label_name": new_label_name,
-        }
 
 
 def build_detection_entries(
@@ -325,7 +306,7 @@ def render_feedback_panel(
         return
 
     detection_entries = detection_entries[:max_detections]
-    feedback_state = ensure_feedback_state()
+    pending_entries: list[tuple[str, dict[str, object], str]] = []
 
     st.caption("Selecciona una etiqueta distinta para añadirla al lote de feedback.")
     for start in range(0, len(detection_entries), THUMBNAIL_COLUMNS):
@@ -352,46 +333,34 @@ def render_feedback_panel(
                     key=f"{entry_key}-select",
                     label_visibility="collapsed",
                 )
-                metadata = {
-                    "region": region,
-                    "flyover": flyover,
-                    "image": image_name,
-                    "image_url": image_results.url,
-                    "detection_index": entry["index"],
-                    "original_label": entry["label_id"],
-                    "original_label_name": entry["label_name"],
-                    "score": entry["score"],
-                    "center": list(entry["center"]),
-                    "bbox": list(entry["bbox"]) if entry["bbox"] is not None else None,
-                }
-                update_feedback_entry(entry_key, metadata, new_label)
+                new_label_id = SPECIES_ID_BY_NAME.get(new_label, entry["label_id"])
+                if new_label_id != entry["label_id"]:
+                    item = {
+                        "region": region,
+                        "flyover": flyover,
+                        "image": image_name,
+                        "image_url": image_results.url,
+                        "detection_index": entry["index"],
+                        "original_label": entry["label_id"],
+                        "original_label_name": entry["label_name"],
+                        "new_label": new_label_id,
+                        "new_label_name": new_label,
+                        "score": entry["score"],
+                        "center": list(entry["center"]),
+                        "bbox": list(entry["bbox"]) if entry["bbox"] is not None else None,
+                    }
+                    pending_entries.append((entry_key, item, entry["label_name"]))
 
-    pending_entries = [
-        entry
-        for entry in feedback_state.values()
-        if entry["region"] == region and entry["flyover"] == flyover
-    ]
     if pending_entries:
         st.success(f"{len(pending_entries)} reclasificaciones listas para subir.")
         if st.button("Subir feedback a S3", type="primary"):
-            payload = []
-            for entry in pending_entries:
-                item = entry.copy()
-
-                for key in ["patch", "index", "label_id", "label_name"]:
-                    item.pop(key, None)
-                payload.append(item)
+            payload = [item for _, item, _ in pending_entries]
             s3_uri = upload_feedback_payload(region=region, flyover=flyover, records=payload)
             if s3_uri:
                 st.success(f"Feedback subido correctamente a {s3_uri}")
-                for key in list(feedback_state.keys()):
-                    data = feedback_state[key]
-                    if data["region"] == region and data["flyover"] == flyover:
-                        feedback_state.pop(key, None)
-                        # También limpiar el estado del widget para que se resetee visualmente
-                        widget_key = f"{key}-select"
-                        if widget_key in st.session_state:
-                            del st.session_state[widget_key]
+                for entry_key, _, original_label_name in pending_entries:
+                    widget_key = f"{entry_key}-select"
+                    st.session_state[widget_key] = original_label_name
     else:
         st.info("Cuando cambies una etiqueta aparecerá aquí para subirla.")
 
