@@ -63,7 +63,6 @@
 uv python install          # usa .python-version
 uv sync --all-extras       # instala dependencias
 source .venv/bin/activate
-dvc pull
 ```
 
 ### Datos y modelos (DVC)
@@ -131,7 +130,15 @@ git clone https://github.com/maia-2025-vision/proyecto-de-grado.git
 cd proyecto-de-grado
 ```
 
-
+### Instalar dependencias y datos mínimos
+```bash
+uv python install
+uv sync --all-extras
+source .venv/bin/activate
+dvc pull data/models/herdnet_v2_hn2/best_model.pth
+dvc pull data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth
+dvc pull data/groundtruth data/train data/val data/test
+```
 
 **Opcional: Instalar proyecto en modo editable**
 Esto evita errores de importación (`ModuleNotFoundError`) al ejecutar scripts desde directorios que no sean la raíz.
@@ -172,14 +179,13 @@ curl -X POST "http://localhost:8000/predict" \
 
 ## Guía del Dashboard
 - Arrancar: `poe start-dashboard` (API en `localhost:8000`). Docker: `poe dockerize-dashboard` -> `poe docker-run-dashboard` (http://localhost:8501).
-- Pasos (con capturas sugeridas en `docs/img/`):
-  1) Bienvenida — navegar por la barra lateral. (`dashboard-step1-bienvenida.png`)
-  2) Cargar y procesar — arrastra `.jpg/.png/.jpeg`; define Etiqueta (ej., `Kruger_Sur_2025-11-10`) y fecha/hora; clic en “Procesar Imágenes”. (`dashboard-step2-carga.png`)
-  3) Monitoreo — spinner mientras sube a S3 y llama la API; mensaje de éxito/error. (`dashboard-step3-progreso.png`)
-  4) Cargar resultados — en “Visualizador y Métricas de Detección”, elige Región (Etiqueta) y Sobrevuelo (fecha/hora), luego “Cargar Resultados”. (`dashboard-step4-selectores.png`)
-  5) Métricas — tabla de conteos por especie + gráfico de barras. (`dashboard-step5-metricas.png`)
-  6) Detecciones — elige una imagen; verás cajas y/o centroides. (`dashboard-step6-detecciones.png`)
-  7) Controles — modo (cajas/centroides/ambos), umbral de confianza, grosor/tamaño, filtro por especie. (`dashboard-step7-controles.png`)
+- Pasos:
+  1) Bienvenida — Navegar por la barra lateral. (`docs/img/home.jpg`)
+  2) Cargar y procesar — Define Región y fecha; clic en “Upload”. (`docs/img/carga.jpg`)
+  3) Visualizar resultados — Elige Región y Fecha (Sobrevuelo), luego “Cargar Resultados” y elegir el modo de visualización (puntos o cajas si disponible). (`docs/img/visualizador.jpg`)
+  4) Métricas — Métricas de las detecciones. (`docs/img/conteos1.jpg`,`docs/img/conteos2.jpg`)
+  5) Ajustar detecciones — Elige una detección errada en para corregirla. (`docs/img/feedback.jpg`)
+  
 [↑ volver arriba](#top)
 
 ## Hoja de ruta
