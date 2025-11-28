@@ -202,12 +202,6 @@ curl -X POST "http://localhost:8000/predict" \
      ![](docs/img/feedback.jpg)
 [↑ back to top](#top)
 
-## Roadmap
-- [ ] Add sample images + filled screenshot assets under `docs/img/`.
-- [ ] Document model  (HN-1..4, FRC-50/101) with metrics and download links.
-- [ ] Add deployment recipes (API + dashboard) for cloud.
-- [ ] Expand tests (API e2e, dashboard smoke).
-[↑ back to top](#top)
 
 ## Contributing
 - Install pre-commit hooks: `pre-commit install`

@@ -199,9 +199,7 @@ curl -X POST "http://localhost:8000/predict" \
 
 [↑ volver arriba](#top)
 
-## Hoja de ruta
 
-[↑ volver arriba](#top)
 
 ## Contribuir
 - Instalar hooks: `pre-commit install`
