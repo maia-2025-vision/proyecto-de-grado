@@ -29,11 +29,8 @@
 5. [Getting Started](#getting-started)
 6. [Usage](#usage)
 7. [Dashboard Guide](#dashboard-guide)
-8. [Roadmap](#roadmap)
-9. [Contributing](#contributing)
-10. [License](#license)
-11. [Contact](#contact)
-12. [Acknowledgments](#acknowledgments)
+8. [Contact](#contact)
+9. [Acknowledgments](#acknowledgments)
 
 ## About
 - Goal: Detect and count multiple African mammal species (Virunga + AED datasets) in dense herds from aerial imagery.
@@ -62,6 +59,16 @@
 uv python install          # uses .python-version
 uv sync --all-extras       # install deps
 source .venv/bin/activate
+
+
+- Install pre-commit hooks: `pre-commit install`
+- Lint/type-check: `poe check`, `poe type-check`
+- e2e tests:
+  
+  poe e2e predict-one
+  poe e2e predict-many
+  poe e2e predict-one-mult
+  
 ```
 
 ### Data & models (DVC)
@@ -203,21 +210,8 @@ curl -X POST "http://localhost:8000/predict" \
 [↑ back to top](#top)
 
 
-## Contributing
-- Install pre-commit hooks: `pre-commit install`
-- Lint/type-check: `poe check`, `poe type-check`
-- e2e tests:
-  ```bash
-  poe e2e predict-one
-  poe e2e predict-many
-  poe e2e predict-one-mult
-  ```
-- Open PRs against main; keep DVC-tracked artifacts out unless necessary.
-[↑ back to top](#top)
 
-## License
 
-[↑ back to top](#top)
 
 ## Contact
 - Andrés Alea — a.alea@uniandes.edu.co

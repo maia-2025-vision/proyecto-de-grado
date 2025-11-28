@@ -29,11 +29,9 @@
 5. [Inicio rápido](#inicio-rapido)
 6. [Uso](#uso)
 7. [Guía del Dashboard](#guia-del-dashboard)
-8. [Hoja de ruta](#hoja-de-ruta)
-9. [Contribuir](#contribuir)
-10. [Licencia](#licencia)
-11. [Contacto](#contacto)
-12. [Agradecimientos](#agradecimientos)
+8. [Licencia](#licencia)
+9. [Contacto](#contacto)
+10. [Agradecimientos](#agradecimientos)
 
 ## Sobre el proyecto
 - Objetivo: Detectar y contar mamíferos africanos (datasets Virunga + AED) en manadas densas desde imágenes aéreas.
@@ -99,6 +97,18 @@ source .venv/bin/activate
   uv run dvc repro test-herdnet-v4-full-imgs
   ```
 - Asegura previamente los insumos de los stages (parches/gt) con `dvc pull`.
+[↑ volver arriba](#top)
+
+### Contribuir
+- Instalar hooks: `pre-commit install`
+- Lint/type-check: `poe check`, `poe type-check`
+- Tests end-to-end:
+  ```bash
+  poe e2e predict-one
+  poe e2e predict-many
+  poe e2e predict-one-mult
+  ```
+- En PR, evita subir artefactos DVC salvo que sea necesario.
 [↑ volver arriba](#top)
 
 ## Inicio rápido
@@ -200,22 +210,6 @@ curl -X POST "http://localhost:8000/predict" \
 [↑ volver arriba](#top)
 
 
-
-## Contribuir
-- Instalar hooks: `pre-commit install`
-- Lint/type-check: `poe check`, `poe type-check`
-- Tests end-to-end:
-  ```bash
-  poe e2e predict-one
-  poe e2e predict-many
-  poe e2e predict-one-mult
-  ```
-- En PR, evita subir artefactos DVC salvo que sea necesario.
-[↑ volver arriba](#top)
-
-## Licencia
-
-[↑ volver arriba](#top)
 
 ## Contacto
 - Andrés Alea — a.alea@uniandes.edu.co
