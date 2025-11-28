@@ -146,7 +146,12 @@ Esto evita errores de importación (`ModuleNotFoundError`) al ejecutar scripts d
 uv pip install -e .
 ```
 
-
+### Variables de entorno clave
+- `MODEL_WEIGHTS_PATH`: ruta al modelo. Valores por defecto:
+  - HerdNet (`poe serve-hn` / `docker-run-api`): `data/models/herdnet_v2_hn2/best_model.pth`
+  - Faster R-CNN (`poe serve-frc`): `data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth`
+- `MODEL_CFG_PATH`: configuración asociada (por defecto `configs/test/herdnet.yaml` o `configs/test/faster_rcnn.yaml`).
+- `AWS_PROFILE`: perfil para credenciales AWS (por defecto `dvc-user` en `docker-run-api`). Alternativa: exportar `AWS_ACCESS_KEY_ID` y `AWS_SECRET_ACCESS_KEY`.
 
 ### Ejecutar servicios
 ```bash

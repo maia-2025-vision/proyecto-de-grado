@@ -150,7 +150,12 @@ This prevents import errors (`ModuleNotFoundError`) when running scripts from no
 uv pip install -e .
 ```
 
-
+### Key environment variables
+- `MODEL_WEIGHTS_PATH`: model path. Defaults:
+  - HerdNet (`poe serve-hn` / `docker-run-api`): `data/models/herdnet_v2_hn2/best_model.pth`
+  - Faster R-CNN (`poe serve-frc`): `data/models/faster-rcnn/resnet50-100-epochs-tbl4/best_model.pth`
+- `MODEL_CFG_PATH`: config file (defaults `configs/test/herdnet.yaml` or `configs/test/faster_rcnn.yaml`).
+- `AWS_PROFILE`: AWS profile (default `dvc-user` in `docker-run-api`). Alternative: set `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`.
 
 ### Run services
 ```bash
